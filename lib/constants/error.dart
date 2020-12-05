@@ -1,0 +1,4 @@
+enum Error {
+  NETWORK_ERROR,
+  UNKNOWN_ERROR
+}

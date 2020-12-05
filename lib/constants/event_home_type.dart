@@ -1,0 +1,4 @@
+enum EventHomeType {
+  UPCOMING,
+  FAVOURITE
+}
