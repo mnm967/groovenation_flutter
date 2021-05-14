@@ -16,10 +16,10 @@ class TextMessage extends Message {
       : super(messageID, messageDateTime, sender);
 }
 
-class ImageMessage extends Message {
-  final String imageURL;
+class MediaMessage extends Message {
+  final String mediaURL;
 
-  ImageMessage(String messageID, DateTime messageDateTime, SocialPerson sender, this.imageURL)
+  MediaMessage(String messageID, DateTime messageDateTime, SocialPerson sender, this.mediaURL)
       : super(messageID, messageDateTime, sender);
 }
 

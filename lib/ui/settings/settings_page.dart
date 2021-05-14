@@ -2,7 +2,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/cubit/auth_cubit.dart';
+import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -40,7 +43,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                   color: Colors.deepPurple,
                                   borderRadius: BorderRadius.circular(900)),
                               child: FlatButton(
-                                padding: EdgeInsets.zero,
+                                padding: EdgeInsets.only(left: 8),
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
@@ -69,24 +72,32 @@ class _SettingsPageState extends State<SettingsPage> {
                       children: [
                         settingsItem(context, "Profile",
                             "Edit your Profile settings", Icons.person, () {
-                              Navigator.pushNamed(context, '/profile_settings');
-                            }),
-                        settingsItem(
-                            context,
-                            "Following",
-                            "View people you are following",
-                            Icons.people_outline,
-                            () {
-                              Navigator.pushNamed(context, '/following');
-                            }),
+                          // Navigator.pushNamed(context, '/profile_settings');
+                          Navigator.push(
+                                context,
+                                new MaterialPageRoute(
+                                    builder: (context) =>
+                                        new ProfileSettingsPageScreen()));
+                        }),
+                        // settingsItem(
+                        //     context,
+                        //     "Following",
+                        //     "View people you are following",
+                        //     Icons.people_outline, () {
+                        //   Navigator.pushNamed(context, '/following');
+                        // }),
                         settingsItem(
                             context,
                             "Change City",
                             "Look for clubs and events in a different city",
-                            Icons.location_city,
-                            () {
-                              Navigator.pushNamed(context, '/city_picker_settings');
-                            }),
+                            Icons.location_city, () {
+                          //Navigator.pushNamed(context, '/city_picker_settings');
+                          Navigator.push(
+                                context,
+                                new MaterialPageRoute(
+                                    builder: (context) =>
+                                        new CityPickerSettingsPageScreen()));
+                        }),
                         // settingsItem(
                         //   context,
                         //   "Followers",
@@ -98,10 +109,15 @@ class _SettingsPageState extends State<SettingsPage> {
                             context,
                             "Notifications",
                             "Change your Notification settings",
-                            Icons.notifications,
-                            () {
-                              Navigator.pushNamed(context, '/notification_settings');
-                            }),
+                            Icons.notifications, () {
+                          // Navigator.pushNamed(
+                          //     context, '/notification_settings');
+                          Navigator.push(
+                                context,
+                                new MaterialPageRoute(
+                                    builder: (context) =>
+                                        new NotificationSettingsPageScreen()));
+                        }),
                         settingsItem(
                             context,
                             "Contact Us",
@@ -260,6 +276,12 @@ class _SettingsPageState extends State<SettingsPage> {
         ));
   }
 
+  _logUserOut() {
+    final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
+    authCubit.logout();
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => true);
+  }
+
   Widget logoutItem(BuildContext context) {
     return Padding(
         padding: EdgeInsets.only(top: 12, bottom: 12),
@@ -270,7 +292,7 @@ class _SettingsPageState extends State<SettingsPage> {
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: FlatButton(
-              onPressed: () {},
+              onPressed: () => _logUserOut(),
               padding: EdgeInsets.zero,
               child: Wrap(children: [
                 Column(

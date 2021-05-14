@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/ui/social/social_grid_item.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
@@ -11,20 +12,22 @@ import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ProfilePage extends StatefulWidget {
+  final SocialPerson socialPerson;
+  ProfilePage(this.socialPerson);
+
   @override
-  _ProfilePageState createState() => _ProfilePageState();
+  _ProfilePageState createState() => _ProfilePageState(socialPerson);
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final SocialPerson socialPerson;
+  _ProfilePageState(this.socialPerson);
+
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
 
   final _listRefreshController = RefreshController(initialRefresh: false);
   final _gridRefreshController = RefreshController(initialRefresh: false);
-
-  openSearchPage() {
-    print("Search Page");
-  }
 
   @override
   void initState() {
@@ -52,6 +55,16 @@ class _ProfilePageState extends State<ProfilePage> {
     _gridRefreshController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  _changeUserBlocked(){
+    //TODO Block/Unblock User
+  }
+  _changeUserFollowingStatus(){
+    //TODO Follow/Unfollow
+  }
+  _openMessages(){
+    //TODO Open Messages
   }
 
   Stack topAppBar() => Stack(children: [
@@ -82,8 +95,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                               height: 116,
                                               width: 116,
                                               child: CircleAvatar(
-                                                backgroundImage: OptimizedCacheImageProvider(
-                                                    'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
+                                                backgroundImage:
+                                                    OptimizedCacheImageProvider(
+                                                        socialPerson
+                                                            .personProfilePicURL),
                                               ),
                                             ),
                                             Padding(
@@ -93,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                     right: 16,
                                                     bottom: 0),
                                                 child: Text(
-                                                  "professor_mnm967",
+                                                  socialPerson.personUsername,
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
@@ -134,7 +149,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                                         child: FlatButton(
                                                           padding:
                                                               EdgeInsets.zero,
-                                                          onPressed: () {},
+                                                          onPressed:
+                                                              _openMessages(),
                                                           child: Text(
                                                             "MESSAGE",
                                                             style: TextStyle(
@@ -156,6 +172,10 @@ class _ProfilePageState extends State<ProfilePage> {
                                                               width: 1.0,
                                                               color:
                                                                   Colors.white),
+                                                          color: socialPerson
+                                                                  .isUserFollowing
+                                                              ? Colors.white
+                                                              : null,
                                                           borderRadius:
                                                               BorderRadius.all(
                                                                   Radius
@@ -165,14 +185,22 @@ class _ProfilePageState extends State<ProfilePage> {
                                                         child: FlatButton(
                                                           padding:
                                                               EdgeInsets.zero,
-                                                          onPressed: () {},
+                                                          onPressed:
+                                                              _changeUserFollowingStatus(),
                                                           child: Text(
-                                                            "FOLLOW",
+                                                            socialPerson
+                                                                    .isUserFollowing
+                                                                ? "UNFOLLOW"
+                                                                : "FOLLOW",
                                                             style: TextStyle(
                                                                 fontFamily:
                                                                     'LatoBold',
-                                                                color: Colors
-                                                                    .white),
+                                                                color: socialPerson
+                                                                        .isUserFollowing
+                                                                    ? Colors
+                                                                        .white
+                                                                    : Colors
+                                                                        .purple),
                                                           ),
                                                         )),
                                                   )
@@ -195,7 +223,12 @@ class _ProfilePageState extends State<ProfilePage> {
                                                   top: 24,
                                                   bottom: 24),
                                               child: PopupMenuButton<String>(
-                                                onSelected: (item) {},
+                                                onSelected: (item) {
+                                                  if (item == "Block User" ||
+                                                      item == "Unblock User") {
+                                                    _changeUserBlocked();
+                                                  }
+                                                },
                                                 padding: EdgeInsets.zero,
                                                 icon: Icon(Icons.more_vert,
                                                     color: Colors.white,
@@ -300,8 +333,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       flexibleSpace: Stack(children: [
                         Positioned.fill(
                             child: OptimizedCacheImage(
-                          //"https://jakecoker.files.wordpress.com/2018/09/default-landscapeipad.png?w=1024&h=768&crop=1",
-                          imageUrl: "https://images.pexels.com/photos/2204724/pexels-photo-2204724.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
+                          imageUrl: socialPerson.personCoverPicURL,
                           fit: BoxFit.cover,
                         )),
                         Positioned.fill(

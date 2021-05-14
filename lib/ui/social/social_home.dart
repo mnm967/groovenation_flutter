@@ -1,16 +1,12 @@
 import 'dart:ui';
-
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:groovenation_flutter/ui/social/social_grid_item.dart';
+import 'package:groovenation_flutter/cubit/social_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/social_state.dart';
+import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
-import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
-import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class SocialHomePage extends StatefulWidget {
   final _SocialHomePageState state = _SocialHomePageState();
@@ -26,18 +22,46 @@ class SocialHomePage extends StatefulWidget {
 }
 
 class _SocialHomePageState extends State<SocialHomePage> {
-  bool isFirstView = true;
+  bool _isFirstView = true;
 
   runBuild() {
-    if (isFirstView) {
+    if (_isFirstView) {
       print("Running Build: SocialHome");
-      isFirstView = false;
+      _isFirstView = false;
+
+      _scrollController.addListener(() {
+        if (_scrollController.position.pixels <= 30) {
+          if (_scrollToTopVisible != false) {
+            setState(() {
+              _scrollToTopVisible = false;
+            });
+          }
+        } else {
+          if (_scrollToTopVisible != true) {
+            setState(() {
+              _scrollToTopVisible = true;
+            });
+          }
+        }
+      });
+
+      final NearbySocialCubit nearbySocialCubit =
+          BlocProvider.of<NearbySocialCubit>(context);
+      nearbySocialCubit.getSocialPosts(nearbyPage);
+
+      final FollowingSocialCubit followingSocialCubit =
+          BlocProvider.of<FollowingSocialCubit>(context);
+      followingSocialCubit.getSocialPosts(followingPage);
+
+      final TrendingSocialCubit trendingSocialCubit =
+          BlocProvider.of<TrendingSocialCubit>(context);
+      trendingSocialCubit.getSocialPosts(trendingPage);
     }
   }
 
-  final _nearbyRefreshController = RefreshController(initialRefresh: false);
-  final _trendingRefreshController = RefreshController(initialRefresh: false);
-  final _followingRefreshController = RefreshController(initialRefresh: false);
+  final _nearbyRefreshController = RefreshController(initialRefresh: true);
+  final _trendingRefreshController = RefreshController(initialRefresh: true);
+  final _followingRefreshController = RefreshController(initialRefresh: true);
 
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
@@ -45,21 +69,6 @@ class _SocialHomePageState extends State<SocialHomePage> {
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels <= 30) {
-        if (_scrollToTopVisible != false) {
-          setState(() {
-            _scrollToTopVisible = false;
-          });
-        }
-      } else {
-        if (_scrollToTopVisible != true) {
-          setState(() {
-            _scrollToTopVisible = true;
-          });
-        }
-      }
-    });
   }
 
   @override
@@ -136,6 +145,45 @@ class _SocialHomePageState extends State<SocialHomePage> {
         )
       ]);
 
+  List<SocialPost> nearbySocialPosts = [];
+  List<SocialPost> followingSocialPosts = [];
+  List<SocialPost> trendingSocialPosts = [];
+
+  int nearbyPage = 0;
+  int followingPage = 0;
+  int trendingPage = 0;
+
+  Function getBlocListener(RefreshController refreshController) {
+    return (context, socialState) {
+      if (socialState is SocialLoadedState) {
+        refreshController.refreshCompleted();
+
+        if (socialState.hasReachedMax)
+          refreshController.loadNoData();
+        else
+          refreshController.loadComplete();
+      }
+
+      if (socialState is SocialErrorState) {
+        refreshController.refreshCompleted();
+        refreshController.refreshFailed();
+        refreshController.loadFailed();
+      }
+    };
+  }
+
+  Function getScrollNotificationListener(RefreshController refreshController) {
+    return (ScrollNotification scrollInfo) {
+      if (scrollInfo.metrics.pixels >=
+          (scrollInfo.metrics.maxScrollExtent - 256)) {
+        if (refreshController.footerStatus == LoadStatus.idle) {
+          refreshController.requestLoading(needMove: false);
+        }
+      }
+      return false;
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -148,172 +196,356 @@ class _SocialHomePageState extends State<SocialHomePage> {
                 Expanded(
                   child: TabBarView(children: [
                     NotificationListener<ScrollNotification>(
-                      onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels >=
-                            (scrollInfo.metrics.maxScrollExtent - 256)) {
-                          if (_nearbyRefreshController.footerStatus ==
-                              LoadStatus.idle) {
-                            _nearbyRefreshController.requestLoading(
-                                needMove: false);
-                          }
-                        }
-                        return false;
-                      },
-                      child: SmartRefresher(
-                          controller: _nearbyRefreshController,
-                          header: WaterDropMaterialHeader(),
-                          footer: ClassicFooter(
-                            textStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 16,
-                                fontFamily: 'Lato'),
-                            noDataText: "You've reached the end of the line",
-                            failedText: "Something Went Wrong",
-                          ),
-                          onLoading: () {
-                            print("Started Loading");
-                            Future.delayed(const Duration(seconds: 5), () {
-                              // setState(() {
-                              //   upcomingCount = upcomingCount + 4;
-                              // });
-                              _nearbyRefreshController.loadNoData();
-                              print("Finished Loading");
-                            });
-                          },
-                          enablePullUp: true,
-                          child: CustomScrollView(
-                            key: Key("NearbySocialHomeScrollView"),
-                            physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                            slivers: [
-                              SliverPadding(
-                                padding: EdgeInsets.only(top: 24),
-                                sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, int index) {
-                                    return Padding(
-                                        padding:
-                                            EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                        child: SocialItem(showClose: false));
-                                  },
-                                  childCount: 8,
-                                )),
-                              )
-                            ],
-                          )),
+                        onNotification: getScrollNotificationListener(
+                            _nearbyRefreshController),
+                        child: BlocConsumer<NearbySocialCubit, SocialState>(
+                            listener: getBlocListener(_nearbyRefreshController),
+                            builder: (context, socialState) {
+                              bool hasReachedMax = false;
+
+                              if (socialState is SocialLoadedState) {
+                                nearbySocialPosts = socialState.socialPosts;
+                                // if (nearbyPage == 0)
+                                //   nearbySocialPosts = socialState.socialPosts;
+                                // else {
+                                //   nearbySocialPosts
+                                //       .addAll(socialState.socialPosts);
+                                // }
+                                hasReachedMax = socialState.hasReachedMax;
+                              }
+
+                              return SocialPostList(nearbySocialPosts,
+                                  hasReachedMax, _nearbyRefreshController, () {
+                                final NearbySocialCubit socialCubit =
+                                    BlocProvider.of<NearbySocialCubit>(context);
+
+                                if ((socialCubit.state is SocialLoadedState ||
+                                        socialCubit.state
+                                            is SocialErrorState) &&
+                                    !_isFirstView) {
+                                  nearbyPage = 0;
+                                  socialCubit.getSocialPosts(nearbyPage);
+                                }
+                              }, () {
+                                if (_isFirstView ||
+                                    nearbySocialPosts.length == 0 ||
+                                    socialState is SocialLoadingState) {
+                                  _nearbyRefreshController.loadComplete();
+                                  return;
+                                }
+
+                                final NearbySocialCubit socialCubit =
+                                    BlocProvider.of<NearbySocialCubit>(context);
+
+                                nearbyPage++;
+                                socialCubit.getSocialPosts(nearbyPage);
+                              });
+                            })),
+                    NotificationListener<ScrollNotification>(
+                      onNotification: getScrollNotificationListener(
+                          _followingRefreshController),
+                      child: BlocConsumer<FollowingSocialCubit, SocialState>(
+                          listener:
+                              getBlocListener(_followingRefreshController),
+                          builder: (context, socialState) {
+                            bool hasReachedMax = false;
+
+                            if (socialState is SocialLoadedState) {
+                              followingSocialPosts = socialState.socialPosts;
+                              // if (followingPage == 0)
+                              //   followingSocialPosts = socialState.socialPosts;
+                              // else {
+                              //   followingSocialPosts
+                              //       .addAll(socialState.socialPosts);
+                              // }
+                              hasReachedMax = socialState.hasReachedMax;
+                            }
+
+                            return SmartRefresher(
+                                controller: _followingRefreshController,
+                                header: WaterDropMaterialHeader(),
+                                footer: ClassicFooter(
+                                  textStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 16,
+                                      fontFamily: 'Lato'),
+                                  noDataText:
+                                      "You've reached the end of the line",
+                                  failedText: "Something Went Wrong",
+                                ),
+                                onLoading: () {
+                                  if (_isFirstView ||
+                                      followingSocialPosts.length == 0 ||
+                                      socialState is SocialLoadingState) {
+                                    _followingRefreshController.loadComplete();
+                                    return;
+                                  }
+
+                                  final FollowingSocialCubit socialCubit =
+                                      BlocProvider.of<FollowingSocialCubit>(
+                                          context);
+
+                                  followingPage++;
+                                  socialCubit.getSocialPosts(followingPage);
+                                },
+                                onRefresh: () {
+                                  final FollowingSocialCubit socialCubit =
+                                      BlocProvider.of<FollowingSocialCubit>(
+                                          context);
+
+                                  if ((socialCubit.state is SocialLoadedState ||
+                                          socialCubit.state
+                                              is SocialErrorState) &&
+                                      !_isFirstView) {
+                                    followingPage = 0;
+                                    socialCubit.getSocialPosts(followingPage);
+                                  }
+                                },
+                                enablePullUp: true,
+                                enablePullDown: true,
+                                child: CustomScrollView(
+                                  physics: const BouncingScrollPhysics(
+                                      parent: AlwaysScrollableScrollPhysics()),
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: EdgeInsets.only(top: 24),
+                                      sliver: SliverList(
+                                          delegate: SliverChildBuilderDelegate(
+                                        (BuildContext context, int index) {
+                                          return Padding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                  16, 0, 16, 16),
+                                              child: SocialItem(
+                                                  socialPost:
+                                                      followingSocialPosts[
+                                                          index],
+                                                  showClose: false));
+                                        },
+                                        childCount: followingSocialPosts.length,
+                                      )),
+                                    )
+                                  ],
+                                ));
+
+                            // return SocialPostList(followingSocialPosts,
+                            //     hasReachedMax, _followingRefreshController, () {
+                            //   final FollowingSocialCubit socialCubit =
+                            //       BlocProvider.of<FollowingSocialCubit>(
+                            //           context);
+
+                            //   if ((socialCubit.state is SocialLoadedState ||
+                            //           socialCubit.state is SocialErrorState) &&
+                            //       !_isFirstView) {
+                            //     followingPage = 0;
+                            //     socialCubit.getSocialPosts(followingPage);
+                            //   }
+                            // }, () {
+                            //   if (_isFirstView ||
+                            //       followingSocialPosts.length == 0 ||
+                            //       socialState is SocialLoadingState) {
+                            //     _followingRefreshController.loadComplete();
+                            //     return;
+                            //   }
+
+                            //   final FollowingSocialCubit socialCubit =
+                            //       BlocProvider.of<FollowingSocialCubit>(
+                            //           context);
+
+                            //   followingPage++;
+                            //   socialCubit.getSocialPosts(followingPage);
+                            // });
+                          }),
                     ),
                     NotificationListener<ScrollNotification>(
-                      onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels >=
-                            (scrollInfo.metrics.maxScrollExtent - 756)) {
-                          if (_followingRefreshController.footerStatus ==
-                              LoadStatus.idle) {
-                            _followingRefreshController.requestLoading(
-                                needMove: false);
-                          }
-                        }
-                        return false;
-                      },
-                      child: SmartRefresher(
-                          controller: _followingRefreshController,
-                          header: WaterDropMaterialHeader(),
-                          footer: ClassicFooter(
-                            textStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 16,
-                                fontFamily: 'Lato'),
-                            noDataText: "You've reached the end of the line",
-                            failedText: "Something Went Wrong",
-                          ),
-                          onLoading: () {
-                            print("Started Loading");
-                            Future.delayed(const Duration(seconds: 5), () {
-                              // setState(() {
-                              //   upcomingCount = upcomingCount + 4;
-                              // });
-                              _followingRefreshController.loadNoData();
-                              print("Finished Loading");
-                            });
-                          },
-                          enablePullUp: true,
-                          child: CustomScrollView(
-                            key: Key("FollowingSocialHomeScrollView"),
-                            physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                            slivers: [
-                              SliverPadding(
-                                padding: EdgeInsets.only(top: 24),
-                                sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, int index) {
-                                    return Padding(
-                                        padding: EdgeInsets.fromLTRB(
-                                            16, 0, 16, 16),
-                                        child: SocialItem(showClose: false));
-                                  },
-                                  childCount: 8,
-                                )),
-                              )
-                            ],
-                          ))),
-                    NotificationListener<ScrollNotification>(
-                      onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels >=
-                            (scrollInfo.metrics.maxScrollExtent - 256)) {
-                          if (_trendingRefreshController.footerStatus ==
-                              LoadStatus.idle) {
-                            _trendingRefreshController.requestLoading(
-                                needMove: false);
-                          }
-                        }
-                        return false;
-                      },
-                      child: SmartRefresher(
-                          controller: _trendingRefreshController,
-                          header: WaterDropMaterialHeader(),
-                          footer: ClassicFooter(
-                            textStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 16,
-                                fontFamily: 'Lato'),
-                            noDataText: "You've reached the end of the line",
-                            failedText: "Something Went Wrong",
-                          ),
-                          onLoading: () {
-                            print("Started Loading");
-                            Future.delayed(const Duration(seconds: 5), () {
-                              // setState(() {
-                              //   upcomingCount = upcomingCount + 4;
-                              // });
+                      onNotification: getScrollNotificationListener(
+                          _trendingRefreshController),
+                      child: BlocConsumer<TrendingSocialCubit, SocialState>(
+                          listener: getBlocListener(_trendingRefreshController),
+                          builder: (context, socialState) {
+                            bool hasReachedMax = false;
+
+                            if (socialState is SocialLoadedState) {
+                              trendingSocialPosts = socialState.socialPosts;
+                              // if (trendingPage == 0)
+                              //   trendingSocialPosts = socialState.socialPosts;
+                              // else {
+                              //   trendingSocialPosts
+                              //       .addAll(socialState.socialPosts);
+                              // }
+                              hasReachedMax = socialState.hasReachedMax;
+                            }
+
+                            if (hasReachedMax)
                               _trendingRefreshController.loadNoData();
-                              print("Finished Loading");
-                            });
-                          },
-                          enablePullUp: true,
-                          child: CustomScrollView(
-                            key: Key("TrendingSocialHomeScrollView"),
-                            physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                            slivers: [
-                              SliverPadding(
-                                padding: EdgeInsets.only(top: 24),
-                                sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, int index) {
-                                    return Padding(
-                                        padding:
-                                            EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                        child: SocialItem(showClose: false));
-                                  },
-                                  childCount: 8,
-                                )),
-                              )
-                            ],
-                          )),
+
+                            return SmartRefresher(
+                                controller: _followingRefreshController,
+                                header: WaterDropMaterialHeader(),
+                                footer: ClassicFooter(
+                                  textStyle: TextStyle(
+                                      color: Colors.white.withOpacity(0.5),
+                                      fontSize: 16,
+                                      fontFamily: 'Lato'),
+                                  noDataText:
+                                      "You've reached the end of the line",
+                                  failedText: "Something Went Wrong",
+                                ),
+                                onLoading: () {
+                                  if (_isFirstView ||
+                                      trendingSocialPosts.length == 0 ||
+                                      socialState is SocialLoadingState) {
+                                    _trendingRefreshController.loadComplete();
+                                    return;
+                                  }
+
+                                  final TrendingSocialCubit socialCubit =
+                                      BlocProvider.of<TrendingSocialCubit>(
+                                          context);
+
+                                  trendingPage++;
+                                  socialCubit.getSocialPosts(trendingPage);
+                                },
+                                onRefresh: () {
+                                  final TrendingSocialCubit socialCubit =
+                                      BlocProvider.of<TrendingSocialCubit>(
+                                          context);
+
+                                  if ((socialCubit.state is SocialLoadedState ||
+                                          socialCubit.state
+                                              is SocialErrorState) &&
+                                      !_isFirstView) {
+                                    trendingPage = 0;
+                                    socialCubit.getSocialPosts(trendingPage);
+                                  }
+                                },
+                                enablePullUp: true,
+                                enablePullDown: true,
+                                child: CustomScrollView(
+                                  physics: const BouncingScrollPhysics(
+                                      parent: AlwaysScrollableScrollPhysics()),
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: EdgeInsets.only(top: 24),
+                                      sliver: SliverList(
+                                          delegate: SliverChildBuilderDelegate(
+                                        (BuildContext context, int index) {
+                                          return Padding(
+                                              padding: EdgeInsets.fromLTRB(
+                                                  16, 0, 16, 16),
+                                              child: SocialItem(
+                                                  socialPost:
+                                                      trendingSocialPosts[
+                                                          index],
+                                                  showClose: false));
+                                        },
+                                        childCount: trendingSocialPosts.length,
+                                      )),
+                                    )
+                                  ],
+                                ));
+
+                            // return SocialPostList(trendingSocialPosts,
+                            //     hasReachedMax, _trendingRefreshController, () {
+                            //   final TrendingSocialCubit socialCubit =
+                            //       BlocProvider.of<TrendingSocialCubit>(context);
+
+                            //   if ((socialCubit.state is SocialLoadedState ||
+                            //           socialCubit.state is SocialErrorState) &&
+                            //       !_isFirstView) {
+                            //     trendingPage = 0;
+                            //     socialCubit.getSocialPosts(trendingPage);
+                            //   }
+                            // }, () {
+                            //   if (_isFirstView ||
+                            //       trendingSocialPosts.length == 0 ||
+                            //       socialState is SocialLoadingState) {
+                            //     _trendingRefreshController.loadComplete();
+                            //     return;
+                            //   }
+
+                            //   final TrendingSocialCubit socialCubit =
+                            //       BlocProvider.of<TrendingSocialCubit>(context);
+
+                            //   trendingPage++;
+                            //   socialCubit.getSocialPosts(trendingPage);
+                            // });
+                          }),
                     ),
                   ]),
                 )
               ],
             )));
   }
+}
+
+class SocialPostList extends StatefulWidget {
+  final List<SocialPost> socialPosts;
+  final bool isCompleted;
+  final RefreshController refreshController;
+  final Function onRefresh;
+  final Function onLoading;
+
+  SocialPostList(this.socialPosts, this.isCompleted, this.refreshController,
+      this.onRefresh, this.onLoading);
+
+  @override
+  _SocialListState createState() {
+    final _SocialListState state = _SocialListState(
+        socialPosts, isCompleted, refreshController, onRefresh, onLoading);
+    return state;
+  }
+}
+
+class _SocialListState extends State<SocialPostList>
+    with AutomaticKeepAliveClientMixin<SocialPostList> {
+  List<SocialPost> socialPosts;
+  bool isCompleted;
+  RefreshController refreshController;
+  Function onRefresh;
+  Function onLoading;
+
+  _SocialListState(this.socialPosts, this.isCompleted, this.refreshController,
+      this.onRefresh, this.onLoading);
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return SmartRefresher(
+        controller: refreshController,
+        header: WaterDropMaterialHeader(),
+        footer: ClassicFooter(
+          textStyle: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 16,
+              fontFamily: 'Lato'),
+          noDataText: "You've reached the end of the line",
+          failedText: "Something Went Wrong",
+        ),
+        onLoading: onLoading,
+        onRefresh: onRefresh,
+        enablePullUp: true,
+        enablePullDown: true,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(top: 24),
+              sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: SocialItem(
+                          socialPost: socialPosts[index], showClose: false));
+                },
+                childCount: socialPosts.length,
+              )),
+            )
+          ],
+        ));
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 }

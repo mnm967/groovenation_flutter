@@ -1,19 +1,34 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/cubit/clubs_cubit.dart';
+import 'package:groovenation_flutter/cubit/events_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
+import 'package:groovenation_flutter/cubit/state/events_state.dart';
+import 'package:groovenation_flutter/models/club.dart';
+import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/ui/tickets/ticket_purchase_dialog.dart';
+import 'package:groovenation_flutter/widgets/loading_dialog.dart';
+import 'package:intl/intl.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class EventPage extends StatefulWidget {
+  final Event event;
+  EventPage(this.event);
+
   @override
-  _EventPageState createState() => _EventPageState();
+  _EventPageState createState() => _EventPageState(event);
 }
 
 class _EventPageState extends State<EventPage> {
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
+
+  final Event event;
+  _EventPageState(this.event);
 
   @override
   void initState() {
@@ -41,7 +56,7 @@ class _EventPageState extends State<EventPage> {
     super.dispose();
   }
 
-  Function showTicketPurchasePage() {
+  Function _showTicketPurchasePage() {
     return () {
       showGeneralDialog(
         barrierLabel: "Barrier",
@@ -50,7 +65,7 @@ class _EventPageState extends State<EventPage> {
         transitionDuration: Duration(milliseconds: 500),
         context: this.context,
         pageBuilder: (con, __, ___) {
-          return TicketPurchaseDialog();
+          return TicketPurchaseDialog(event);
         },
         transitionBuilder: (_, anim, __, child) {
           return SlideTransition(
@@ -63,10 +78,62 @@ class _EventPageState extends State<EventPage> {
     };
   }
 
-  Function openClubPage() {
-    return () {
-      Navigator.pushNamed(context, '/club');
-    };
+  _openClubPage(Club club) {
+    Navigator.pushNamed(context, '/club', arguments: club);
+  }
+
+  final GlobalKey<State> _keyLoader = new GlobalKey<State>();
+  bool _isLoadingVisible = false;
+
+  Future<void> _showLoadingDialog(BuildContext context, String text) async {
+    _isLoadingVisible = true;
+
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return LoadingDialog(_keyLoader, text);
+        });
+  }
+
+  Future<void> _hideLoadingDialog() async {
+    if (_isLoadingVisible) {
+      _isLoadingVisible = false;
+      await Future.delayed(Duration(seconds: 1));
+    }
+
+    Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+  }
+
+  Future<void> _showAlertDialog(String title, String desc) async {
+    await _hideLoadingDialog();
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            title,
+            style: TextStyle(fontFamily: 'Lato'),
+          ),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(desc, style: TextStyle(fontFamily: 'Lato')),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            FlatButton(
+              child: Text("Okay"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -76,190 +143,228 @@ class _EventPageState extends State<EventPage> {
 
     SystemChrome.setSystemUIOverlayStyle(myTheme);
 
+    final FavouritesEventsCubit favouritesEventsCubit =
+        BlocProvider.of<FavouritesEventsCubit>(context);
+
     return Stack(
       children: [
         Scaffold(
           backgroundColor: Colors.transparent,
-          body: CustomScrollView(
-            controller: _scrollController,
-            physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics()),
-            slivers: [
-              SliverPersistentHeader(
-                delegate: MySliverAppBar(
-                    expandedHeight: 392.0,
-                    statusBarHeight: MediaQuery.of(context).padding.top,
-                    onTicketButtonClick: showTicketPurchasePage(),
-                    onClubButtonClick: openClubPage()),
-                floating: false,
-                pinned: true,
-              ),
-              SliverToBoxAdapter(
-                  child: Padding(
-                      padding: EdgeInsets.only(top: 16, left: 16, right: 16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Padding(
-                              padding: EdgeInsets.zero,
-                              child: Text(
-                                "Helix After Party",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 36,
-                                    fontFamily: 'LatoBold'),
-                              )),
-                          Padding(
-                              padding: EdgeInsets.only(top: 8),
-                              child: Text(
-                                "Jive Lounge",
-                                style: TextStyle(
-                                    color: Colors.white.withOpacity(0.5),
-                                    fontSize: 24,
-                                    fontFamily: 'Lato'),
-                              )),
-                          Padding(
-                              padding: EdgeInsets.only(top: 16),
-                              child: Text(
-                                "Sep 19, 2020 · 20:00",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontFamily: 'Lato'),
-                              )),
-                          Visibility(
-                              visible: true,
-                              child: Padding(
+          body: BlocListener<EventPageClubCubit, ClubsState>(
+              listener: (BuildContext context, state) {
+                if (state is ClubLoadedState) {
+                  _hideLoadingDialog();
+                  Club club = state.club;
+
+                  _openClubPage(club);
+                }
+
+                if (state is ClubsErrorState) {
+                  _showAlertDialog("Something Went Wrong",
+                      "An error occured. Please check your connection and try again.");
+                }
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics()),
+                slivers: [
+                  BlocBuilder<FavouritesEventsCubit, EventsState>(
+                      builder: (context, favouriteEventsState) {
+                    bool eventIsFav =
+                        favouritesEventsCubit.checkEventExists(event.eventID);
+
+                    return SliverPersistentHeader(
+                      delegate: MySliverAppBar(
+                        expandedHeight: 392.0,
+                        statusBarHeight: MediaQuery.of(context).padding.top,
+                        imageUrl: event.imageUrl,
+                        onTicketButtonClick: _showTicketPurchasePage(),
+                        onClubButtonClick: () {
+                          _showLoadingDialog(context, "Loading Club...");
+                          final EventPageClubCubit eventPageClubCubit =
+                              BlocProvider.of<EventPageClubCubit>(context);
+
+                          eventPageClubCubit.getClub(event.clubID);
+                        },
+                        isEventLiked: eventIsFav,
+                        onFavButtonClick: () {
+                          if (favouritesEventsCubit
+                              .checkEventExists(event.eventID)) {
+                            favouritesEventsCubit.removeEvent(event);
+                          } else
+                            favouritesEventsCubit.addEvent(event);
+                        },
+                      ),
+                      floating: false,
+                      pinned: true,
+                    );
+                  }),
+                  SliverToBoxAdapter(
+                      child: Padding(
+                          padding:
+                              EdgeInsets.only(top: 16, left: 16, right: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                  padding: EdgeInsets.zero,
+                                  child: Text(
+                                    event.clubName,
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 36,
+                                        fontFamily: 'LatoBold'),
+                                  )),
+                              Padding(
                                   padding: EdgeInsets.only(top: 8),
                                   child: Text(
-                                    "18+ Only",
+                                    event.title,
                                     style: TextStyle(
-                                        color: Colors.red,
+                                        color: Colors.white.withOpacity(0.5),
                                         fontSize: 24,
                                         fontFamily: 'Lato'),
-                                  ))),
-                          // Padding(
-                          //   padding: EdgeInsets.only(top: 8),
-                          //   child: Padding(
-                          //       padding: EdgeInsets.only(top: 8, right: 8),
-                          //       child: Container(
-                          //         padding: EdgeInsets.zero,
-                          //         decoration: BoxDecoration(
-                          //           color: Colors.white,
-                          //           borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                          //         ),
-                          //         child: FlatButton(
-                          //           onPressed: () {},
-                          //           child: Container(
-                          //               height: 56,
-                          //               child: Align(
-                          //                 alignment: Alignment.center,
-                          //                 child: Text(
-                          //                   "Visit Website",
-                          //                   style: TextStyle(
-                          //                       fontFamily: 'LatoBold',
-                          //                       color: Colors.deepPurple.withOpacity(0.8),
-                          //                       fontSize: 18),
-                          //                 ),
-                          //               )),
-                          //         ),
-                          //       )),
-                          // ),
-                          Padding(
-                            padding: EdgeInsets.only(top: 16),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.globeAfrica,
+                                  )),
+                              Padding(
+                                  padding: EdgeInsets.only(top: 16),
+                                  child: Text(
+                                    DateFormat("MMM dd, yyyy · HH:mm")
+                                        .format(event.eventStartDate),
+                                    style: TextStyle(
                                         color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.facebookF,
+                                        fontSize: 24,
+                                        fontFamily: 'Lato'),
+                                  )),
+                              Visibility(
+                                  visible: event.isAdultOnly,
+                                  child: Padding(
+                                      padding: EdgeInsets.only(top: 8),
+                                      child: Text(
+                                        "18+ Only",
+                                        style: TextStyle(
+                                            color: Colors.red,
+                                            fontSize: 24,
+                                            fontFamily: 'Lato'),
+                                      ))),
+                              Padding(
+                                padding: EdgeInsets.only(top: 16),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Visibility(
+                                        visible: event.webLink != null,
+                                        child: Padding(
+                                            padding: EdgeInsets.all(8),
+                                            child: RawMaterialButton(
+                                              onPressed: () {
+                                                _launchURL(event.webLink);
+                                              },
+                                              constraints:
+                                                  BoxConstraints.expand(
+                                                      width: 72, height: 72),
+                                              elevation: 0,
+                                              child: Center(
+                                                  child: Icon(
+                                                FontAwesomeIcons.globeAfrica,
+                                                color: Colors.white,
+                                                size: 24.0,
+                                              )),
+                                              padding: EdgeInsets.all(16.0),
+                                              shape: CircleBorder(
+                                                  side: BorderSide(
+                                                      width: 1,
+                                                      color: Colors.white)),
+                                            ))),
+                                    Visibility(
+                                        visible: event.facebookLink != null,
+                                        child: Padding(
+                                            padding: EdgeInsets.all(8),
+                                            child: RawMaterialButton(
+                                              onPressed: () {
+                                                _launchURL(event.facebookLink);
+                                              },
+                                              constraints:
+                                                  BoxConstraints.expand(
+                                                      width: 72, height: 72),
+                                              elevation: 0,
+                                              child: Center(
+                                                  child: Icon(
+                                                FontAwesomeIcons.facebookF,
+                                                color: Colors.white,
+                                                size: 24.0,
+                                              )),
+                                              padding: EdgeInsets.all(16.0),
+                                              shape: CircleBorder(
+                                                  side: BorderSide(
+                                                      width: 1,
+                                                      color: Colors.white)),
+                                            ))),
+                                    Visibility(
+                                        visible: event.twitterLink != null,
+                                        child: Padding(
+                                            padding: EdgeInsets.all(8),
+                                            child: RawMaterialButton(
+                                              onPressed: () {
+                                                _launchURL(event.twitterLink);
+                                              },
+                                              constraints:
+                                                  BoxConstraints.expand(
+                                                      width: 72, height: 72),
+                                              elevation: 0,
+                                              child: Center(
+                                                  child: Icon(
+                                                FontAwesomeIcons.twitter,
+                                                color: Colors.white,
+                                                size: 24.0,
+                                              )),
+                                              padding: EdgeInsets.all(16.0),
+                                              shape: CircleBorder(
+                                                  side: BorderSide(
+                                                      width: 1,
+                                                      color: Colors.white)),
+                                            ))),
+                                    Visibility(
+                                        visible: event.instagramLink != null,
+                                        child: Padding(
+                                            padding: EdgeInsets.all(8),
+                                            child: RawMaterialButton(
+                                              onPressed: () {
+                                                _launchURL(event.instagramLink);
+                                              },
+                                              constraints:
+                                                  BoxConstraints.expand(
+                                                      width: 72, height: 72),
+                                              elevation: 0,
+                                              child: Center(
+                                                  child: Icon(
+                                                FontAwesomeIcons.instagram,
+                                                color: Colors.white,
+                                                size: 24.0,
+                                              )),
+                                              padding: EdgeInsets.all(16.0),
+                                              shape: CircleBorder(
+                                                  side: BorderSide(
+                                                      width: 1,
+                                                      color: Colors.white)),
+                                            ))),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                  padding: EdgeInsets.only(top: 16, bottom: 84),
+                                  child: Text(
+                                    event.description,
+                                    textAlign: TextAlign.start,
+                                    style: TextStyle(
                                         color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.twitter,
-                                        color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.instagram,
-                                        color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                              padding: EdgeInsets.only(top: 16, bottom: 84),
-                              child: Text(
-                                "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-                                textAlign: TextAlign.start,
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontFamily: 'LatoLight'),
-                              )),
-                        ],
-                      )))
-            ],
-          ),
+                                        fontSize: 24,
+                                        fontFamily: 'LatoLight'),
+                                  )),
+                            ],
+                          )))
+                ],
+              )),
         ),
         AnimatedOpacity(
             opacity: _scrollToTopVisible ? 1.0 : 0.0,
@@ -295,340 +400,27 @@ class _EventPageState extends State<EventPage> {
     );
   }
 
-  final List<String> items = <String>[
-    '1 Person',
-    '2 People',
-    '3 People',
-    '4 People'
-  ];
-  String dropdownValue = '1 Person';
-
-  final List<String> typeItems = <String>[
-    'General Admission',
-    'Special Admission',
-    'VIP Admission',
-    'Golden Circle'
-  ];
-  String typeValue = 'Special Admission';
-
-  Widget ticketPurchasePage(context) {
-    return Material(
-        color: Colors.transparent,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.only(top: 24, bottom: 16, right: 16, left: 24),
-          physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Expanded(
-                        child: Align(
-                            alignment: Alignment.topLeft,
-                            child: ticketPageText(
-                                "Event Name", "Helix After Party"))),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      icon: Icon(Icons.close),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      iconSize: 24,
-                      color: Colors.white,
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Event Club", "Jive Lounge"),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Date", "Sep 19, 2020 · 20:00"),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Tickets Currently Available", "4"),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Adults Only", "Yes"),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "Type",
-                          textAlign: TextAlign.start,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontFamily: 'Lato',
-                              fontSize: 18,
-                              color: Colors.white.withOpacity(0.4)),
-                        ),
-                        Padding(
-                            padding: EdgeInsets.only(top: 8, right: 8),
-                            child: Container(
-                              padding: EdgeInsets.only(left: 12, right: 12),
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1.0, color: Colors.white),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(10.0)),
-                              ),
-                              child: Stack(
-                                children: [
-                                  DropdownButton<String>(
-                                    icon: Icon(Icons.arrow_drop_down,
-                                        color: Colors.white),
-                                    iconSize: 28,
-                                    elevation: 16,
-                                    style: TextStyle(color: Colors.deepPurple),
-                                    isExpanded: true,
-                                    underline: Container(
-                                      height: 0,
-                                      color: Colors.transparent,
-                                    ),
-                                    onChanged: (String newValue) {
-                                      setState(() {
-                                        typeValue = newValue;
-                                        print(typeValue);
-                                      });
-                                    },
-                                    itemHeight: 56,
-                                    value: typeValue,
-                                    items: typeItems
-                                        .map<DropdownMenuItem<String>>(
-                                            (String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value,
-                                            style: TextStyle(
-                                                fontFamily: 'Lato',
-                                                color: Colors.deepPurple,
-                                                fontSize: 18)),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  Container(
-                                    height: 56,
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        typeValue,
-                                        style: TextStyle(
-                                            fontFamily: 'Lato',
-                                            color: Colors.white,
-                                            fontSize: 18),
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ))
-                      ]),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "No. of People",
-                          textAlign: TextAlign.start,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                              fontFamily: 'Lato',
-                              fontSize: 18,
-                              color: Colors.white.withOpacity(0.4)),
-                        ),
-                        Padding(
-                            padding: EdgeInsets.only(top: 8, right: 8),
-                            child: Container(
-                              padding: EdgeInsets.only(left: 12, right: 12),
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(width: 1.0, color: Colors.white),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(10.0)),
-                              ),
-                              child: Stack(
-                                children: [
-                                  DropdownButton<String>(
-                                    icon: Icon(Icons.arrow_drop_down,
-                                        color: Colors.white),
-                                    iconSize: 28,
-                                    elevation: 16,
-                                    style: TextStyle(color: Colors.deepPurple),
-                                    isExpanded: true,
-                                    underline: Container(
-                                      height: 0,
-                                      color: Colors.transparent,
-                                    ),
-                                    onChanged: (String newValue) {
-                                      setState(() {
-                                        dropdownValue = newValue;
-                                        print(dropdownValue);
-                                      });
-                                    },
-                                    itemHeight: 56,
-                                    value: dropdownValue,
-                                    items: items.map<DropdownMenuItem<String>>(
-                                        (String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value,
-                                            style: TextStyle(
-                                                fontFamily: 'Lato',
-                                                color: Colors.deepPurple,
-                                                fontSize: 18)),
-                                      );
-                                    }).toList(),
-                                  ),
-                                  Container(
-                                    height: 56,
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        dropdownValue,
-                                        style: TextStyle(
-                                            fontFamily: 'Lato',
-                                            color: Colors.white,
-                                            fontSize: 18),
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ))
-                      ]),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 48),
-                  child: purchasePageText("Type", "General Admission", false),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: purchasePageText("No. of People", "1", false),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 16),
-                  child: purchasePageText("Total Price", "R500", true),
-                ),
-                Padding(
-                  padding: EdgeInsets.only(top: 8, bottom: 8),
-                  child: Padding(
-                      padding: EdgeInsets.only(top: 8, right: 8),
-                      child: Container(
-                        padding: EdgeInsets.zero,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                        ),
-                        child: FlatButton(
-                          onPressed: () {},
-                          child: Container(
-                              height: 56,
-                              child: Align(
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "Purchase",
-                                  style: TextStyle(
-                                      fontFamily: 'LatoBold',
-                                      color: Colors.deepPurple,
-                                      fontSize: 18),
-                                ),
-                              )),
-                        ),
-                      )),
-                ),
-              ]),
-        ));
-  }
-
-  Widget ticketPageText(title, text) {
-    return Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.start,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-                fontFamily: 'Lato',
-                fontSize: 18,
-                color: Colors.white.withOpacity(0.4)),
-          ),
-          Padding(
-              padding: EdgeInsets.only(top: 1, right: 8),
-              child: Text(
-                text,
-                textAlign: TextAlign.start,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    fontFamily: 'LatoBold', fontSize: 20, color: Colors.white),
-              )),
-        ]);
-  }
-
-  Widget purchasePageText(title, text, isBold) {
-    return Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            textAlign: TextAlign.start,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-                fontFamily: isBold ? 'LatoBlack' : 'Lato',
-                fontSize: 20,
-                color: Colors.white.withOpacity(0.4)),
-          ),
-          Expanded(
-              child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: Text(
-                        text,
-                        textAlign: TextAlign.start,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                            fontFamily: isBold ? 'LatoBlack' : 'Lato',
-                            fontSize: 22,
-                            color: Colors.white),
-                      )))),
-        ]);
-  }
+  void _launchURL(String url) async =>
+      await canLaunch(url) ? await launch(url) : throw 'Could not launch $url';
 }
 
 class MySliverAppBar extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
   final double statusBarHeight;
+  final String imageUrl;
   final Function onTicketButtonClick;
   final Function onClubButtonClick;
+  final Function onFavButtonClick;
+  final bool isEventLiked;
 
   MySliverAppBar({
     @required this.expandedHeight,
     @required this.statusBarHeight,
+    @required this.imageUrl,
     @required this.onTicketButtonClick,
     @required this.onClubButtonClick,
+    @required this.onFavButtonClick,
+    @required this.isEventLiked,
   });
 
   @override
@@ -645,8 +437,8 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                 children: [
                   Positioned.fill(
                       child: OptimizedCacheImage(
-                      imageUrl: "https://images.pexels.com/photos/2034851/pexels-photo-2034851.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-                     fit: BoxFit.cover,
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
                   )),
                   Positioned.fill(
                     child: Container(
@@ -715,7 +507,8 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
         ]));
   }
 
-  Stack topAppBar(BuildContext context, double shrinkOffset) => Stack(children: [
+  Stack topAppBar(BuildContext context, double shrinkOffset) =>
+      Stack(children: [
         Row(children: [
           Expanded(
             child: Container(
@@ -749,9 +542,12 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                                                     BorderRadius.circular(9)),
                                             child: FlatButton(
                                               padding: EdgeInsets.zero,
-                                              onPressed: () {},
+                                              onPressed: () =>
+                                                  onFavButtonClick(),
                                               child: Icon(
-                                                Icons.favorite_border,
+                                                isEventLiked
+                                                    ? Icons.favorite_outlined
+                                                    : Icons.favorite_border,
                                                 color: Colors.white,
                                                 size: 28,
                                               ),
@@ -769,12 +565,13 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                                           child: Container(
                                             height: 48,
                                             width: 48,
+                                            padding: EdgeInsets.zero,
                                             decoration: BoxDecoration(
                                                 color: Colors.deepPurple,
                                                 borderRadius:
-                                                    BorderRadius.circular(900)),
+                                                    BorderRadius.circular(90)),
                                             child: FlatButton(
-                                              padding: EdgeInsets.zero,
+                                              padding: EdgeInsets.only(left: 8),
                                               onPressed: () {
                                                 Navigator.pop(context);
                                               },

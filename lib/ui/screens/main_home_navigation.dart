@@ -6,6 +6,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/ui/clubs/clubs_home.dart';
 import 'package:groovenation_flutter/ui/events/events_home.dart';
 import 'package:groovenation_flutter/ui/profile/profile_home.dart';
+import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/ui/social/social_home.dart';
 import 'package:groovenation_flutter/ui/tickets/tickets_home.dart';
 
@@ -20,7 +21,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   final EventsHomePage page1 = EventsHomePage(1);
   final ClubsHomePage page2 = ClubsHomePage();
   final TicketsHomePage page3 = TicketsHomePage();
-  final SocialHomePage page4 = SocialHomePage();
+  //final SocialHomePage page4 = SocialHomePage();
   final ProfileHomePage page5 = ProfileHomePage();
 
   @override
@@ -45,8 +46,8 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                 navPageItem(0, page1),
                 navPageItem(1, page2),
                 navPageItem(2, page3),
-                navPageItem(3, page4),
-                navPageItem(4, page5),
+                //navPageItem(3, page4),
+                //navPageItem(3, page5),
               ],
             ),
           ),
@@ -61,9 +62,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                     child: BottomNavigationBar(
                       currentIndex: index,
                       onTap: (int index) {
-                        setState(() {
-                          this.index = index;
-                        });
+                        if (index != 3)
+                          setState(() {
+                            this.index = index;
+                          });
                         switch (index) {
                           case 0:
                             page1.runBuild();
@@ -74,11 +76,18 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                           case 2:
                             page3.runBuild();
                             return;
+                          // case 3:
+                          //   page4.runBuild();
+                          //   return;
                           case 3:
-                            page4.runBuild();
-                            return;
-                          case 4:
-                            page5.runBuild();
+                            Navigator.push(
+                                context,
+                                new MaterialPageRoute(
+                                    builder: (context) =>
+                                        new SettingsPageScreen()));
+                            // Navigator.pushReplacementNamed(
+                            //     context, '/settings');
+
                             return;
                         }
                       },
@@ -105,12 +114,15 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                           icon: new Icon(FontAwesomeIcons.ticketAlt),
                           title: new Text('Tickets'),
                         ),
+                        // BottomNavigationBarItem(
+                        //     icon: FaIcon(FontAwesomeIcons.users),
+                        //     title: Text('Social')),
+                        // BottomNavigationBarItem(
+                        //     icon: Icon(Icons.person_pin),
+                        //     title: Text('Profile')),
                         BottomNavigationBarItem(
-                            icon: FaIcon(FontAwesomeIcons.users),
-                            title: Text('Social')),
-                        BottomNavigationBarItem(
-                            icon: Icon(Icons.person_pin),
-                            title: Text('Proile')),
+                            icon: Icon(Icons.settings),
+                            title: Text('Settings')),
                       ],
                     )))),
       ],

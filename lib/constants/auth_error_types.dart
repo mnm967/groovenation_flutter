@@ -1,0 +1,10 @@
+enum AuthSignUpErrorType {
+  EMAIL_EXISTS_ERROR,
+  USERNAME_EXISTS_ERROR,
+  UNKNOWN_ERROR
+}
+
+enum AuthLoginErrorType {
+  LOGIN_FAILED,
+  UNKNOWN_ERROR
+}

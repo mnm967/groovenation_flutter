@@ -1,8 +1,11 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:location/location.dart';
+import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
 
 class CityPickerPage extends StatefulWidget {
   @override
@@ -33,15 +36,34 @@ class _CityPickerPageState extends State<CityPickerPage> {
             FlatButton(
               child: Text("No"),
               onPressed: () {
-                //TODO
-                Navigator.of(context).pop();
+                sharedPrefs.userCity = selectedCity;
+                if (sharedPrefs.username != null)
+                  //Navigator.pushReplacementNamed(context, '/main');
+                  Navigator.push(
+                      context,
+                      new MaterialPageRoute(
+                          builder: (context) => new MainNavigationScreen()));
+                else
+                  Navigator.pushReplacementNamed(
+                      context, '/create_username'); //TODO Create Username Page
               },
             ),
             FlatButton(
               child: Text("Yes"),
-              onPressed: () {
-                //TODO
-                Navigator.of(context).pop();
+              onPressed: () async {
+                Location location = new Location();
+                await location.requestPermission();
+
+                sharedPrefs.userCity = selectedCity;
+                if (sharedPrefs.username != null)
+                  //Navigator.pushReplacementNamed(context, '/main');
+                  Navigator.push(
+                      context,
+                      new MaterialPageRoute(
+                          builder: (context) => new MainNavigationScreen()));
+                else
+                  Navigator.pushReplacementNamed(
+                      context, '/create_username'); //TODO Create Username Page
               },
             ),
           ],
@@ -87,6 +109,8 @@ class _CityPickerPageState extends State<CityPickerPage> {
         ),
       ]);
 
+  String selectedCity;
+
   @override
   Widget build(BuildContext context) {
     var myTheme = SystemUiOverlayStyle.light
@@ -125,7 +149,8 @@ class _CityPickerPageState extends State<CityPickerPage> {
                         Padding(
                             padding: EdgeInsets.fromLTRB(12, 0, 12, 4),
                             child: Align(
-                              child: cityItem(context),
+                              child: cityItem(context, "Johannesburg",
+                                  "https://media.threatpost.com/wp-content/uploads/sites/103/2019/10/30083110/johannesburg-e1572438686227.jpg"),
                               alignment: Alignment.topCenter,
                             )),
                       ],
@@ -136,7 +161,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
     ));
   }
 
-  Widget cityItem(BuildContext context) {
+  Widget cityItem(BuildContext context, String name, String imageUrl) {
     return Padding(
         padding: EdgeInsets.symmetric(vertical: 6),
         child: Card(
@@ -147,6 +172,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: FlatButton(
               onPressed: () {
+                selectedCity = CITY_JOHANNESBURG;
                 _showPermissionDialog();
               },
               padding: EdgeInsets.zero,
@@ -170,8 +196,9 @@ class _CityPickerPageState extends State<CityPickerPage> {
                                         child: CircleAvatar(
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
-                                          backgroundImage: NetworkImage(
-                                              'https://media.threatpost.com/wp-content/uploads/sites/103/2019/10/30083110/johannesburg-e1572438686227.jpg'),
+                                          backgroundImage:
+                                              OptimizedCacheImageProvider(
+                                                  imageUrl),
                                         ))),
                                 Expanded(
                                     child: Padding(
@@ -191,7 +218,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
                                                     padding: EdgeInsets.only(
                                                         left: 4, right: 3),
                                                     child: Text(
-                                                      "Johannesburg",
+                                                      name,
                                                       textAlign:
                                                           TextAlign.start,
                                                       maxLines: 1,

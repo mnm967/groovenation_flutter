@@ -7,11 +7,16 @@ class SocialComment {
   final bool hasUserLiked;
   final String comment;
 
-  SocialComment(
-    this.person, 
-    this.postTime, 
-    this.likesAmount, 
-    this.hasUserLiked, 
-    this.comment
-  );
+  SocialComment(this.person, this.postTime, this.likesAmount, this.hasUserLiked,
+      this.comment);
+
+  factory SocialComment.fromJson(dynamic json) {
+    return SocialComment(
+      SocialPerson.fromJson(json['person']),
+      DateTime.parse(json['postTime']),
+      json['likesAmount'],
+      json['hasUserLiked'],
+      json['comment'],
+    );
+  }
 }

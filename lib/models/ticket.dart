@@ -2,6 +2,7 @@ class Ticket {
   final String ticketID;
   final String eventID;
   final String eventName;
+  final String imageUrl;
   final String clubName;
   final double clubLatitude;
   final double clubLongitude;
@@ -17,6 +18,7 @@ class Ticket {
     this.ticketID, 
     this.eventID, 
     this.eventName, 
+    this.imageUrl, 
     this.clubName, 
     this.clubLatitude, 
     this.clubLongitude, 
@@ -34,6 +36,7 @@ class Ticket {
       json['ticketID'],
       json['eventID'],
       json['eventName'],
+      json['imageUrl'],
       json['clubName'],
       json['clubLatitude'],
       json['clubLongitude'],
@@ -52,6 +55,7 @@ class Ticket {
       "ticketID": ticketID,
       "eventID": eventID,  
       "eventName": eventName,  
+      "imageUrl": imageUrl,  
       "clubName": clubName,  
       "clubLatitude": clubLatitude,  
       "clubLongitude": clubLongitude,  

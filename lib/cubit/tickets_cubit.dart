@@ -1,10 +1,9 @@
 import 'dart:convert';
-
 import 'package:groovenation_flutter/cubit/state/tickets_state.dart';
 import 'package:groovenation_flutter/data/repo/ticket_repository.dart';
 import 'package:groovenation_flutter/models/ticket.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
-import 'package:groovenation_flutter/constants/error.dart';
 
 class TicketsCubit extends HydratedCubit<TicketsState> {
   TicketsCubit(this.ticketsRepository) : super(TicketsInitialState());
@@ -14,11 +13,20 @@ class TicketsCubit extends HydratedCubit<TicketsState> {
   void getTickets() async {
     emit(TicketsLoadingState());
     try {
-      List<Ticket> newTickets = await ticketsRepository.getTestTickets();
-      emit(TicketsLoadedState(tickets: newTickets));
-    } catch (e) {
-      print(e.toString());
-      emit(TicketsErrorState(Error.UNKNOWN_ERROR));
+      List<Ticket> tickets = await ticketsRepository.getUserTickets();
+      emit(TicketsLoadedState(tickets: tickets));
+    } on TicketException catch (e) {
+      emit(TicketsErrorState(e.error));
+    }
+  }
+
+  void addUserTicket(Ticket ticket) async {
+    if (state is TicketsLoadedState) {
+      List tickets = (state as TicketsLoadedState).tickets;
+      
+      emit(TicketsInitialState());
+      tickets.add(ticket);
+      emit(TicketsLoadedState(tickets: tickets));
     }
   }
 

@@ -1,21 +1,6 @@
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:groovenation_flutter/main.dart';
-import 'package:groovenation_flutter/ui/chat/chat_page.dart';
-import 'package:groovenation_flutter/ui/chat/conversations_page.dart';
-import 'package:groovenation_flutter/ui/city/city_picker_page.dart';
-import 'package:groovenation_flutter/ui/clubs/club_page.dart';
-import 'package:groovenation_flutter/ui/events/event_page.dart';
-import 'package:groovenation_flutter/ui/login/login.dart';
-import 'package:groovenation_flutter/ui/profile/profile_page.dart';
-import 'package:groovenation_flutter/ui/screens/main_home_navigation.dart';
-import 'package:groovenation_flutter/ui/search/search_page.dart';
-import 'package:groovenation_flutter/ui/settings/notification_settings_page.dart';
-import 'package:groovenation_flutter/ui/settings/profile_settings_page.dart';
-import 'package:groovenation_flutter/ui/settings/settings_page.dart';
-import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
 
 class AppBackgroundPage extends StatelessWidget {
   final Widget child;

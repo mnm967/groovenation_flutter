@@ -2,28 +2,50 @@ import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
+import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/comment_item.dart';
 import 'package:groovenation_flutter/ui/social/comments_dialog.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
 
 class SocialItem extends StatefulWidget {
+  final SocialPost socialPost;
   final bool showClose;
-  SocialItem({@required this.showClose});
+  SocialItem({@required this.socialPost, @required this.showClose});
 
   @override
-  _SocialItemState createState() => _SocialItemState(showClose: showClose);
+  _SocialItemState createState() =>
+      _SocialItemState(socialPost: socialPost, showClose: showClose);
 }
 
 class _SocialItemState extends State<SocialItem> {
+  SocialPost socialPost;
   bool showClose = false;
-  _SocialItemState({this.showClose});
+
+  _SocialItemState({this.socialPost, this.showClose});
 
   final FlareControls flareControls = FlareControls();
 
   @override
   Widget build(BuildContext context) {
     return socialItem(context);
+  }
+
+  _likePost(bool canUnlike) {
+    //TODO Like Post
+  }
+
+  _sharePost() {
+    //TODO Share Post
+  }
+
+  _reportPost() {
+    //TODO Report Post
+  }
+
+  _openSocialPerson(SocialPerson socialPerson) {
+    //TODO Open Social Person
   }
 
   Widget socialItem(BuildContext context) {
@@ -47,12 +69,14 @@ class _SocialItemState extends State<SocialItem> {
                           width: 64,
                           child: CircleAvatar(
                             backgroundColor: Colors.purple.withOpacity(0.5),
-                            backgroundImage: OptimizedCacheImageProvider(
-                                'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
+                            // backgroundImage: OptimizedCacheImageProvider(
+                            //     socialPost.person.personProfilePicURL),
                             child: FlatButton(
                                 onPressed: () {
-                                  Navigator.pushNamed(context, '/profile_page');
-                                }, child: Container()),
+                                  _openSocialPerson(socialPost.person);
+                                  //Navigator.pushNamed(context, '/profile_page');
+                                },
+                                child: Container()),
                           )),
                       Expanded(
                           child: Container(
@@ -62,7 +86,7 @@ class _SocialItemState extends State<SocialItem> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "professor_mnm967",
+                              socialPost.person.personUsername,
                               textAlign: TextAlign.start,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -71,29 +95,34 @@ class _SocialItemState extends State<SocialItem> {
                                   fontSize: 18,
                                   color: Colors.white),
                             ),
-                            Padding(
-                                padding: EdgeInsets.only(top: 6),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.local_bar,
-                                        size: 20,
-                                        color: Colors.white.withOpacity(0.4)),
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 8),
-                                      child: Text(
-                                        "Jive Lounge",
-                                        textAlign: TextAlign.start,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                            fontFamily: 'Lato',
-                                            fontSize: 16,
+                            socialPost.clubName != null
+                                ? Padding(
+                                    padding: EdgeInsets.only(top: 6),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.local_bar,
+                                            size: 20,
                                             color:
                                                 Colors.white.withOpacity(0.4)),
-                                      ),
-                                    )
-                                  ],
-                                )),
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 8),
+                                          child: Text(
+                                            socialPost.clubName,
+                                            textAlign: TextAlign.start,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                                fontFamily: 'Lato',
+                                                fontSize: 16,
+                                                color: Colors.white
+                                                    .withOpacity(0.4)),
+                                          ),
+                                        )
+                                      ],
+                                    ))
+                                : Padding(
+                                    padding: EdgeInsets.zero,
+                                  ),
                           ],
                         ),
                       )),
@@ -102,7 +131,11 @@ class _SocialItemState extends State<SocialItem> {
                         child: Row(
                           children: [
                             PopupMenuButton<String>(
-                              onSelected: (item) {},
+                              onSelected: (item) {
+                                if (item == 'Report') {
+                                  _reportPost();
+                                }
+                              },
                               padding: EdgeInsets.zero,
                               icon: Icon(Icons.more_vert,
                                   color: Colors.white, size: 28),
@@ -116,15 +149,17 @@ class _SocialItemState extends State<SocialItem> {
                                 }).toList();
                               },
                             ),
-                            Visibility(visible: this.showClose, child: IconButton(
-                                icon: Icon(
-                                  Icons.close,
-                                  size: 28,
-                                  color: Colors.white,
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                }))
+                            Visibility(
+                                visible: this.showClose,
+                                child: IconButton(
+                                    icon: Icon(
+                                      Icons.close,
+                                      size: 28,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    }))
                           ],
                         ),
                       )
@@ -138,15 +173,12 @@ class _SocialItemState extends State<SocialItem> {
                         children: [
                           GestureDetector(
                               onDoubleTap: () {
-                                print("double");
                                 flareControls.play('like');
+                                _likePost(false);
                               },
                               child: Stack(
                                 children: [
-                                  CroppedCacheImage(
-                                      url:
-                                          //'https://c-sf.smule.com/rs-s78/arr/ea/63/5ea2c2ee-8088-4068-bc4f-4a46a2912a7d_1024.jpg'),
-                                          'https://images.pexels.com/photos/1185440/pexels-photo-1185440.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260'),
+                                  CroppedCacheImage(url: socialPost.mediaURL),
                                   Container(
                                     child: Center(
                                       child: SizedBox(
@@ -188,7 +220,9 @@ class _SocialItemState extends State<SocialItem> {
                           size: 28,
                           color: Colors.white,
                         ),
-                        onTap: () {}),
+                        onTap: () {
+                          _likePost(true);
+                        }),
                   ),
                   Padding(
                     padding: EdgeInsets.only(top: 16, left: 16, bottom: 16),
@@ -206,7 +240,9 @@ class _SocialItemState extends State<SocialItem> {
                             transitionDuration: Duration(milliseconds: 500),
                             context: context,
                             pageBuilder: (con, __, ___) {
-                              return CommentsDialog();
+                              return CommentsDialog(
+                                socialPost: socialPost,
+                              );
                             },
                             transitionBuilder: (_, anim, __, child) {
                               return SlideTransition(
@@ -229,7 +265,9 @@ class _SocialItemState extends State<SocialItem> {
                           size: 28,
                           color: Colors.white,
                         ),
-                        onTap: () {}),
+                        onTap: () {
+                          _sharePost();
+                        }),
                   ),
                 ],
               ),
@@ -238,7 +276,9 @@ class _SocialItemState extends State<SocialItem> {
                 child: Padding(
                   padding: EdgeInsets.only(left: 16, right: 16),
                   child: Text(
-                    "400 likes",
+                    socialPost.likesAmount == 1
+                        ? "${socialPost.likesAmount} like"
+                        : "${socialPost.likesAmount} likes",
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.5),
                         fontSize: 18,
@@ -246,7 +286,9 @@ class _SocialItemState extends State<SocialItem> {
                   ),
                 ),
               ),
-              CommentItem(),
+              socialPost.caption == null
+                  ? Padding(padding: EdgeInsets.only(top: 8))
+                  : CommentItem(socialPost.person, socialPost.caption),
             ],
           )),
         ),

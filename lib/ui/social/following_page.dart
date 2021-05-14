@@ -1,8 +1,15 @@
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/cubit/state/user_cubit_state.dart';
+import 'package:groovenation_flutter/cubit/user_cubit.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:optimized_cached_image/widgets.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class FollowingPage extends StatefulWidget {
   @override
@@ -12,6 +19,7 @@ class FollowingPage extends StatefulWidget {
 class _FollowingPageState extends State<FollowingPage> {
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
+  final _followingRefreshController = RefreshController(initialRefresh: false);
 
   @override
   void initState() {
@@ -31,6 +39,9 @@ class _FollowingPageState extends State<FollowingPage> {
         }
       }
     });
+
+    final UserCubit userCubit = BlocProvider.of<UserCubit>(context);
+    userCubit.getFollowing(_page);
   }
 
   @override
@@ -48,8 +59,22 @@ class _FollowingPageState extends State<FollowingPage> {
                 borderRadius: BorderRadius.circular(10.0),
                 color: Colors.white.withOpacity(0.2)),
             child: TextField(
-              keyboardType: TextInputType.multiline,
+              keyboardType: TextInputType.text,
               autofocus: false,
+              onChanged: (value) {
+                currentSearchTerm = value;
+                _page = 0;
+                if (value.isEmpty) {
+                  final UserCubit userCubit =
+                      BlocProvider.of<UserCubit>(context);
+                  if (!(userCubit.state is UserFollowingLoadingState))
+                    userCubit.getFollowing(_page);
+                } else {
+                  final UserCubit userCubit =
+                      BlocProvider.of<UserCubit>(context);
+                  userCubit.searchFollowing(_page, value);
+                }
+              },
               cursorColor: Colors.white.withOpacity(0.7),
               style: TextStyle(
                   fontFamily: 'Lato', color: Colors.white, fontSize: 20),
@@ -75,6 +100,42 @@ class _FollowingPageState extends State<FollowingPage> {
           ),
         ),
       ]);
+
+  List<SocialPerson> socialPeople = [];
+  bool hasReachedMax = false;
+  String currentSearchTerm = "";
+  int _page = 0;
+
+  _onRefresh() {
+    _page = 0;
+    final UserCubit userCubit = BlocProvider.of<UserCubit>(context);
+    if (!(userCubit.state is UserFollowingLoadingState)) {
+      if (currentSearchTerm.isEmpty)
+        userCubit.getFollowing(_page);
+      else
+        userCubit.searchFollowing(_page, currentSearchTerm);
+    }
+  }
+
+  _onLoading() {
+    if (socialPeople.length == 0 || hasReachedMax) return;
+
+    _page++;
+    final UserCubit userCubit = BlocProvider.of<UserCubit>(context);
+    if (!(userCubit.state is UserFollowingLoadingState)) {
+      if (currentSearchTerm.isEmpty)
+        userCubit.getFollowing(_page);
+      else
+        userCubit.searchFollowing(_page, currentSearchTerm);
+    }
+  }
+
+  ClassicFooter _classicFooter = ClassicFooter(
+    textStyle: TextStyle(
+        color: Colors.white.withOpacity(0.5), fontSize: 16, fontFamily: 'Lato'),
+    noDataText: "You've reached the end of the line",
+    failedText: "Something Went Wrong",
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -133,79 +194,68 @@ class _FollowingPageState extends State<FollowingPage> {
                       padding: EdgeInsets.only(top: 16),
                       child: topAppBar(),
                     ),
-                    ListView(
-                      padding: EdgeInsets.only(top: 12, bottom: 12),
-                      physics: NeverScrollableScrollPhysics(),
-                      shrinkWrap: true,
-                      children: [
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
-                            child: Align(
-                              child: profileItem(context),
-                              alignment: Alignment.topCenter,
-                            )),
-                      ],
-                    )
+                    BlocConsumer<UserCubit, UserState>(
+                        listener: (context, state) {
+                      if (state is UserFollowingErrorState) {
+                        switch (state.error) {
+                          case Error.NETWORK_ERROR:
+                            alertUtil.sendAlert(BASIC_ERROR_TITLE,
+                                NETWORK_ERROR_PROMPT, Colors.red, Icons.error);
+                            break;
+                          default:
+                            alertUtil.sendAlert(BASIC_ERROR_TITLE,
+                                UNKNOWN_ERROR_PROMPT, Colors.red, Icons.error);
+                            break;
+                        }
+                      }
+                    }, builder: (context, state) {
+                      if (state is UserFollowingLoadingState) {
+                        return Padding(
+                            padding: EdgeInsets.only(top: 64),
+                            child: Center(
+                                child: SizedBox(
+                              height: 56,
+                              width: 56,
+                              child: CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                strokeWidth: 2.0,
+                              ),
+                            )));
+                      }
+
+                      if (state is UserFollowingLoadedState) {
+                        if (_page == 0)
+                          socialPeople = state.socialPeople;
+                        else
+                          socialPeople.addAll(state.socialPeople);
+
+                        hasReachedMax = state.hasReachedMax;
+                      }
+
+                      return SmartRefresher(
+                          controller: _followingRefreshController,
+                          header: WaterDropMaterialHeader(),
+                          footer: _classicFooter,
+                          onLoading: _onLoading(),
+                          onRefresh: _onRefresh(),
+                          enablePullDown: false,
+                          enablePullUp: true,
+                          child: ListView.builder(
+                              padding: EdgeInsets.only(top: 12, bottom: 12),
+                              physics: NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              itemCount: socialPeople.length,
+                              itemBuilder: (context, index) {
+                                return Padding(
+                                    padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
+                                    child: Align(
+                                      child: profileItem(
+                                          context, socialPeople[index]),
+                                      alignment: Alignment.topCenter,
+                                    ));
+                              }));
+                    })
                   ],
                 )),
           )
@@ -249,7 +299,7 @@ class _FollowingPageState extends State<FollowingPage> {
     ]));
   }
 
-  Widget profileItem(BuildContext context) {
+  Widget profileItem(BuildContext context, SocialPerson socialPerson) {
     return Padding(
         padding: EdgeInsets.symmetric(vertical: 6),
         child: Card(
@@ -281,8 +331,10 @@ class _FollowingPageState extends State<FollowingPage> {
                                         child: CircleAvatar(
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
-                                          backgroundImage: NetworkImage(
-                                              'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
+                                          backgroundImage:
+                                              OptimizedCacheImageProvider(
+                                                  socialPerson
+                                                      .personCoverPicURL),
                                         ))),
                                 Expanded(
                                     child: Padding(
@@ -302,7 +354,8 @@ class _FollowingPageState extends State<FollowingPage> {
                                                     padding: EdgeInsets.only(
                                                         left: 4, right: 3),
                                                     child: Text(
-                                                      "professor_mnm967",
+                                                      socialPerson
+                                                          .personUsername,
                                                       textAlign:
                                                           TextAlign.start,
                                                       maxLines: 1,

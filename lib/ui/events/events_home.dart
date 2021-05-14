@@ -1,19 +1,18 @@
 import 'dart:ui';
 
-import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/cubit/events_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/events_state.dart';
 import 'package:groovenation_flutter/models/event.dart';
-import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:intl/intl.dart';
 import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
 import 'package:optimized_cached_image/widgets.dart';
-import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class EventsHomePage extends StatefulWidget {
   final int page;
@@ -51,7 +50,8 @@ class _EventsHomePageState extends State<EventsHomePage> {
   final ScrollController _upcomingScrollController = new ScrollController();
   final ScrollController _favouritesScrollController = new ScrollController();
 
-  RefreshController _upcomingRefreshController = RefreshController(initialRefresh: true);
+  RefreshController _upcomingRefreshController =
+      RefreshController(initialRefresh: false);
   final _favouritesRefreshController = RefreshController(initialRefresh: false);
 
   void setListScrollListener(
@@ -60,7 +60,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
       if (controller.position.pixels >=
           (controller.position.maxScrollExtent - 456)) {
         if (refreshController.footerStatus == LoadStatus.idle) {
-          print("Start Loading");
           refreshController.requestLoading(needMove: false);
         }
       }
@@ -72,8 +71,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
     super.initState();
     setListScrollListener(
         _upcomingScrollController, _upcomingRefreshController);
-    // setListScrollListener(
-    //     _favouritesScrollController, _favouritesRefreshController);
   }
 
   openSearchPage() {
@@ -141,15 +138,13 @@ class _EventsHomePageState extends State<EventsHomePage> {
     _upcomingScrollController.dispose();
     _upcomingRefreshController.dispose();
 
-    _favouritesScrollController.dispose();
-    _favouritesRefreshController.dispose();
+    // _favouritesScrollController.dispose();
+    // _favouritesRefreshController.dispose();
     super.dispose();
   }
 
-  // int upcomingCount = 4;
-  // int favouritesCount = 4;
-
   bool _isInitialFavouriteLoad = true;
+
   @override
   Widget build(BuildContext context) {
     int pg = widget.page;
@@ -162,7 +157,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
             BlocProvider.of<UpcomingEventsCubit>(context);
         if (_isInitialFavouriteLoad) {
           _isInitialFavouriteLoad = false;
-          print("BlocConsumerUpcoming");
           upcomingEventsCubit.getEvents(upcomingPage);
         }
       }
@@ -182,7 +176,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
                       children: [
                         upcomingList(),
                         SmartRefresher(
-                          //key: new PageStorageKey('favourite_events'),
                           controller: _favouritesRefreshController,
                           header: WaterDropMaterialHeader(),
                           enablePullDown: false,
@@ -202,86 +195,108 @@ class _EventsHomePageState extends State<EventsHomePage> {
 
   Widget upcomingList() {
     return BlocConsumer<UpcomingEventsCubit, EventsState>(
-        //key: new PageStorageKey('upcoming_events'),
         listener: (context, state) {
-          if (state is EventsLoadedState) {
-            upcomingPage++;
-            if (_upcomingRefreshController.isRefresh) {
-              _upcomingScrollController.jumpTo(0.0);
-              _upcomingRefreshController.refreshCompleted();
+      if (state is EventsLoadedState) {
+        // setState(() {
+        //         upcomingPage++;
+        //       });
+        if (_upcomingRefreshController.isRefresh) {
+          _upcomingScrollController.jumpTo(0.0);
+          _upcomingRefreshController.refreshCompleted();
+          _upcomingRefreshController.loadComplete();
+
+          _upcomingRefreshController = RefreshController(initialRefresh: false);
+        } else if (_upcomingRefreshController.isLoading) {
+          if (state.hasReachedMax)
+            _upcomingRefreshController.loadNoData();
+          else
+            _upcomingRefreshController.loadComplete();
+        }
+      }
+    }, builder: (context, upcomingEventsState) {
+      if (upcomingEventsState is EventsLoadedState)
+        upcomingEvents = upcomingEventsState.events;
+
+      if (upcomingEventsState is EventsErrorState) {
+        switch (upcomingEventsState.error) {
+          case Error.NETWORK_ERROR:
+            alertUtil.sendAlert(BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT,
+                Colors.red, Icons.error);
+            break;
+          default:
+            alertUtil.sendAlert(BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT,
+                Colors.red, Icons.error);
+            break;
+        }
+      }
+
+      final FavouritesEventsCubit favouritesEventsCubit =
+          BlocProvider.of<FavouritesEventsCubit>(context);
+
+      return SmartRefresher(
+          controller: _upcomingRefreshController,
+          header: WaterDropMaterialHeader(),
+          footer: ClassicFooter(
+            textStyle: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+                fontFamily: 'Lato'),
+            noDataText: "You've reached the end of the line",
+            failedText: "Something Went Wrong",
+          ),
+          onRefresh: () {
+            print("favsuc:" + checkFavouritesSuccess().toString());
+
+            if (!checkFavouritesSuccess()) return;
+
+            final UpcomingEventsCubit upcomingEventsCubit =
+                BlocProvider.of<UpcomingEventsCubit>(context);
+
+            if ((upcomingEventsCubit.state is EventsLoadedState ||
+                    upcomingEventsCubit.state is EventsErrorState) &&
+                !_isFirstView) {
+              setState(() {
+                upcomingPage = 0;
+              });
+
               _upcomingRefreshController.loadComplete();
 
-              _upcomingRefreshController = RefreshController(initialRefresh: false);
-            } else if (_upcomingRefreshController.isLoading) {
-              if (state.hasReachedMax)
-                _upcomingRefreshController.loadNoData();
-              else
-                _upcomingRefreshController.loadComplete();
+              upcomingEventsCubit.getEvents(0);
             }
-          }
-        },
-        builder: (context, upcomingEventsState) {
-          if (upcomingEventsState is EventsLoadedState)
-            upcomingEvents = upcomingEventsState.events;
+          },
+          onLoading: () {
+            if (upcomingEvents.length == 0) {
+              _upcomingRefreshController.loadComplete();
+              return;
+            }
 
-          // if (upcomingEventsState is EventsLoadingState && upcomingPage == 0)
-          //   upcomingEvents = [];
+            final UpcomingEventsCubit upcomingEventsCubit =
+                BlocProvider.of<UpcomingEventsCubit>(context);
 
-          final FavouritesEventsCubit favouritesEventsCubit =
-              BlocProvider.of<FavouritesEventsCubit>(context);
+            setState(() {
+                upcomingPage++;
+              });
 
-          return SmartRefresher(
-              controller: _upcomingRefreshController,
-              header: WaterDropMaterialHeader(),
-              footer: ClassicFooter(
-                textStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 16,
-                    fontFamily: 'Lato'),
-                noDataText: "You've reached the end of the line",
-                failedText: "Something Went Wrong",
-              ),
-              onRefresh: () {
-                print("onREEEFRESH");
-                if (!checkFavouritesSuccess()) return;
-
-                final UpcomingEventsCubit upcomingEventsCubit =
-                    BlocProvider.of<UpcomingEventsCubit>(context);
-
-                if ((upcomingEventsCubit.state is EventsLoadedState ||
-                        upcomingEventsCubit.state is EventsErrorState) &&
-                    !_isFirstView) {
-                  upcomingPage = 0;
-                  upcomingEventsCubit.getEvents(upcomingPage);
-                }
-              },
-              onLoading: () {
-                if (upcomingEvents.length == 0) return;
-                print("Started Loading - EventsCubit");
-
-                final UpcomingEventsCubit upcomingEventsCubit =
-                    BlocProvider.of<UpcomingEventsCubit>(context);
-                upcomingEventsCubit.getEvents(upcomingPage);
-              },
-              enablePullUp: true,
-              child: ListView.builder(
-                  controller: _upcomingScrollController,
-                  padding:
-                      EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
-                  physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics()),
-                  itemCount: upcomingEvents.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: eventItem(
-                            context,
-                            upcomingEvents[index],
-                            favouritesEventsCubit.checkEventExists(
-                                upcomingEvents[index].eventID),
-                            index));
-                  }));
-        });
+            upcomingEventsCubit.getEvents(upcomingPage);
+          },
+          enablePullUp: true,
+          child: ListView.builder(
+              controller: _upcomingScrollController,
+              padding: EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              itemCount: upcomingEvents.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: eventItem(
+                        context,
+                        upcomingEvents[index],
+                        favouritesEventsCubit
+                            .checkEventExists(upcomingEvents[index].eventID),
+                        index));
+              }));
+    });
   }
 
   bool checkFavouritesSuccess() {
@@ -301,7 +316,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
 
   Widget favouritesList() {
     return ListView.builder(
-        //controller: _favouritesScrollController,
         physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics()),
         padding: EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
@@ -335,8 +349,7 @@ class _EventsHomePageState extends State<EventsHomePage> {
                       height: 256,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(
-                                'https://images.pexels.com/photos/2034851/pexels-photo-2034851.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260'),
+                            image: OptimizedCacheImageProvider(event.imageUrl),
                             fit: BoxFit.cover),
                       ),
                       child: Align(
@@ -358,7 +371,7 @@ class _EventsHomePageState extends State<EventsHomePage> {
                                             context);
                                     if (isFavourite) {
                                       favouritesEventsCubit
-                                          .removeEvent(event.eventID);
+                                          .removeEvent(event);
                                     } else
                                       favouritesEventsCubit.addEvent(event);
                                   },
@@ -395,14 +408,16 @@ class _EventsHomePageState extends State<EventsHomePage> {
                                             MainAxisAlignment.center,
                                         children: [
                                           Text(
-                                            "Feb",
+                                            DateFormat.MMM()
+                                                .format(event.eventStartDate),
                                             style: TextStyle(
                                               fontFamily: 'LatoBold',
                                               fontSize: 18,
                                             ),
                                           ),
                                           Text(
-                                            "21",
+                                            DateFormat.d()
+                                                .format(event.eventStartDate),
                                             style: TextStyle(
                                               fontFamily: 'LatoBold',
                                               fontSize: 18,
@@ -428,7 +443,7 @@ class _EventsHomePageState extends State<EventsHomePage> {
                                   Padding(
                                       padding: EdgeInsets.only(top: 6),
                                       child: Text(
-                                        "Jive Lounge",
+                                        event.clubName,
                                         textAlign: TextAlign.start,
                                         style: TextStyle(
                                             fontFamily: 'Lato',

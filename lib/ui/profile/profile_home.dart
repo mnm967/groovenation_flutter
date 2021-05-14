@@ -1,17 +1,15 @@
 import 'dart:ui';
-
-import 'package:flare_flutter/flare_actor.dart';
-import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:groovenation_flutter/ui/social/comment_item.dart';
-import 'package:groovenation_flutter/ui/social/comments_dialog.dart';
+import 'package:groovenation_flutter/cubit/social_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/social_state.dart';
+import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_grid_item.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
-import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
-import 'package:inview_notifier_list/inview_notifier_list.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -31,35 +29,55 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
 
   runBuild() {
     if (isFirstView) {
+      _scrollController.addListener(() {
+        if (_scrollController.position.pixels <= 30) {
+          if (_scrollToTopVisible != false) {
+            setState(() {
+              _scrollToTopVisible = false;
+            });
+          }
+        } else {
+          if (_scrollToTopVisible != true) {
+            setState(() {
+              _scrollToTopVisible = true;
+            });
+          }
+        }
+      });
+
       print("Running Build: ProfileHome");
       isFirstView = false;
+
+      final UserSocialCubit userSocialCubit =
+          BlocProvider.of<UserSocialCubit>(context);
+      userSocialCubit.getSocialPosts(socialPostsPage);
     }
   }
 
   final _listRefreshController = RefreshController(initialRefresh: false);
-  final _gridRefreshController = RefreshController(initialRefresh: false);
+  final _gridRefreshController = RefreshController(initialRefresh: true);
 
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
 
   @override
   void initState() {
-    super.initState(); 
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels <= 30) {
-        if (_scrollToTopVisible != false) {
-          setState(() {
-            _scrollToTopVisible = false;
-          });
-        }
-      } else {
-        if (_scrollToTopVisible != true) {
-          setState(() {
-            _scrollToTopVisible = true;
-          });
-        }
-      }
-    });
+    super.initState();
+    // _scrollController.addListener(() {
+    //   if (_scrollController.position.pixels <= 30) {
+    //     if (_scrollToTopVisible != false) {
+    //       setState(() {
+    //         _scrollToTopVisible = false;
+    //       });
+    //     }
+    //   } else {
+    //     if (_scrollToTopVisible != true) {
+    //       setState(() {
+    //         _scrollToTopVisible = true;
+    //       });
+    //     }
+    //   }
+    // });
   }
 
   @override
@@ -99,9 +117,9 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                                               height: 116,
                                               width: 116,
                                               child: CircleAvatar(
-                                                backgroundImage: OptimizedCacheImageProvider(
-                                                    'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
-                                              ),
+                                                  backgroundImage:
+                                                      OptimizedCacheImageProvider(
+                                                          "${sharedPrefs.profilePicUrl}")),
                                             ),
                                             Padding(
                                                 padding: EdgeInsets.only(
@@ -110,7 +128,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                                                     right: 16,
                                                     bottom: 48),
                                                 child: Text(
-                                                  "professor_mnm967",
+                                                  "${sharedPrefs.username}",
                                                   maxLines: 1,
                                                   overflow:
                                                       TextOverflow.ellipsis,
@@ -131,7 +149,8 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                                       children: [
                                         FlatButton(
                                             onPressed: () {
-                                              Navigator.pushNamed(context, '/settings');
+                                              Navigator.pushNamed(
+                                                  context, '/settings');
                                             },
                                             padding: EdgeInsets.only(right: 8),
                                             child: Icon(
@@ -161,6 +180,9 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
     return mainView(context);
   }
 
+  List<SocialPost> socialPosts = [];
+  int socialPostsPage = 0;
+
   Widget mainView(BuildContext context) {
     return DefaultTabController(
         length: 2,
@@ -178,6 +200,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                       expandedHeight: 372.0,
                       floating: false,
                       pinned: false,
+                      leading: Container(),
                       backgroundColor: Colors.transparent,
                       bottom: PreferredSize(
                           preferredSize: new Size(0, 24),
@@ -204,8 +227,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                       flexibleSpace: Stack(children: [
                         Positioned.fill(
                             child: OptimizedCacheImage(
-                          //"https://jakecoker.files.wordpress.com/2018/09/default-landscapeipad.png?w=1024&h=768&crop=1",
-                          imageUrl: "https://images.pexels.com/photos/2204724/pexels-photo-2204724.jpeg?auto=compress&cs=tinysrgb&dpr=2&w=500",
+                          imageUrl: "${sharedPrefs.coverPicUrl}",
                           fit: BoxFit.cover,
                         )),
                         Positioned.fill(
@@ -222,113 +244,110 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                     ),
                   ];
                 },
-                body: TabBarView(children: [
-                  NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification scrollInfo) {
-                      if (scrollInfo.metrics.pixels >=
-                          (scrollInfo.metrics.maxScrollExtent - 256)) {
-                        if (_gridRefreshController.footerStatus ==
-                            LoadStatus.idle) {
-                          _gridRefreshController.requestLoading(
-                              needMove: false);
-                        }
-                      }
-                      return false;
-                    },
-                    child: SmartRefresher(
-                        controller: _gridRefreshController,
-                        header: WaterDropMaterialHeader(),
-                        footer: ClassicFooter(
-                          textStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 16,
-                              fontFamily: 'Lato'),
-                          noDataText: "You've reached the end of the line",
-                          failedText: "Something Went Wrong",
-                        ),
-                        onLoading: () {
-                          print("Started Loading");
-                          Future.delayed(const Duration(seconds: 5), () {
-                            // setState(() {
-                            //   upcomingCount = upcomingCount + 4;
-                            // });
-                            _listRefreshController.loadNoData();
-                            print("Finished Loading");
-                          });
-                        },
-                        enablePullUp: true,
-                        child: CustomScrollView(
-                          physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                          slivers: [
-                            SliverGrid(
-                                gridDelegate:
-                                    SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                ),
-                                delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, int index) {
-                                    return SocialGridItem();
-                                  },
-                                  childCount: 160,
-                                )),
-                          ],
-                        )),
-                  ),
-                  NotificationListener<ScrollNotification>(
+                body: BlocConsumer<UserSocialCubit, SocialState>(
+                    listener: (context, socialState) {
+                  if (socialState is SocialLoadedState) {
+                    _listRefreshController.refreshCompleted();
+                    if (socialState.socialPosts.length > 0 &&
+                        socialPostsPage == 0)
+                      _listRefreshController.loadComplete();
+                    else
+                      _listRefreshController.loadNoData();
+
+                    _gridRefreshController.refreshCompleted();
+                    if (socialState.socialPosts.length > 0 &&
+                        socialPostsPage == 0)
+                      _gridRefreshController.loadComplete();
+                    else
+                      _gridRefreshController.loadNoData();
+                  }
+
+                  if (socialState is SocialErrorState) {
+                    _listRefreshController.refreshFailed();
+                    _listRefreshController.loadFailed();
+
+                    _gridRefreshController.refreshFailed();
+                    _gridRefreshController.loadFailed();
+                  }
+                }, builder: (context, socialState) {
+                  bool hasReachedMax = false;
+
+                  if (socialState is SocialLoadedState) {
+                    socialPosts = socialState.socialPosts;
+                    // if (socialPostsPage == 0)
+                    //   socialPosts = socialState.socialPosts;
+                    // else {
+                    //   socialPosts.addAll(socialState.socialPosts);
+                    // }
+                    hasReachedMax = socialState.hasReachedMax;
+                  }
+
+                  return TabBarView(children: [
+                    NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
                         if (scrollInfo.metrics.pixels >=
-                            (scrollInfo.metrics.maxScrollExtent - 756)) {
-                          if (_listRefreshController.footerStatus ==
+                            (scrollInfo.metrics.maxScrollExtent - 256)) {
+                          if (_gridRefreshController.footerStatus ==
                               LoadStatus.idle) {
-                            _listRefreshController.requestLoading(
+                            _gridRefreshController.requestLoading(
                                 needMove: false);
                           }
                         }
                         return false;
                       },
-                      child: SmartRefresher(
-                          controller: _listRefreshController,
-                          header: WaterDropMaterialHeader(),
-                          footer: ClassicFooter(
-                            textStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 16,
-                                fontFamily: 'Lato'),
-                            noDataText: "You've reached the end of the line",
-                            failedText: "Something Went Wrong",
-                          ),
-                          onLoading: () {
-                            print("Started Loading");
-                            Future.delayed(const Duration(seconds: 5), () {
-                              // setState(() {
-                              //   upcomingCount = upcomingCount + 4;
-                              // });
-                              _listRefreshController.loadNoData();
-                              print("Finished Loading");
-                            });
-                          },
-                          enablePullUp: true,
-                          child: CustomScrollView(
-                            physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                            slivers: [
-                              SliverPadding(
-                                padding: EdgeInsets.only(top: 24),
-                                sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, int index) {
-                                    return Padding(
-                                        padding:
-                                            EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                        child: SocialItem(showClose: false));
-                                  },
-                                  childCount: 8,
-                                )),
-                              )
-                            ],
-                          ))),
-                ])),
+                      child: SocialGridList(
+                          socialPosts, hasReachedMax, _gridRefreshController,
+                          () {
+                        final UserSocialCubit socialCubit =
+                            BlocProvider.of<UserSocialCubit>(context);
+
+                        if ((socialCubit.state is SocialLoadedState ||
+                                socialCubit.state is SocialErrorState) &&
+                            !isFirstView) {
+                          socialPostsPage = 0;
+                          socialCubit.getSocialPosts(socialPostsPage);
+                        }
+                      }, () {
+                        final UserSocialCubit socialCubit =
+                            BlocProvider.of<UserSocialCubit>(context);
+
+                        socialPostsPage++;
+                        socialCubit.getSocialPosts(socialPostsPage);
+                      }),
+                    ),
+                    NotificationListener<ScrollNotification>(
+                        onNotification: (ScrollNotification scrollInfo) {
+                          if (scrollInfo.metrics.pixels >=
+                              (scrollInfo.metrics.maxScrollExtent - 756)) {
+                            if (_listRefreshController.footerStatus ==
+                                LoadStatus.idle) {
+                              _listRefreshController.requestLoading(
+                                  needMove: false);
+                            }
+                          }
+                          return false;
+                        },
+                        child: SocialPostList(
+                            socialPosts, hasReachedMax, _listRefreshController,
+                            () {
+                          final UserSocialCubit socialCubit =
+                              BlocProvider.of<UserSocialCubit>(context);
+
+                          if ((socialCubit.state is SocialLoadedState ||
+                                  socialCubit.state is SocialErrorState) &&
+                              !isFirstView) {
+                            socialPostsPage = 0;
+                            socialCubit.getSocialPosts(socialPostsPage);
+                          }
+                        }, () {
+                          final UserSocialCubit socialCubit =
+                              BlocProvider.of<UserSocialCubit>(context);
+
+                          socialPostsPage++;
+                          socialCubit.getSocialPosts(socialPostsPage);
+                        })),
+                  ]);
+                })),
           ),
           AnimatedOpacity(
               opacity: _scrollToTopVisible ? 1.0 : 0.0,
@@ -367,4 +386,151 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                       ))))
         ]));
   }
+}
+
+class SocialPostList extends StatefulWidget {
+  final List<SocialPost> socialPosts;
+  final bool isCompleted;
+  final RefreshController refreshController;
+  final Function onRefresh;
+  final Function onLoading;
+
+  SocialPostList(this.socialPosts, this.isCompleted, this.refreshController,
+      this.onRefresh, this.onLoading);
+
+  @override
+  _SocialListState createState() {
+    final _SocialListState state = _SocialListState(
+        socialPosts, isCompleted, refreshController, onRefresh, onLoading);
+    return state;
+  }
+}
+
+class _SocialListState extends State<SocialPostList>
+    with AutomaticKeepAliveClientMixin<SocialPostList> {
+  List<SocialPost> socialPosts;
+  bool isCompleted;
+  RefreshController refreshController;
+  Function onRefresh;
+  Function onLoading;
+
+  _SocialListState(this.socialPosts, this.isCompleted, this.refreshController,
+      this.onRefresh, this.onLoading);
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return SmartRefresher(
+        controller: refreshController,
+        header: WaterDropMaterialHeader(),
+        footer: ClassicFooter(
+          textStyle: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 16,
+              fontFamily: 'Lato'),
+          noDataText: "Nothing to See Here",
+          failedText: "Something Went Wrong",
+        ),
+        onLoading: onLoading,
+        onRefresh: onRefresh,
+        enablePullUp: true,
+        enablePullDown: true,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.only(top: 24),
+              sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                (BuildContext context, int index) {
+                  return Padding(
+                      padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      child: SocialItem(
+                          socialPost: socialPosts[index], showClose: false));
+                },
+                childCount: socialPosts.length,
+              )),
+            )
+          ],
+        ));
+  }
+
+  @override
+  bool get wantKeepAlive => true;
+}
+
+class SocialGridList extends StatefulWidget {
+  final List<SocialPost> socialPosts;
+  final bool isCompleted;
+  final RefreshController refreshController;
+  final Function onRefresh;
+  final Function onLoading;
+
+  SocialGridList(this.socialPosts, this.isCompleted, this.refreshController,
+      this.onRefresh, this.onLoading);
+
+  @override
+  _SocialGridListState createState() {
+    final _SocialGridListState state = _SocialGridListState(
+        socialPosts, isCompleted, refreshController, onRefresh, onLoading);
+    return state;
+  }
+}
+
+class _SocialGridListState extends State<SocialGridList>
+    with AutomaticKeepAliveClientMixin<SocialGridList> {
+  List<SocialPost> socialPosts;
+  bool isCompleted;
+  RefreshController refreshController;
+  Function onRefresh;
+  Function onLoading;
+
+  _SocialGridListState(this.socialPosts, this.isCompleted,
+      this.refreshController, this.onRefresh, this.onLoading);
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    return SmartRefresher(
+        controller: refreshController,
+        header: WaterDropMaterialHeader(),
+        footer: ClassicFooter(
+          textStyle: TextStyle(
+              color: Colors.white.withOpacity(0.5),
+              fontSize: 16,
+              fontFamily: 'Lato'),
+          noDataText: "Nothing to See Here",
+          failedText: "Something Went Wrong",
+        ),
+        onLoading: () => {
+          onLoading()
+          },
+        onRefresh: () => onRefresh(),
+        enablePullUp: true,
+        enablePullDown: true,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+              parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            SliverPadding(
+                padding: socialPosts.length == 0
+                    ? EdgeInsets.only(top: 24)
+                    : EdgeInsets.zero,
+                sliver: SliverGrid(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                    ),
+                    delegate: SliverChildBuilderDelegate(
+                      (BuildContext context, int index) {
+                        return SocialGridItem(socialPost: socialPosts[index]);
+                      },
+                      childCount: socialPosts.length,
+                    ))),
+          ],
+        ));
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 }

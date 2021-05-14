@@ -40,3 +40,14 @@ class ClubsErrorState extends ClubsState {
   @override
   List<Object> get props => [error];
 }
+
+class ClubLoadedState extends ClubsState {
+  final Club club;
+
+  ClubLoadedState({
+    this.club,
+  });
+
+  @override
+  List<Object> get props => [club];
+}

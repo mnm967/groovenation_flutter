@@ -1,12 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_paystack/flutter_paystack.dart';
+import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/cubit/state/ticket_purchase_state.dart';
+import 'package:groovenation_flutter/cubit/state/tickets_state.dart';
+import 'package:groovenation_flutter/cubit/ticket_purchase_cubit.dart';
+import 'package:groovenation_flutter/models/event.dart';
+import 'package:groovenation_flutter/models/ticket_price.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:intl/intl.dart';
 
 class TicketPurchaseDialog extends StatefulWidget {
+  final Event event;
+  TicketPurchaseDialog(this.event);
+
   @override
-  _TicketPurchaseDialogState createState() => _TicketPurchaseDialogState();
+  _TicketPurchaseDialogState createState() => _TicketPurchaseDialogState(event);
 }
 
 class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
+  var publicKey = 'pk_test_e0bc926082eeaa6e1bff2f37c1c785a129642f0c';
+
+  final Event event;
+  _TicketPurchaseDialogState(this.event);
+
+  // _purchaseTicket() {
+  //   final TicketPurchaseCubit ticketPurchaseCubit =
+  //       BlocProvider.of<TicketPurchaseCubit>(context);
+  //   ticketPurchaseCubit.executePurchase(
+  //       event.eventID, selectedTicketType, selectedNoOfPeople);
+  // }
+
+  String userPaymentReference;
+
+  _makePayment(BuildContext context) async {
+    String paymentReference = _getReference();
+    userPaymentReference = paymentReference;
+
+    Charge charge = Charge()
+      ..amount = (_calculateTicketTotalCost() * 100)
+      ..currency = "ZAR"
+      ..reference = paymentReference
+      ..email = sharedPrefs.email;
+
+    CheckoutResponse response = await PaystackPlugin.checkout(
+      context,
+      method: CheckoutMethod.card,
+      charge: charge,
+    );
+
+    if (response.status) {
+      final TicketPurchaseCubit ticketPurchaseCubit =
+          BlocProvider.of<TicketPurchaseCubit>(context);
+
+      ticketPurchaseCubit.verifyPurchase(context, event.eventID, event.clubID,
+          selectedTicketType, selectedNoOfPeople, paymentReference);
+    }
+  }
+
+  String _getReference() {
+    return sharedPrefs.userId +
+        DateTime.now().millisecondsSinceEpoch.toString();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final TicketPurchaseCubit ticketPurchaseCubit =
+        BlocProvider.of<TicketPurchaseCubit>(context);
+    ticketPurchaseCubit.getTicketPrices(event.eventID);
+
+    PaystackPlugin.initialize(publicKey: publicKey);
+  }
+
+  List<TicketPrice> ticketPrices;
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -15,15 +84,84 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
         height: double.infinity,
         child: SizedBox.expand(
           child: Card(
-            color: Colors.deepPurple,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: ticketPurchasePage(),
-          ),
+              color: Colors.deepPurple,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+              child: BlocConsumer<TicketPurchaseCubit, TicketPurchaseState>(
+                  listener: (context, state) {
+                if (state is TicketPurchasePricesLoadedState) {
+                  ticketPrices = state.ticketPrices;
+                  selectedTicketType = state.ticketPrices[0];
+                  _checkTicketNum();
+                }
+              }, builder: (context, state) {
+                if (state is TicketPurchasePricesLoadingState ||
+                    state is TicketsInitialState ||
+                    state is TicketPurchaseLoadingState) {
+                  return purchaseProcessingPage();
+                }
+
+                if (state is TicketPurchasePricesErrorState) {
+                  if (state.error == Error.NETWORK_ERROR)
+                    return purchaseStatusPage(
+                        BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT, Icons.error);
+                  else
+                    return purchaseStatusPage(
+                        BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT, Icons.error);
+                }
+
+                if (state is TicketPurchaseErrorState) {
+                  if (state.error == Error.NETWORK_ERROR)
+                    return purchaseStatusPage(
+                        BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT, Icons.error);
+                  else
+                    return purchaseStatusPage(
+                        BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT, Icons.error);
+                }
+
+                if (state is TicketPurchaseSuccessState) {
+                  return purchaseStatusPage(
+                      "Purchase Successful",
+                      "You've successfully purchased your ticket for "+event.title+". Hope you enjoy!!",
+                      Icons.check);
+                }
+
+                return ticketPurchasePage(context);
+              })),
         ),
         margin: EdgeInsets.only(top: 16, bottom: 16, left: 16, right: 16),
       ),
     );
+  }
+
+  _checkTicketNum() {
+    switch (selectedTicketType.numAvailable) {
+      case 0:
+        items = [];
+        numPeopleSelectedValue = null;
+        selectedNoOfPeople = 0;
+        break;
+      case 1:
+        items = ['1 Person'];
+        numPeopleSelectedValue = items[0];
+        selectedNoOfPeople = 1;
+        break;
+      case 2:
+        items = ['1 Person', '2 People'];
+        numPeopleSelectedValue = items[0];
+        selectedNoOfPeople = 1;
+        break;
+      case 3:
+        items = ['1 Person', '2 People', '3 People'];
+        numPeopleSelectedValue = items[0];
+        selectedNoOfPeople = 1;
+        break;
+      default:
+        items = ['1 Person', '2 People', '3 People', '4 People'];
+        numPeopleSelectedValue = items[0];
+        selectedNoOfPeople = 1;
+        break;
+    }
   }
 
   Widget purchaseProcessingPage() {
@@ -38,7 +176,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
     );
   }
 
-  Widget purchaseStatusPage() {
+  Widget purchaseStatusPage(String title, String text, IconData data) {
     return Stack(
       children: [
         Container(
@@ -55,7 +193,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                 ),
                 child: Center(
                     child: Icon(
-                  Icons.check,
+                  data,
                   color: Colors.white,
                   size: 46.0,
                 )),
@@ -63,7 +201,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
               Padding(
                 padding: EdgeInsets.only(top: 36, right: 16, left: 16),
                 child: Text(
-                  "Purchase Successful",
+                  title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: Colors.white, fontFamily: 'Lato', fontSize: 36),
@@ -72,12 +210,50 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
               Padding(
                 padding: EdgeInsets.only(top: 16, right: 16, left: 16),
                 child: Text(
-                  "You've successfully purchased your ticket for Helix After Party. Hope you enjoy!!",
+                  text,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                      color: Colors.white.withOpacity(0.5), fontFamily: 'Lato', fontSize: 24),
+                      color: Colors.white.withOpacity(0.5),
+                      fontFamily: 'Lato',
+                      fontSize: 24),
                 ),
               ),
+              BlocBuilder<TicketPurchaseCubit, TicketPurchaseState>(
+                  builder: (context, state) {
+                if (!(state is TicketPurchaseErrorState))
+                  return Padding(
+                    padding: EdgeInsets.zero,
+                  );
+                return Padding(
+                    padding: EdgeInsets.only(top: 16, right: 16, left: 16),
+                    child: Center(
+                      child: FlatButton(
+                        color: Colors.white,
+                        padding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        onPressed: () {
+                          final TicketPurchaseCubit ticketPurchaseCubit =
+                              BlocProvider.of<TicketPurchaseCubit>(context);
+
+                          ticketPurchaseCubit.verifyPurchase(
+                              context,
+                              event.eventID,
+                              event.clubID,
+                              selectedTicketType,
+                              selectedNoOfPeople,
+                              userPaymentReference);
+                        },
+                        child: Text(
+                          "Try Again",
+                          style: TextStyle(
+                              color: Colors.purple,
+                              fontFamily: 'Lato',
+                              fontSize: 17),
+                        ),
+                      ),
+                    ));
+              })
             ],
           )),
         ),
@@ -99,23 +275,17 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
     );
   }
 
-  final List<String> items = <String>[
-    '1 Person',
-    '2 People',
-    '3 People',
-    '4 People'
-  ];
-  String dropdownValue = '1 Person';
+  int _calculateTicketTotalCost() {
+    return selectedTicketType.price * selectedNoOfPeople;
+  }
 
-  final List<String> typeItems = <String>[
-    'General Admission',
-    'Special Admission',
-    'VIP Admission',
-    'Golden Circle'
-  ];
-  String typeValue = 'Special Admission';
+  List<String> items = <String>['1 Person', '2 People', '3 People', '4 People'];
+  String numPeopleSelectedValue = '1 Person';
 
-  Widget ticketPurchasePage() {
+  TicketPrice selectedTicketType;
+  int selectedNoOfPeople = 1;
+
+  Widget ticketPurchasePage(context) {
     return Material(
         color: Colors.transparent,
         child: SingleChildScrollView(
@@ -133,8 +303,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                     Expanded(
                         child: Align(
                             alignment: Alignment.topLeft,
-                            child: ticketPageText(
-                                "Event Name", "Helix After Party"))),
+                            child: ticketPageText("Event Name", event.title))),
                     IconButton(
                       padding: EdgeInsets.zero,
                       icon: Icon(Icons.close),
@@ -148,19 +317,24 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Event Club", "Jive Lounge"),
+                  child: ticketPageText("Event Club", event.clubName),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Date", "Sep 19, 2020 · 20:00"),
+                  child: ticketPageText(
+                      "Date",
+                      DateFormat("MMM dd, yyyy · HH:mm")
+                          .format(event.eventStartDate)),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Tickets Currently Available", "4"),
+                  child: ticketPageText("Tickets Currently Available",
+                      selectedTicketType.numAvailable == 0 ? "No" : "Yes"),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
-                  child: ticketPageText("Adults Only", "Yes"),
+                  child: ticketPageText(
+                      "Adults Only", event.isAdultOnly ? "Yes" : "No"),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
@@ -203,18 +377,20 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                                     ),
                                     onChanged: (String newValue) {
                                       setState(() {
-                                        typeValue = newValue;
-                                        print(typeValue);
+                                        selectedTicketType =
+                                            ticketPrices.firstWhere((element) =>
+                                                element.ticketType == newValue);
                                       });
+                                      _checkTicketNum();
                                     },
                                     itemHeight: 56,
-                                    value: typeValue,
-                                    items: typeItems
+                                    value: selectedTicketType.ticketType,
+                                    items: ticketPrices
                                         .map<DropdownMenuItem<String>>(
-                                            (String value) {
+                                            (TicketPrice value) {
                                       return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value,
+                                        value: value.ticketType,
+                                        child: Text(value.ticketType,
                                             style: TextStyle(
                                                 fontFamily: 'Lato',
                                                 color: Colors.deepPurple,
@@ -227,7 +403,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                                     child: Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        typeValue,
+                                        selectedTicketType.ticketType,
                                         style: TextStyle(
                                             fontFamily: 'Lato',
                                             color: Colors.white,
@@ -281,12 +457,13 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                                     ),
                                     onChanged: (String newValue) {
                                       setState(() {
-                                        dropdownValue = newValue;
-                                        print(dropdownValue);
+                                        numPeopleSelectedValue = newValue;
+                                        selectedNoOfPeople =
+                                            (items.indexOf(newValue) + 1);
                                       });
                                     },
                                     itemHeight: 56,
-                                    value: dropdownValue,
+                                    value: numPeopleSelectedValue,
                                     items: items.map<DropdownMenuItem<String>>(
                                         (String value) {
                                       return DropdownMenuItem<String>(
@@ -304,7 +481,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                                     child: Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
-                                        dropdownValue,
+                                        numPeopleSelectedValue,
                                         style: TextStyle(
                                             fontFamily: 'Lato',
                                             color: Colors.white,
@@ -319,15 +496,20 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 48),
-                  child: purchasePageText("Type", "General Admission", false),
+                  child: purchasePageText(
+                      "Type", selectedTicketType.ticketType, false),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
-                  child: purchasePageText("No. of People", "1", false),
+                  child: purchasePageText(
+                      "No. of People",
+                      (items.indexOf(numPeopleSelectedValue) + 1).toString(),
+                      false),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 16),
-                  child: purchasePageText("Total Price", "R500", true),
+                  child: purchasePageText("Total Price",
+                      "R" + _calculateTicketTotalCost().toString(), true),
                 ),
                 Padding(
                   padding: EdgeInsets.only(top: 8, bottom: 8),
@@ -340,7 +522,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                           borderRadius: BorderRadius.all(Radius.circular(10.0)),
                         ),
                         child: FlatButton(
-                          onPressed: () {},
+                          onPressed: () => _makePayment(context),
                           child: Container(
                               height: 56,
                               child: Align(

@@ -2,9 +2,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/constants/user_location_status.dart';
 import 'package:groovenation_flutter/cubit/clubs_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
 import 'package:groovenation_flutter/models/club.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:groovenation_flutter/util/location_util.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -71,7 +77,6 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
     });
   }
 
-  //TODO Move Everything to RunBuild
   @override
   void initState() {
     super.initState();
@@ -166,22 +171,11 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
         final TopClubsCubit topClubsCubit =
             BlocProvider.of<TopClubsCubit>(context);
 
-        print("BlocConsumer");
         if (_isInitialFavouriteLoad) {
           _isInitialFavouriteLoad = false;
-          print("BlocConsumerNearby");
           nearbyClubsCubit.getClubs(nearbyPage);
-
-          print("BlocConsumerTop");
           topClubsCubit.getClubs(topRatedPage);
         }
-        //if (nearbyClubsCubit.state is ClubsInitialState) {
-
-        //}
-
-        //if (topClubsCubit.state is ClubsInitialState) {
-
-        //}
       }
     }, builder: (context, favouriteClubsState) {
       if (favouriteClubsState is ClubsLoadedState) {
@@ -214,85 +208,112 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
     });
   }
 
+  Function _getBlocListener(
+      RefreshController refreshController, ScrollController scrollController) {
+    return (context, state) {
+      if (state is ClubsLoadedState) {
+        if (refreshController.isRefresh) {
+          scrollController.jumpTo(0.0);
+          refreshController.refreshCompleted();
+          refreshController.loadComplete();
+        } else if (refreshController.isLoading) {
+          if (state.hasReachedMax)
+            refreshController.loadNoData();
+          else
+            refreshController.loadComplete();
+        }
+      }
+    };
+  }
+
+  ClassicFooter _classicFooter = ClassicFooter(
+    textStyle: TextStyle(
+        color: Colors.white.withOpacity(0.5), fontSize: 16, fontFamily: 'Lato'),
+    noDataText: "You've reached the end of the line",
+    failedText: "Something Went Wrong",
+  );
+
   List<Club> nearbyClubs = [];
   int nearbyPage = 0;
 
   Widget nearbyList() {
     return BlocConsumer<NearbyClubsCubit, ClubsState>(
-        listener: (context, state) {
-      if (state is ClubsLoadedState) {
-        nearbyPage++;
-        if (_nearbyRefreshController.isRefresh) {
-          _nearbyScrollController.jumpTo(0.0);
-          _nearbyRefreshController.refreshCompleted();
-          _nearbyRefreshController.loadComplete();
-        } else if (_nearbyRefreshController.isLoading) {
-          if (state.hasReachedMax)
-            _nearbyRefreshController.loadNoData();
-          else
-            _nearbyRefreshController.loadComplete();
-        }
-      }
-    }, builder: (context, nearbyClubsState) {
-      if (nearbyClubsState is ClubsLoadedState)
-        nearbyClubs = nearbyClubsState.clubs;
+        listener:
+            _getBlocListener(_nearbyRefreshController, _nearbyScrollController),
+        builder: (context, nearbyClubsState) {
+          if (nearbyClubsState is ClubsLoadedState)
+            nearbyClubs = nearbyClubsState.clubs;
 
-      // if (nearbyClubsState is ClubsLoadingState && nearbyPage == 0)
-      //   nearbyClubs = [];
+          if (nearbyClubsState is ClubsErrorState) {
+            _nearbyRefreshController.refreshFailed();
 
-      final FavouritesClubsCubit favouritesClubsCubit =
-          BlocProvider.of<FavouritesClubsCubit>(context);
-
-      return SmartRefresher(
-          controller: _nearbyRefreshController,
-          header: WaterDropMaterialHeader(),
-          footer: ClassicFooter(
-            textStyle: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 16,
-                fontFamily: 'Lato'),
-            noDataText: "You've reached the end of the line",
-            failedText: "Something Went Wrong",
-          ),
-          onRefresh: () {
-            if (!checkFavouritesSuccess()) return;
-
-            final NearbyClubsCubit nearbyClubsCubit =
-                BlocProvider.of<NearbyClubsCubit>(context);
-
-            if ((nearbyClubsCubit.state is ClubsLoadedState ||
-                    nearbyClubsCubit.state is ClubsErrorState) &&
-                !_isFirstView) {
-              nearbyPage = 0;
-              nearbyClubsCubit.getClubs(nearbyPage);
+            switch (nearbyClubsState.error) {
+              case Error.NETWORK_ERROR:
+                alertUtil.sendAlert(BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT,
+                    Colors.red, Icons.error);
+                break;
+              default:
+                alertUtil.sendAlert(BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT,
+                    Colors.red, Icons.error);
+                break;
             }
-          },
-          onLoading: () {
-            if (nearbyClubs.length == 0) return;
-            print("Started Loading - ClubsCubit");
+          }
 
-            final NearbyClubsCubit nearbyClubsCubit =
-                BlocProvider.of<NearbyClubsCubit>(context);
-            nearbyClubsCubit.getClubs(nearbyPage);
-          },
-          enablePullUp: true,
-          child: ListView.builder(
-              padding: EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
-              physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics()),
-              controller: _nearbyScrollController,
-              itemCount: nearbyClubs.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: clubItem(
-                        context,
-                        nearbyClubs[index],
-                        favouritesClubsCubit
-                            .checkClubExists(nearbyClubs[index].clubID),
-                        index));
-              }));
-    });
+          final FavouritesClubsCubit favouritesClubsCubit =
+              BlocProvider.of<FavouritesClubsCubit>(context);
+
+          return SmartRefresher(
+              controller: _nearbyRefreshController,
+              header: WaterDropMaterialHeader(),
+              footer: _classicFooter,
+              onRefresh: () {
+                if (!checkFavouritesSuccess()) return;
+
+                final NearbyClubsCubit nearbyClubsCubit =
+                    BlocProvider.of<NearbyClubsCubit>(context);
+
+                if ((nearbyClubsCubit.state is ClubsLoadedState ||
+                        nearbyClubsCubit.state is ClubsErrorState) &&
+                    !_isFirstView) {
+                  setState(() {
+                    nearbyPage = 0;
+                  });
+                  nearbyClubsCubit.getClubs(nearbyPage);
+                }
+              },
+              onLoading: () {
+                if (nearbyClubs.length == 0) {
+                  _nearbyRefreshController.loadComplete();
+                  return;
+                }
+
+                final NearbyClubsCubit nearbyClubsCubit =
+                    BlocProvider.of<NearbyClubsCubit>(context);
+
+                setState(() {
+                  nearbyPage++;
+                });
+                nearbyClubsCubit.getClubs(nearbyPage);
+              },
+              enablePullUp: true,
+              child: ListView.builder(
+                  padding:
+                      EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
+                  physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  controller: _nearbyScrollController,
+                  itemCount: nearbyClubs.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: clubItem(
+                            context,
+                            nearbyClubs[index],
+                            favouritesClubsCubit
+                                .checkClubExists(nearbyClubs[index].clubID),
+                            index));
+                  }));
+        });
   }
 
   List<Club> topClubs = [];
@@ -300,86 +321,82 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
   bool _isTopFirstInit = true;
 
   Widget topRatedList() {
-    return BlocConsumer<TopClubsCubit, ClubsState>(listener: (context, state) {
-      if (state is ClubsLoadedState) {
-        topRatedPage++;
+    return BlocConsumer<TopClubsCubit, ClubsState>(
+        listener: _getBlocListener(
+            _topRatedRefreshController, _topRatedScrollController),
+        builder: (context, topClubsState) {
+          if (topClubsState is ClubsLoadedState) topClubs = topClubsState.clubs;
 
-        if (_topRatedRefreshController.isRefresh) {
-          _topRatedScrollController.jumpTo(0.0);
-          print("DOne");
-          _topRatedRefreshController.refreshCompleted();
-          _topRatedRefreshController.loadComplete();
-        } else if (_topRatedRefreshController.isLoading) {
-          if (state.hasReachedMax)
-            _topRatedRefreshController.loadNoData();
-          else
-            _topRatedRefreshController.loadComplete();
-        }
-      }
-    }, builder: (context, topClubsState) {
-      if (topClubsState is ClubsLoadedState) topClubs = topClubsState.clubs;
+        if (topClubsState is ClubsErrorState) {
+            _topRatedRefreshController.refreshFailed();
 
-      final FavouritesClubsCubit favouritesClubsCubit =
-          BlocProvider.of<FavouritesClubsCubit>(context);
-
-      return SmartRefresher(
-          controller: _topRatedRefreshController,
-          header: WaterDropMaterialHeader(),
-          footer: ClassicFooter(
-            textStyle: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 16,
-                fontFamily: 'Lato'),
-            noDataText: "You've reached the end of the line",
-            failedText: "Something Went Wrong",
-          ),
-          onRefresh: () {
-            if (_isTopFirstInit) {
-              _isTopFirstInit = false;
-              if (!(topClubsState is ClubsLoadingState) && !(favouritesClubsCubit.state is ClubsLoadingState)) {
-                _topRatedRefreshController.refreshCompleted();
-              }
-              return;
+            switch (topClubsState.error) {
+              case Error.NETWORK_ERROR:
+                alertUtil.sendAlert(BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT,
+                    Colors.red, Icons.error);
+                break;
+              default:
+                alertUtil.sendAlert(BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT,
+                    Colors.red, Icons.error);
+                break;
             }
+          }
 
-            if (!checkFavouritesSuccess()) return;
+          final FavouritesClubsCubit favouritesClubsCubit =
+              BlocProvider.of<FavouritesClubsCubit>(context);
 
-            final TopClubsCubit topClubsCubit =
-                BlocProvider.of<TopClubsCubit>(context);
+          return SmartRefresher(
+              controller: _topRatedRefreshController,
+              header: WaterDropMaterialHeader(),
+              footer: _classicFooter,
+              onRefresh: () {
+                if (_isTopFirstInit) {
+                  _isTopFirstInit = false;
+                  if (!(topClubsState is ClubsLoadingState) &&
+                      !(favouritesClubsCubit.state is ClubsLoadingState)) {
+                    _topRatedRefreshController.refreshCompleted();
+                  }
+                  return;
+                }
 
-            if ((topClubsCubit.state is ClubsLoadedState ||
-                    topClubsCubit.state is ClubsErrorState) &&
-                !_isFirstView) {
-              topRatedPage = 0;
-              topClubsCubit.getClubs(topRatedPage);
-            }
-          },
-          onLoading: () {
-            if (topClubs.length == 0) return;
-            print("Started Loading - ClubsCubit");
+                if (!checkFavouritesSuccess()) return;
 
-            final TopClubsCubit topClubsCubit =
-                BlocProvider.of<TopClubsCubit>(context);
-            topClubsCubit.getClubs(topRatedPage);
-          },
-          enablePullUp: true,
-          child: ListView.builder(
-              padding: EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
-              physics: const BouncingScrollPhysics(
-                  parent: AlwaysScrollableScrollPhysics()),
-              controller: _topRatedScrollController,
-              itemCount: topClubs.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                    padding: EdgeInsets.only(bottom: 16),
-                    child: clubItem(
-                        context,
-                        topClubs[index],
-                        favouritesClubsCubit
-                            .checkClubExists(topClubs[index].clubID),
-                        index));
-              }));
-    });
+                final TopClubsCubit topClubsCubit =
+                    BlocProvider.of<TopClubsCubit>(context);
+
+                if ((topClubsCubit.state is ClubsLoadedState ||
+                        topClubsCubit.state is ClubsErrorState) &&
+                    !_isFirstView) {
+                  topRatedPage = 0;
+                  topClubsCubit.getClubs(topRatedPage);
+                }
+              },
+              onLoading: () {
+                if (topClubs.length == 0) return;
+
+                final TopClubsCubit topClubsCubit =
+                    BlocProvider.of<TopClubsCubit>(context);
+                topClubsCubit.getClubs(topRatedPage);
+              },
+              enablePullUp: true,
+              child: ListView.builder(
+                  padding:
+                      EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
+                  physics: const BouncingScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics()),
+                  controller: _topRatedScrollController,
+                  itemCount: topClubs.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                        padding: EdgeInsets.only(bottom: 16),
+                        child: clubItem(
+                            context,
+                            topClubs[index],
+                            favouritesClubsCubit
+                                .checkClubExists(topClubs[index].clubID),
+                            index));
+                  }));
+        });
   }
 
   bool checkFavouritesSuccess() {
@@ -410,6 +427,8 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
         });
   }
 
+  double _getDistanceToClub() {}
+
   Widget clubItem(
       BuildContext context, Club club, bool isFavourite, int index) {
     return Card(
@@ -432,8 +451,7 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                       height: 236,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(
-                                'https://images.pexels.com/photos/4784/alcohol-bar-party-cocktail.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260'),
+                            image: OptimizedCacheImageProvider(club.images[0]),
                             fit: BoxFit.cover),
                       ),
                       child: Align(
@@ -455,7 +473,7 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                                             context);
                                     if (isFavourite) {
                                       favouritesClubsCubit
-                                          .removeClub(club.clubID);
+                                          .removeClub(club);
                                     } else
                                       favouritesClubsCubit.addClub(club);
                                   },
@@ -485,8 +503,8 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                                 radius: 79,
                                 circularStrokeCap: CircularStrokeCap.round,
                                 lineWidth: 5.0,
-                                percent: 0.9,
-                                center: new Text("4.5",
+                                percent: club.averageRating / 5.0,
+                                center: new Text(club.averageRating.toDouble().toStringAsFixed(1),
                                     style: TextStyle(
                                         fontFamily: 'LatoBold',
                                         color: Colors.white,
@@ -502,7 +520,7 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    club != null ? club.name : "null",
+                                    club.name,
                                     textAlign: TextAlign.start,
                                     style: TextStyle(
                                         fontFamily: 'LatoBold',
@@ -512,7 +530,12 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                                   Padding(
                                       padding: EdgeInsets.only(top: 6),
                                       child: Text(
-                                        "4.8 km away",
+                                        locationUtil.userLocationStatus ==
+                                                UserLocationStatus.FOUND
+                                            ? _getDistanceToClub()
+                                                    .toStringAsFixed(1) +
+                                                " km away"
+                                            : "Johannesburg",
                                         textAlign: TextAlign.start,
                                         style: TextStyle(
                                             fontFamily: 'Lato',

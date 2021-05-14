@@ -1,15 +1,15 @@
-import 'dart:io';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/models/club.dart';
-import 'package:groovenation_flutter/ui/chat/chat_page.dart';
+import 'package:groovenation_flutter/models/event.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/ui/chat/conversations_page.dart';
 import 'package:groovenation_flutter/ui/city/city_picker_page.dart';
 import 'package:groovenation_flutter/ui/city/city_picker_settings_page.dart';
+import 'package:groovenation_flutter/ui/clubs/club_events_page.dart';
+import 'package:groovenation_flutter/ui/clubs/club_moments_page.dart';
 import 'package:groovenation_flutter/ui/clubs/club_page.dart';
+import 'package:groovenation_flutter/ui/clubs/club_reviews_page.dart';
 import 'package:groovenation_flutter/ui/events/event_page.dart';
 import 'package:groovenation_flutter/ui/login/login.dart';
 import 'package:groovenation_flutter/ui/profile/profile_page.dart';
@@ -22,23 +22,33 @@ import 'package:groovenation_flutter/ui/settings/profile_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/settings_page.dart';
 import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
 import 'package:groovenation_flutter/ui/social/following_page.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class MainAppPage extends StatefulWidget {
   @override
-  _MainAppPageState createState() => _MainAppPageState();
+  MainAppPageState createState() => MainAppPageState();
 }
 
-class _MainAppPageState extends State<MainAppPage>
+class MainAppPageState extends State<MainAppPage>
     with SingleTickerProviderStateMixin {
   AnimationController controller;
   Animation<Offset> position;
 
+  String dialogTitle;
+  String dialogText;
+  Color backgroundColor;
+  IconData icon;
+
   @override
   void initState() {
     super.initState();
+
+    dialogTitle = "An Error Occured";
+    dialogText = "Please check your internet connection and try again.";
+    backgroundColor = Colors.red;
+    icon = Icons.error;
 
     controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 750));
@@ -46,28 +56,55 @@ class _MainAppPageState extends State<MainAppPage>
         .animate(
             CurvedAnimation(parent: controller, curve: Curves.bounceInOut));
 
-    controller.forward();
+    alertUtil.init(this);
 
+    //alertUtil.sendAlert(dialogTitle, dialogText, backgroundColor, icon);
+
+    // controller.forward();
+
+    // Future.delayed(const Duration(seconds: 5), () {
+    //   controller.animateBack(-4.0);
+    // });
+  }
+
+  openDialog(
+    String title,
+    String text,
+    Color backgroundColor,
+    IconData icon,
+  ) {
+    dialogTitle = title;
+    dialogText = text;
+    this.backgroundColor = backgroundColor;
+    this.icon = icon;
+
+    controller.forward();
     Future.delayed(const Duration(seconds: 5), () {
-      controller.animateBack(-4.0);
+      closeDialog();
     });
+  }
+
+  closeDialog() {
+    controller.animateBack(-4.0);
   }
 
   @override
   Widget build(BuildContext context) {
+    print("uid: "+sharedPrefs.userId.toString());
+
     return Stack(
       children: [
         MaterialApp(
-          initialRoute: '/',
+          initialRoute: sharedPrefs.userId == null ? '/' : '/main',
           theme: ThemeData(
             primarySwatch: Colors.purple,
           ),
           onGenerateRoute: (settings) {
             switch (settings.name) {
               case '/':
-                return buildPageTransition(MainNavigationScreen(), settings);
-              case '/login':
                 return buildPageTransition(LoginPageScreen(), settings);
+              case '/main':
+                return buildPageTransition(MainNavigationScreen(), settings);
               case '/event':
                 return buildPageTransition(EventPageScreen(), settings);
               case '/club':
@@ -98,6 +135,12 @@ class _MainAppPageState extends State<MainAppPage>
                     ChangePasswordSettingsPageScreen(), settings);
               case '/profile_page':
                 return buildPageTransition(ProfilePageScreen(), settings);
+              case '/club_events':
+                return buildPageTransition(ClubEventsPageScreen(), settings);
+              case '/club_moments':
+                return buildPageTransition(ClubMomentsPageScreen(), settings);
+              case '/club_reviews':
+                return buildPageTransition(ClubReviewsPageScreen(), settings);
               default:
                 return null;
             }
@@ -137,7 +180,7 @@ class _MainAppPageState extends State<MainAppPage>
         padding: EdgeInsets.all(10),
         child: Card(
           elevation: 7,
-          color: Colors.red,
+          color: backgroundColor,
           clipBehavior: Clip.antiAliasWithSaveLayer,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
@@ -167,8 +210,8 @@ class _MainAppPageState extends State<MainAppPage>
                                           backgroundColor: Colors.white,
                                           child: Center(
                                               child: Icon(
-                                            Icons.error,
-                                            color: Colors.red,
+                                            icon,
+                                            color: backgroundColor,
                                             size: 36,
                                           )),
                                         ))),
@@ -190,7 +233,7 @@ class _MainAppPageState extends State<MainAppPage>
                                                     padding: EdgeInsets.only(
                                                         left: 4, right: 3),
                                                     child: Text(
-                                                      "An error occured",
+                                                      dialogTitle,
                                                       textAlign:
                                                           TextAlign.start,
                                                       maxLines: 1,
@@ -222,7 +265,7 @@ class _MainAppPageState extends State<MainAppPage>
                                                                     left: 4,
                                                                     right: 1),
                                                             child: Text(
-                                                              "Please check your internet connection and try again.",
+                                                              dialogText,
                                                               textAlign:
                                                                   TextAlign
                                                                       .start,
@@ -269,7 +312,8 @@ class MainNavigationScreen extends StatelessWidget {
 class EventPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AppBackgroundPage(child: EventPage());
+    final Event event = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(child: EventPage(event));
   }
 }
 
@@ -278,6 +322,30 @@ class ClubPageScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final Club club = ModalRoute.of(context).settings.arguments;
     return AppBackgroundPage(child: ClubPage(club));
+  }
+}
+
+class ClubEventsPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final Club club = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(child: ClubEventsPage(club));
+  }
+}
+
+class ClubMomentsPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final Club club = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(child: ClubMomentsPage(club));
+  }
+}
+
+class ClubReviewsPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final Club club = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(child: ClubReviewsPage(club));
   }
 }
 
@@ -361,6 +429,7 @@ class ChangePasswordSettingsPageScreen extends StatelessWidget {
 class ProfilePageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AppBackgroundPage(child: ProfilePage());
+    final SocialPerson socialPerson = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(child: ProfilePage(socialPerson));
   }
 }

@@ -1,18 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:groovenation_flutter/models/social_comment.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class PostCommentItem extends StatefulWidget {
+  final SocialComment socialComment;
+  PostCommentItem(this.socialComment);
+
   @override
-  _PostCommentItemState createState() => _PostCommentItemState();
+  _PostCommentItemState createState() => _PostCommentItemState(socialComment);
 }
 
 class _PostCommentItemState extends State<PostCommentItem> {
   bool currentMaxLines = false;
+  final SocialComment socialComment;
+  _PostCommentItemState(this.socialComment);
 
   @override
   void initState() {
     super.initState();
     currentMaxLines = false;
+  }
+
+  _openSocialPerson(SocialPerson person) {
+    Navigator.pushNamed(context, '/profile_page', arguments: person);
+  }
+
+  _likeComment() {
+    //TODO Like Comment
   }
 
   @override
@@ -36,10 +52,10 @@ class _PostCommentItemState extends State<PostCommentItem> {
                       child: CircleAvatar(
                         backgroundColor: Colors.purple.withOpacity(0.5),
                         backgroundImage: OptimizedCacheImageProvider(
-                            'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
+                            socialComment.person.personProfilePicURL),
                         child: FlatButton(
                             onPressed: () {
-                              print("object");
+                              _openSocialPerson(socialComment.person);
                             },
                             child: Container()),
                       ))),
@@ -62,12 +78,11 @@ class _PostCommentItemState extends State<PostCommentItem> {
                                     fontFamily: 'LatoLight'),
                                 children: <TextSpan>[
                                   new TextSpan(
-                                      text: 'professor_mnm967',
+                                      text: socialComment.person.personUsername,
                                       style: new TextStyle(
                                           fontFamily: 'LatoBlack')),
                                   new TextSpan(
-                                      text:
-                                          '\tHello World. The quick brown fox jumped over the lazy dog.'),
+                                      text: '\t${socialComment.comment}'),
                                 ],
                               ),
                             )),
@@ -75,7 +90,9 @@ class _PostCommentItemState extends State<PostCommentItem> {
                             padding:
                                 EdgeInsets.only(left: 16, right: 8, top: 3),
                             child: Text(
-                              "6 Hours Ago · 23 likes",
+                              socialComment.likesAmount == 1
+                                  ? "${timeago.format(socialComment.postTime)} · ${socialComment.likesAmount} like"
+                                  : "${timeago.format(socialComment.postTime)} · ${socialComment.likesAmount} likes",
                               style: new TextStyle(
                                   color: Colors.white.withOpacity(0.4),
                                   fontSize: 14,
@@ -87,12 +104,14 @@ class _PostCommentItemState extends State<PostCommentItem> {
               IconButton(
                   padding: EdgeInsets.zero,
                   icon: Icon(
-                    Icons.favorite_border,
+                    socialComment.hasUserLiked
+                        ? Icons.favorite
+                        : Icons.favorite_border,
                     color: Colors.white,
                   ),
                   iconSize: 20,
                   onPressed: () {
-                    print("yolo");
+                    _likeComment();
                   })
             ]));
   }

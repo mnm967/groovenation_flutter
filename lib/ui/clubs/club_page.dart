@@ -3,10 +3,20 @@ import 'dart:ui';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/cubit/club_reviews_cubit.dart';
+import 'package:groovenation_flutter/cubit/clubs_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
 import 'package:groovenation_flutter/models/club.dart';
+import 'package:groovenation_flutter/models/club_review.dart';
+import 'package:groovenation_flutter/models/event.dart';
+import 'package:groovenation_flutter/models/social_post.dart';
+import 'package:groovenation_flutter/ui/social/social_item_dialog.dart';
+import 'package:intl/intl.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ClubPage extends StatefulWidget {
   final Club club;
@@ -22,11 +32,15 @@ class _ClubPageState extends State<ClubPage> {
   Club club;
   _ClubPageState({this.club});
 
+  void _launchURL(String url) async =>
+      await canLaunch(url) ? await launch(url) : throw 'Could not launch $url';
+
   @override
   void initState() {
     super.initState();
-    
-    print("Found Screene : " + club.name+ club.clubID);
+
+    if (club.userReview != null) _currentUserRating = club.userReview.rating.toDouble();
+    if (club.userReview != null) _currentUserReview = club.userReview.review;
   }
 
   @override
@@ -35,6 +49,12 @@ class _ClubPageState extends State<ClubPage> {
         .copyWith(systemNavigationBarColor: Colors.deepPurple);
 
     SystemChrome.setSystemUIOverlayStyle(myTheme);
+
+    final FavouritesClubsCubit favouritesClubsCubit =
+        BlocProvider.of<FavouritesClubsCubit>(context);
+
+    if (club.userReview != null)
+      print("urev: " + club.userReview.rating.toString());
 
     return Stack(
       children: [
@@ -45,14 +65,27 @@ class _ClubPageState extends State<ClubPage> {
             physics: const BouncingScrollPhysics(
                 parent: AlwaysScrollableScrollPhysics()),
             slivers: [
-              SliverPersistentHeader(
-                delegate: MySliverAppBar(
-                  expandedHeight: 392.0,
-                  statusBarHeight: MediaQuery.of(context).padding.top,
-                ),
-                floating: false,
-                pinned: true,
-              ),
+              BlocBuilder<FavouritesClubsCubit, ClubsState>(
+                  builder: (context, favouriteEventsState) {
+                bool clubIsFav =
+                    favouritesClubsCubit.checkClubExists(club.clubID);
+
+                return SliverPersistentHeader(
+                  delegate: MySliverAppBar(
+                      expandedHeight: 392.0,
+                      statusBarHeight: MediaQuery.of(context).padding.top,
+                      imageUrl: club.images[0],
+                      isClubLiked: clubIsFav,
+                      onFavButtonClick: () {
+                        if (favouritesClubsCubit.checkClubExists(club.clubID)) {
+                          favouritesClubsCubit.removeClub(club);
+                        } else
+                          favouritesClubsCubit.addClub(club);
+                      }),
+                  floating: false,
+                  pinned: true,
+                );
+              }),
               SliverToBoxAdapter(
                   child: Padding(
                       padding: EdgeInsets.only(top: 8, left: 16, right: 16),
@@ -62,14 +95,14 @@ class _ClubPageState extends State<ClubPage> {
                           Padding(
                               padding: EdgeInsets.zero,
                               child: Text(
-                                "Jive Lounge",
+                                club.name,
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 36,
                                     fontFamily: 'LatoBold'),
                               )),
                           RatingBar(
-                            initialRating: 3.4,
+                            initialRating: club.averageRating.toDouble(),
                             direction: Axis.horizontal,
                             allowHalfRating: true,
                             itemCount: 5,
@@ -82,115 +115,116 @@ class _ClubPageState extends State<ClubPage> {
                             itemSize: 24,
                             onRatingUpdate: (rating) {},
                           ),
-                          // Padding(
-                          //     padding: EdgeInsets.only(top: 8),
-                          //     child: Text(
-                          //       "www.jivelounge.co.za",
-                          //       style: TextStyle(
-                          //           color:
-                          //               Colors.white.withOpacity(0.5),
-                          //           fontSize: 24,
-                          //           fontFamily: 'Lato'),
-                          //     )),
-                          // Padding(
-                          //     padding: EdgeInsets.only(top: 8),
-                          //     child: Text(
-                          //       "+27 65 800 9321",
-                          //       style: TextStyle(
-                          //           color:
-                          //               Colors.white.withOpacity(0.5),
-                          //           fontSize: 24,
-                          //           fontFamily: 'Lato'),
-                          //     )),
                           Padding(
                             padding: EdgeInsets.only(top: 16),
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.globeAfrica,
-                                        color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.facebookF,
-                                        color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.twitter,
-                                        color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
-                                Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: RawMaterialButton(
-                                      onPressed: () {},
-                                      constraints: BoxConstraints.expand(
-                                          width: 72, height: 72),
-                                      elevation: 0,
-                                      child: Center(
-                                          child: Icon(
-                                        FontAwesomeIcons.instagram,
-                                        color: Colors.white,
-                                        size: 24.0,
-                                      )),
-                                      padding: EdgeInsets.all(16.0),
-                                      shape: CircleBorder(
-                                          side: BorderSide(
-                                              width: 1, color: Colors.white)),
-                                    )),
+                                Visibility(
+                                    visible: club.webLink != null,
+                                    child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: RawMaterialButton(
+                                          onPressed: () {
+                                            _launchURL(club.webLink);
+                                          },
+                                          constraints: BoxConstraints.expand(
+                                              width: 72, height: 72),
+                                          elevation: 0,
+                                          child: Center(
+                                              child: Icon(
+                                            FontAwesomeIcons.globeAfrica,
+                                            color: Colors.white,
+                                            size: 24.0,
+                                          )),
+                                          padding: EdgeInsets.all(16.0),
+                                          shape: CircleBorder(
+                                              side: BorderSide(
+                                                  width: 1,
+                                                  color: Colors.white)),
+                                        ))),
+                                Visibility(
+                                    visible: club.facebookLink != null,
+                                    child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: RawMaterialButton(
+                                          onPressed: () {
+                                            _launchURL(club.facebookLink);
+                                          },
+                                          constraints: BoxConstraints.expand(
+                                              width: 72, height: 72),
+                                          elevation: 0,
+                                          child: Center(
+                                              child: Icon(
+                                            FontAwesomeIcons.facebookF,
+                                            color: Colors.white,
+                                            size: 24.0,
+                                          )),
+                                          padding: EdgeInsets.all(16.0),
+                                          shape: CircleBorder(
+                                              side: BorderSide(
+                                                  width: 1,
+                                                  color: Colors.white)),
+                                        ))),
+                                Visibility(
+                                    visible: club.twitterLink != null,
+                                    child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: RawMaterialButton(
+                                          onPressed: () {
+                                            _launchURL(club.twitterLink);
+                                          },
+                                          constraints: BoxConstraints.expand(
+                                              width: 72, height: 72),
+                                          elevation: 0,
+                                          child: Center(
+                                              child: Icon(
+                                            FontAwesomeIcons.twitter,
+                                            color: Colors.white,
+                                            size: 24.0,
+                                          )),
+                                          padding: EdgeInsets.all(16.0),
+                                          shape: CircleBorder(
+                                              side: BorderSide(
+                                                  width: 1,
+                                                  color: Colors.white)),
+                                        ))),
+                                Visibility(
+                                    visible: club.instagramLink != null,
+                                    child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: RawMaterialButton(
+                                          onPressed: () {
+                                            _launchURL(club.instagramLink);
+                                          },
+                                          constraints: BoxConstraints.expand(
+                                              width: 72, height: 72),
+                                          elevation: 0,
+                                          child: Center(
+                                              child: Icon(
+                                            FontAwesomeIcons.instagram,
+                                            color: Colors.white,
+                                            size: 24.0,
+                                          )),
+                                          padding: EdgeInsets.all(16.0),
+                                          shape: CircleBorder(
+                                              side: BorderSide(
+                                                  width: 1,
+                                                  color: Colors.white)),
+                                        ))),
                               ],
                             ),
                           ),
-                          cardView(FontAwesomeIcons.mapMarkerAlt,
-                              "417 5th Avenue, Apartment 10B, 10016"),
-                          cardView(FontAwesomeIcons.mobile, "+27 65 800 9321"),
-                          cardView(FontAwesomeIcons.globeAfrica,
-                              "www.jivelounge.co.za"),
+                          cardView(FontAwesomeIcons.mapMarkerAlt, club.address),
+                          cardView(FontAwesomeIcons.mobile, club.phoneNumber),
+                          club.webLink != null
+                              ? cardView(
+                                  FontAwesomeIcons.globeAfrica, club.webLink)
+                              : null,
                           eventsCardView(),
                           imagesCardView(),
-                          momentsCardView(),
+                          //momentsCardView(),
                           reviewsCardView(),
                           Padding(
                               padding: EdgeInsets.only(bottom: 36),
@@ -233,30 +267,72 @@ class _ClubPageState extends State<ClubPage> {
                         ),
                       ],
                     ),
+                    Visibility(
+                        visible: club.upcomingEvents.length == 0,
+                        child: Padding(
+                            padding: EdgeInsets.only(top: 16, bottom: 32),
+                            child: Center(
+                              child: Text(
+                                "Nothing to See Yet",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.25),
+                                    fontSize: 18,
+                                    fontFamily: 'Lato'),
+                              ),
+                            ))),
                     ListView.builder(
                         padding: EdgeInsets.zero,
                         physics: NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
-                        itemCount: 4,
+                        itemCount: club.upcomingEvents.length,
                         itemBuilder: (context, index) {
-                          return miniEventItem();
+                          return miniEventItem(club.upcomingEvents[index]);
                         }),
-                    FlatButton(
-                        padding: EdgeInsets.all(24),
-                        onPressed: () {},
-                        child: Center(
-                          child: Text(
-                            "View More",
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 18,
-                                fontFamily: 'Lato'),
-                          ),
-                        ))
+                    Visibility(
+                        visible: club.upcomingEvents.length != 0,
+                        child: FlatButton(
+                            padding: EdgeInsets.all(24),
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/club_events',
+                                  arguments: club);
+                            },
+                            child: Center(
+                              child: Text(
+                                "View More",
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 18,
+                                    fontFamily: 'Lato'),
+                              ),
+                            )))
                   ],
                 )),
           ),
         ));
+  }
+
+  _showSocialDialog(BuildContext context, SocialPost socialPost) {
+    showGeneralDialog(
+      barrierLabel: "Barrier",
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.7),
+      transitionDuration: Duration(milliseconds: 500),
+      context: context,
+      pageBuilder: (con, __, ___) {
+        return SafeArea(
+          child: SocialItemDialog(socialPost),
+        );
+      },
+      transitionBuilder: (_, anim, __, child) {
+        return SlideTransition(
+          position: Tween(begin: Offset(0, 1), end: Offset(0, 0))
+              .animate(CurvedAnimation(parent: anim, curve: Curves.elasticOut)),
+          child: child,
+        );
+      },
+    );
   }
 
   Widget momentsCardView() {
@@ -288,52 +364,64 @@ class _ClubPageState extends State<ClubPage> {
                         ),
                       ],
                     ),
-                    Card(
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15)),
-                        elevation: 0,
-                        color: Colors.transparent,
-                        child: GridView.count(
-                          physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          padding: EdgeInsets.zero,
-                          crossAxisCount: 2,
-                          children: List.generate(6, (index) {
-                            if (index.isOdd) {
-                              return Ink.image(
-                                image: OptimizedCacheImageProvider(
-                                  'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-                                ),
-                                fit: BoxFit.cover,
-                                child: InkWell(
-                                  onTap: () {},
-                                ),
-                              );
-                            }
-                            return Ink.image(
-                              image: OptimizedCacheImageProvider(
-                                'https://images.pexels.com/photos/2240771/pexels-photo-2240771.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+                    Visibility(
+                        visible: club.reviews.length == 0,
+                        child: Padding(
+                            padding: EdgeInsets.only(top: 16, bottom: 32),
+                            child: Center(
+                              child: Text(
+                                "Nothing to See Yet",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.25),
+                                    fontSize: 18,
+                                    fontFamily: 'Lato'),
                               ),
-                              fit: BoxFit.cover,
-                              child: InkWell(
-                                onTap: () {},
+                            ))),
+                    Visibility(
+                        visible: club.reviews.length != 0,
+                        child: Card(
+                            clipBehavior: Clip.antiAliasWithSaveLayer,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15)),
+                            elevation: 0,
+                            color: Colors.transparent,
+                            child: GridView.count(
+                              physics: NeverScrollableScrollPhysics(),
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              crossAxisCount: 2,
+                              children:
+                                  List.generate(club.moments.length, (index) {
+                                return Ink.image(
+                                  image: OptimizedCacheImageProvider(
+                                      club.moments[index].mediaURL),
+                                  fit: BoxFit.cover,
+                                  child: InkWell(
+                                    onTap: _showSocialDialog(
+                                        context, club.moments[index]),
+                                  ),
+                                );
+                              }),
+                            ))),
+                    Visibility(
+                        visible: club.reviews.length != 0,
+                        child: FlatButton(
+                            padding: EdgeInsets.all(24),
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/club_moments',
+                                  arguments: club);
+                            },
+                            child: Center(
+                              child: Text(
+                                "View More",
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 18,
+                                    fontFamily: 'Lato'),
                               ),
-                            );
-                          }),
-                        )),
-                    FlatButton(
-                        padding: EdgeInsets.all(24),
-                        onPressed: () {},
-                        child: Center(
-                          child: Text(
-                            "View More",
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.7),
-                                fontSize: 18,
-                                fontFamily: 'Lato'),
-                          ),
-                        ))
+                            )))
                   ],
                 )),
           ),
@@ -369,19 +457,37 @@ class _ClubPageState extends State<ClubPage> {
                         ),
                       ],
                     ),
+                    Visibility(
+                        visible: club.reviews.length == 0,
+                        child: Padding(
+                            padding: EdgeInsets.only(top: 16, bottom: 32),
+                            child: Center(
+                              child: Text(
+                                "Nothing to See Yet",
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.25),
+                                    fontSize: 18,
+                                    fontFamily: 'Lato'),
+                              ),
+                            ))),
                     ListView.builder(
                         padding: EdgeInsets.zero,
                         physics: NeverScrollableScrollPhysics(),
                         shrinkWrap: true,
-                        itemCount: 4,
+                        itemCount: club.reviews.length,
                         itemBuilder: (context, index) {
-                          return ReviewItem();
+                          return ReviewItem(club.reviews[index]);
                         }),
                     Visibility(
-                        visible: true,
+                        visible: club.reviews.length != 0,
                         child: FlatButton(
                             padding: EdgeInsets.all(24),
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.pushNamed(context, '/club_reviews',
+                                  arguments: club);
+                            },
                             child: Center(
                               child: Text(
                                 "View More",
@@ -430,24 +536,13 @@ class _ClubPageState extends State<ClubPage> {
                               Duration(milliseconds: 800),
                           autoPlayCurve: Curves.fastOutSlowIn,
                           disableCenter: true),
-                      items: [1, 2, 3, 4, 5].map((i) {
+                      items: club.images.map((i) {
                         return Builder(
                           builder: (BuildContext context) {
-                            if (i.isEven) {
-                              return Container(
-                                  decoration: BoxDecoration(
-                                image: DecorationImage(
-                                  image: OptimizedCacheImageProvider(
-                                      'https://images.pexels.com/photos/2747446/pexels-photo-2747446.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ));
-                            }
                             return Container(
                                 decoration: BoxDecoration(
                               image: DecorationImage(
-                                  image: OptimizedCacheImageProvider(
-                                      'https://images.pexels.com/photos/2034851/pexels-photo-2034851.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260'),
+                                  image: OptimizedCacheImageProvider(i),
                                   fit: BoxFit.cover),
                             ));
                           },
@@ -456,7 +551,18 @@ class _ClubPageState extends State<ClubPage> {
             )));
   }
 
+  double _currentUserRating = 0.0;
+  String _currentUserReview = "";
+  TextEditingController _reviewInputController = TextEditingController();
+
   Widget userReviewCardView() {
+    _reviewInputController.value = TextEditingValue(
+      text: _currentUserReview,
+      selection: TextSelection.fromPosition(
+        TextPosition(offset: _currentUserReview.length),
+      ),
+    );
+
     return Padding(
         padding: EdgeInsets.only(top: 16),
         child: Container(
@@ -486,6 +592,7 @@ class _ClubPageState extends State<ClubPage> {
                       ],
                     ),
                     RatingBar(
+                      initialRating: _currentUserRating,
                       direction: Axis.horizontal,
                       allowHalfRating: true,
                       itemCount: 5,
@@ -497,17 +604,120 @@ class _ClubPageState extends State<ClubPage> {
                       unratedColor: Colors.white,
                       itemSize: 64,
                       onRatingUpdate: (rating) {
-                        print(rating);
+                        setState(() {
+                          _currentUserRating = rating;
+                        });
+
+                        final NearbyClubsCubit nearbyClubsCubit =
+                            BlocProvider.of<NearbyClubsCubit>(context);
+                        final TopClubsCubit topClubsCubit =
+                            BlocProvider.of<TopClubsCubit>(context);
+                        final FavouritesClubsCubit favouriteClubsCubit =
+                            BlocProvider.of<FavouritesClubsCubit>(context);
+
+                        if (_reviewInputController.text.isNotEmpty &&
+                            _currentUserRating > 0) {
+                          num newClubRating = club.averageRating;
+
+                          if (club.userReview != null) {
+                            num tave = club.averageRating * club.totalReviews;
+                            tave = tave - club.userReview.rating;
+                            tave = tave + rating;
+                            newClubRating = tave / club.totalReviews;
+                          } else {
+                            num tave = club.averageRating * club.totalReviews;
+                            setState(() {
+                              club.totalReviews++;
+                            });
+                            tave = tave + rating;
+                            newClubRating = tave / (club.totalReviews);
+                          }
+
+                          setState(() {
+                            club.averageRating = newClubRating.toDouble();
+                            if (club.userReview != null)
+                              club.userReview.rating = rating;
+                          });
+
+                          final AddClubReviewCubit addClubReviewCubit =
+                              BlocProvider.of<AddClubReviewCubit>(context);
+
+                          addClubReviewCubit.addReview(club.clubID,
+                              _currentUserRating, _reviewInputController.text);
+
+                          if (club.userReview != null) {
+                            nearbyClubsCubit.updateUserReviewClub(club);
+                            topClubsCubit.updateUserReviewClub(club);
+                            favouriteClubsCubit.updateUserReviewClub(club);
+                          }
+                        }
                       },
                     ),
                     Padding(
                         padding: EdgeInsets.all(16),
                         child: TextField(
+                          controller: _reviewInputController,
                           maxLength: 1000,
                           maxLengthEnforced: true,
                           keyboardType: TextInputType.multiline,
                           maxLines: null,
                           cursorColor: Colors.white.withOpacity(0.7),
+                          onChanged: (text) {
+                            setState(() {
+                              _currentUserReview = text;
+                            });
+
+                            final NearbyClubsCubit nearbyClubsCubit =
+                                BlocProvider.of<NearbyClubsCubit>(context);
+                            final TopClubsCubit topClubsCubit =
+                                BlocProvider.of<TopClubsCubit>(context);
+                            final FavouritesClubsCubit favouriteClubsCubit =
+                                BlocProvider.of<FavouritesClubsCubit>(context);
+
+                            if (text.isNotEmpty && _currentUserRating > 0) {
+                              num newClubRating = club.averageRating;
+
+                              if (club.userReview != null &&
+                                  _currentUserRating !=
+                                      club.userReview.rating) {
+                                num tave =
+                                    club.averageRating * club.totalReviews;
+                                tave = tave - club.userReview.rating;
+                                tave = tave + _currentUserRating;
+                                newClubRating = tave / club.totalReviews;
+                              } else {
+                                num tave =
+                                    club.averageRating * club.totalReviews;
+                                setState(() {
+                                  club.totalReviews++;
+                                });
+                                tave = tave + _currentUserRating;
+                                newClubRating = tave / (club.totalReviews);
+                              }
+
+                              setState(() {
+                                club.averageRating = newClubRating.toDouble();
+                              });
+
+                              final AddClubReviewCubit addClubReviewCubit =
+                                  BlocProvider.of<AddClubReviewCubit>(context);
+
+                              addClubReviewCubit.addReview(
+                                  club.clubID, _currentUserRating, text);
+
+                              setState(() {
+                                if (club.userReview != null)
+                                  club.userReview.review = text;
+                                else
+                                  club.userReview = ClubReview(
+                                      null, _currentUserRating, text);
+                              });
+
+                              nearbyClubsCubit.updateUserReviewClub(club);
+                              topClubsCubit.updateUserReviewClub(club);
+                              favouriteClubsCubit.updateUserReviewClub(club);
+                            }
+                          },
                           style: TextStyle(
                               fontFamily: 'Lato',
                               color: Colors.white.withOpacity(0.7),
@@ -515,7 +725,7 @@ class _ClubPageState extends State<ClubPage> {
                           decoration: InputDecoration(
                             hintMaxLines: 3,
                             hintText:
-                                "Your review will be submitted once you type something",
+                                "Your review will be submitted once you choose a rating & type something",
                             border: OutlineInputBorder(
                                 borderRadius: const BorderRadius.all(
                                   const Radius.circular(10.0),
@@ -530,9 +740,11 @@ class _ClubPageState extends State<ClubPage> {
         ));
   }
 
-  Widget miniEventItem() {
+  Widget miniEventItem(Event event) {
     return FlatButton(
-        onPressed: () {},
+        onPressed: () {
+          Navigator.pushNamed(context, '/event', arguments: event);
+        },
         padding: EdgeInsets.only(top: 16, bottom: 16),
         child: Row(
           mainAxisSize: MainAxisSize.max,
@@ -549,14 +761,14 @@ class _ClubPageState extends State<ClubPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            "Feb",
+                            DateFormat.MMM().format(event.eventStartDate),
                             style: TextStyle(
                               fontFamily: 'LatoBold',
                               fontSize: 18,
                             ),
                           ),
                           Text(
-                            "21",
+                            DateFormat.d().format(event.eventStartDate),
                             style: TextStyle(
                               fontFamily: 'LatoBold',
                               fontSize: 18,
@@ -573,7 +785,7 @@ class _ClubPageState extends State<ClubPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Helix After Party",
+                    event.title,
                     textAlign: TextAlign.start,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -585,7 +797,7 @@ class _ClubPageState extends State<ClubPage> {
                   Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: Text(
-                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                        event.description,
                         textAlign: TextAlign.start,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -641,11 +853,17 @@ class _ClubPageState extends State<ClubPage> {
 }
 
 class ReviewItem extends StatefulWidget {
+  final ClubReview review;
+  ReviewItem(this.review);
+
   @override
-  _ReviewItemState createState() => _ReviewItemState();
+  _ReviewItemState createState() => _ReviewItemState(review);
 }
 
 class _ReviewItemState extends State<ReviewItem> {
+  final ClubReview review;
+  _ReviewItemState(this.review);
+
   bool currentMaxLines = false;
 
   @override
@@ -673,7 +891,7 @@ class _ReviewItemState extends State<ReviewItem> {
               child: CircleAvatar(
                 backgroundColor: Colors.purple.withOpacity(0.5),
                 backgroundImage: OptimizedCacheImageProvider(
-                    'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
+                    review.person.personProfilePicURL),
                 child: FlatButton(onPressed: () {}, child: Container()),
               )),
           Expanded(
@@ -684,7 +902,7 @@ class _ReviewItemState extends State<ReviewItem> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "professor_mnm967",
+                  review.person.personUsername,
                   textAlign: TextAlign.start,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -694,7 +912,7 @@ class _ReviewItemState extends State<ReviewItem> {
                       color: Colors.white),
                 ),
                 RatingBar(
-                  initialRating: 3.4,
+                  initialRating: review.rating,
                   direction: Axis.horizontal,
                   allowHalfRating: true,
                   itemCount: 5,
@@ -710,7 +928,7 @@ class _ReviewItemState extends State<ReviewItem> {
                 Padding(
                     padding: EdgeInsets.only(top: 6),
                     child: Text(
-                      "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+                      review.review,
                       textAlign: TextAlign.start,
                       maxLines: currentMaxLines ? 10000 : 3,
                       overflow: TextOverflow.ellipsis,
@@ -731,10 +949,16 @@ class _ReviewItemState extends State<ReviewItem> {
 class MySliverAppBar extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
   final double statusBarHeight;
+  final String imageUrl;
+  final Function onFavButtonClick;
+  final bool isClubLiked;
 
   MySliverAppBar({
     @required this.expandedHeight,
     @required this.statusBarHeight,
+    @required this.imageUrl,
+    @required this.onFavButtonClick,
+    @required this.isClubLiked,
   });
 
   @override
@@ -751,7 +975,7 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                 children: [
                   Positioned.fill(
                       child: OptimizedCacheImage(
-                    imageUrl: "https://images.pexels.com/photos/4784/alcohol-bar-party-cocktail.jpg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+                    imageUrl: imageUrl,
                     fit: BoxFit.cover,
                   )),
                   Positioned.fill(
@@ -834,9 +1058,12 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                                                     BorderRadius.circular(9)),
                                             child: FlatButton(
                                               padding: EdgeInsets.zero,
-                                              onPressed: () {},
+                                              onPressed: () =>
+                                                  onFavButtonClick(),
                                               child: Icon(
-                                                Icons.star_border,
+                                                isClubLiked
+                                                    ? Icons.star_outlined
+                                                    : Icons.star_border,
                                                 color: Colors.white,
                                                 size: 28,
                                               ),
@@ -859,7 +1086,7 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                                                 borderRadius:
                                                     BorderRadius.circular(900)),
                                             child: FlatButton(
-                                              padding: EdgeInsets.zero,
+                                              padding: EdgeInsets.only(left: 8),
                                               onPressed: () {
                                                 Navigator.pop(context);
                                               },

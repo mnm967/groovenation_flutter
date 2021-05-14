@@ -5,9 +5,10 @@ class SocialPerson {
   final String personCoverPicURL;
   final bool isUserFollowing;
   final bool hasUserBlocked;
+  final bool personBlockedUser;
 
   SocialPerson(this.personID, this.personUsername, this.personProfilePicURL,
-      this.personCoverPicURL, this.isUserFollowing, this.hasUserBlocked);
+      this.personCoverPicURL, this.isUserFollowing, this.hasUserBlocked, this.personBlockedUser);
 
   factory SocialPerson.fromJson(dynamic json) {
     return SocialPerson(
@@ -17,6 +18,7 @@ class SocialPerson {
       json['personCoverPicURL'],
       json['isUserFollowing'],
       json['hasUserBlocked'],
+      json['personBlockedUser'],
     );
   }
 
@@ -27,5 +29,6 @@ class SocialPerson {
         "personCoverPicURL": personCoverPicURL,
         "isUserFollowing": isUserFollowing,
         "hasUserBlocked": hasUserBlocked,
+        "personBlockedUser": personBlockedUser,
       };
 }

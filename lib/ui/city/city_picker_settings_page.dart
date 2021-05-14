@@ -2,7 +2,9 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
 
 class CityPickerSettingsPage extends StatefulWidget {
   @override
@@ -10,7 +12,6 @@ class CityPickerSettingsPage extends StatefulWidget {
 }
 
 class _CityPickerSettingsPageState extends State<CityPickerSettingsPage> {
-
   Column topAppBar() => Column(children: [
         Padding(
           padding: EdgeInsets.only(top: 16, left: 16, right: 16),
@@ -65,7 +66,7 @@ class _CityPickerSettingsPageState extends State<CityPickerSettingsPage> {
                 padding: EdgeInsets.only(top: 16),
                 child: Column(
                   children: [
-Row(
+                    Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Padding(
@@ -77,7 +78,7 @@ Row(
                                   color: Colors.deepPurple,
                                   borderRadius: BorderRadius.circular(900)),
                               child: FlatButton(
-                                padding: EdgeInsets.zero,
+                                padding: EdgeInsets.only(left: 8),
                                 onPressed: () {
                                   Navigator.pop(context);
                                 },
@@ -99,10 +100,12 @@ Row(
                             )),
                       ],
                     ),
-                    Visibility(visible: false, child : Padding(
-                      padding: EdgeInsets.only(top: 16),
-                      child: topAppBar(),
-                    )),
+                    Visibility(
+                        visible: false,
+                        child: Padding(
+                          padding: EdgeInsets.only(top: 16),
+                          child: topAppBar(),
+                        )),
                     ListView(
                       padding: EdgeInsets.only(top: 16),
                       physics: NeverScrollableScrollPhysics(),
@@ -111,7 +114,8 @@ Row(
                         Padding(
                             padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
                             child: Align(
-                              child: cityItem(context),
+                              child: cityItem(context, "Johannesburg",
+                                  "https://media.threatpost.com/wp-content/uploads/sites/103/2019/10/30083110/johannesburg-e1572438686227.jpg"),
                               alignment: Alignment.topCenter,
                             )),
                       ],
@@ -122,7 +126,13 @@ Row(
     ));
   }
 
-  Widget cityItem(BuildContext context) {
+  String _selectedCity = sharedPrefs.userCity;
+  _saveSelectedCity(BuildContext c) {
+    sharedPrefs.userCity = _selectedCity;
+    Navigator.pop(c);
+  }
+
+  Widget cityItem(BuildContext context, String name, String imageUrl) {
     return Padding(
         padding: EdgeInsets.symmetric(vertical: 6),
         child: Card(
@@ -133,7 +143,8 @@ Row(
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: FlatButton(
               onPressed: () {
-                
+                _selectedCity = CITY_JOHANNESBURG;
+                _saveSelectedCity(context);
               },
               padding: EdgeInsets.zero,
               child: Wrap(children: [
@@ -156,8 +167,9 @@ Row(
                                         child: CircleAvatar(
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
-                                          backgroundImage: NetworkImage(
-                                              'https://media.threatpost.com/wp-content/uploads/sites/103/2019/10/30083110/johannesburg-e1572438686227.jpg'),
+                                          backgroundImage:
+                                              OptimizedCacheImageProvider(
+                                                  imageUrl),
                                         ))),
                                 Expanded(
                                     child: Padding(
@@ -177,7 +189,7 @@ Row(
                                                     padding: EdgeInsets.only(
                                                         left: 4, right: 3),
                                                     child: Text(
-                                                      "Johannesburg",
+                                                      name,
                                                       textAlign:
                                                           TextAlign.start,
                                                       maxLines: 1,

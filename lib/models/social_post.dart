@@ -1,6 +1,7 @@
 import 'package:groovenation_flutter/models/social_person.dart';
 
 class SocialPost {
+  final String postID; 
   final SocialPerson person;
   final String clubID; //Nullable
   final String clubName; //Nullable
@@ -11,11 +12,12 @@ class SocialPost {
   final int postType;
   final String mediaURL;
 
-  SocialPost(this.person, this.clubID, this.clubName, this.likesAmount,
+  SocialPost(this.postID, this.person, this.clubID, this.clubName, this.likesAmount,
       this.caption, this.hasUserLiked, this.postType, this.mediaURL);
 
   factory SocialPost.fromJson(dynamic json) {
     return SocialPost(
+      json['postID'],
       SocialPerson.fromJson(json['person']),
       json['clubID'],
       json['clubName'],
@@ -28,6 +30,7 @@ class SocialPost {
   }
 
   Map toJson() => {
+        "postID": postID,
         "person": person.toJson(),
         "clubID": clubID,
         "clubName": clubName,

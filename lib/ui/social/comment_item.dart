@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 
 class CommentItem extends StatefulWidget {
+  final SocialPerson socialPerson;
+  final String comment;
+
+  CommentItem(this.socialPerson, this.comment);
+
   @override
-  _CommentItemState createState() => _CommentItemState();
+  _CommentItemState createState() => _CommentItemState(socialPerson, comment);
 }
 
 class _CommentItemState extends State<CommentItem> {
   bool currentMaxLines = false;
+  final SocialPerson socialPerson;
+  final String comment;
+
+  _CommentItemState(this.socialPerson, this.comment);
 
   @override
   void initState() {
@@ -35,11 +45,10 @@ class _CommentItemState extends State<CommentItem> {
                     color: Colors.white, fontSize: 16, fontFamily: 'LatoLight'),
                 children: <TextSpan>[
                   new TextSpan(
-                      text: 'professor_mnm967',
+                      text: socialPerson.personUsername,
                       style: new TextStyle(fontFamily: 'LatoBlack')),
                   new TextSpan(
-                      text:
-                          '\tLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.'),
+                      text:'\t$comment'),
                 ],
               ),
             )),
