@@ -102,6 +102,9 @@ class _ChangePasswordSettingsPageState
               case Error.NETWORK_ERROR:
                 _showAlertDialog(BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT);
                 break;
+              case Error.INCORRECT_OLD_PASSWORD:
+                _showAlertDialog(BASIC_ERROR_TITLE, INCORRECT_OLD_PASSWORD_ERROR_PROMPT);
+                break;
               default:
                 _showAlertDialog(BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT);
                 break;
@@ -131,7 +134,7 @@ class _ChangePasswordSettingsPageState
                                       color: Colors.deepPurple,
                                       borderRadius: BorderRadius.circular(900)),
                                   child: FlatButton(
-                                    padding: EdgeInsets.zero,
+                                    padding: EdgeInsets.only(left: 8),
                                     onPressed: () {
                                       Navigator.pop(context);
                                     },
@@ -148,7 +151,7 @@ class _ChangePasswordSettingsPageState
                                   "Change Password",
                                   style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 36,
+                                      fontSize: 30,
                                       fontFamily: 'LatoBold'),
                                 )),
                           ],
@@ -267,7 +270,7 @@ class _ChangePasswordSettingsPageState
                                         BorderRadius.all(Radius.circular(10.0)),
                                   ),
                                   child: FlatButton(
-                                    onPressed: _saveNewPassword(),
+                                    onPressed: () => _saveNewPassword(),
                                     child: Container(
                                         height: 64,
                                         child: Align(

@@ -15,6 +15,7 @@ import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_item_dialog.dart';
 import 'package:intl/intl.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -39,7 +40,8 @@ class _ClubPageState extends State<ClubPage> {
   void initState() {
     super.initState();
 
-    if (club.userReview != null) _currentUserRating = club.userReview.rating.toDouble();
+    if (club.userReview != null)
+      _currentUserRating = club.userReview.rating.toDouble();
     if (club.userReview != null) _currentUserReview = club.userReview.review;
   }
 
@@ -81,7 +83,9 @@ class _ClubPageState extends State<ClubPage> {
                           favouritesClubsCubit.removeClub(club);
                         } else
                           favouritesClubsCubit.addClub(club);
-                      }),
+                      },
+                      latitude: club.latitude,
+                      longitude: club.longitude),
                   floating: false,
                   pinned: true,
                 );
@@ -221,7 +225,7 @@ class _ClubPageState extends State<ClubPage> {
                           club.webLink != null
                               ? cardView(
                                   FontAwesomeIcons.globeAfrica, club.webLink)
-                              : null,
+                              : Padding(padding: EdgeInsets.zero),
                           eventsCardView(),
                           imagesCardView(),
                           //momentsCardView(),
@@ -874,6 +878,7 @@ class _ReviewItemState extends State<ReviewItem> {
 
   @override
   Widget build(BuildContext context) {
+    print(review);
     return FlatButton(
       onPressed: () {
         setState(() {
@@ -912,7 +917,7 @@ class _ReviewItemState extends State<ReviewItem> {
                       color: Colors.white),
                 ),
                 RatingBar(
-                  initialRating: review.rating,
+                  initialRating: review.rating.toDouble(),
                   direction: Axis.horizontal,
                   allowHalfRating: true,
                   itemCount: 5,
@@ -952,6 +957,8 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
   final String imageUrl;
   final Function onFavButtonClick;
   final bool isClubLiked;
+  final double latitude;
+  final double longitude;
 
   MySliverAppBar({
     @required this.expandedHeight,
@@ -959,6 +966,8 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
     @required this.imageUrl,
     @required this.onFavButtonClick,
     @required this.isClubLiked,
+    @required this.latitude,
+    @required this.longitude,
   });
 
   @override
@@ -1008,7 +1017,9 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                             child: Container(
                                 child: FlatButton(
                                     padding: EdgeInsets.zero,
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      MapsLauncher.launchCoordinates(latitude, longitude);
+                                    },
                                     child: Center(
                                       child: Icon(
                                         FontAwesomeIcons.mapMarkedAlt,

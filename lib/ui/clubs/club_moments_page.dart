@@ -148,8 +148,8 @@ class _ClubMomentsPageState extends State<ClubMomentsPage> {
                       controller: _momentRefreshController,
                       header: WaterDropMaterialHeader(),
                       footer: _classicFooter,
-                      onLoading: _onLoading(),
-                      onRefresh: _onRefresh(),
+                      onLoading: () => _onLoading(),
+                      onRefresh: () => _onRefresh(),
                       enablePullDown: true,
                       enablePullUp: true,
                       child: BlocConsumer<ClubMomentsCubit, SocialState>(

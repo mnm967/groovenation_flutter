@@ -121,6 +121,7 @@ class _SearchPageState extends State<SearchPage>
                 color: Colors.white.withOpacity(0.2)),
             child: TextField(
               controller: searchTextController,
+              textInputAction: TextInputAction.go,
               keyboardType: TextInputType.multiline,
               autofocus: true,
               cursorColor: Colors.white.withOpacity(0.7),

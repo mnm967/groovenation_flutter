@@ -1,3 +1,4 @@
+import 'package:crypt/crypt.dart';
 import 'package:dio/dio.dart';
 import 'package:groovenation_flutter/constants/error.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
@@ -107,11 +108,15 @@ class SocialRepository {
         "email": email,
         "profile_image": newProfileImagePath != null
             ? await MultipartFile.fromFile(newProfileImagePath,
-                filename: randomAlphaNumeric(15) + DateTime.now().millisecondsSinceEpoch.toString() + p.extension(newProfileImagePath))
+                filename: randomAlphaNumeric(15) +
+                    DateTime.now().millisecondsSinceEpoch.toString() +
+                    p.extension(newProfileImagePath))
             : null,
         "cover_image": newCoverImagePath != null
             ? await MultipartFile.fromFile(newCoverImagePath,
-                filename: randomAlphaNumeric(15) + DateTime.now().millisecondsSinceEpoch.toString() + p.extension(newCoverImagePath))
+                filename: randomAlphaNumeric(15) +
+                    DateTime.now().millisecondsSinceEpoch.toString() +
+                    p.extension(newCoverImagePath))
             : null,
       });
 
@@ -145,19 +150,26 @@ class SocialRepository {
 
   Future<bool> changeUserPassword(
       String userId, String oldPassword, String newPassword) async {
+    final c1 =
+        Crypt.sha256(oldPassword, rounds: 10000, salt: PASSWORD_SHA_SALT);
+    final c2 =
+        Crypt.sha256(newPassword, rounds: 10000, salt: PASSWORD_SHA_SALT);
+
     try {
-      Response response = await Dio()
-          .post("$API_HOST/social/profile/password/change", data: {
+      Response response =
+          await Dio().post("$API_HOST/social/profile/password/change", data: {
         "userId": userId,
-        "oldPassword": oldPassword,
-        "newPassword": newPassword
-      });
+        "oldPassword": c1.hash,
+        "newPassword": c2.hash,
+      }, options: Options(contentType: Headers.formUrlEncodedContentType));
 
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;
 
         if (jsonResponse['status'] == 1) {
           return jsonResponse['is_success'];
+        } else if (jsonResponse['status'] == -2) {
+          throw SocialException(Error.INCORRECT_OLD_PASSWORD);
         } else
           throw SocialException(Error.UNKNOWN_ERROR);
       } else
@@ -227,8 +239,14 @@ class SocialRepository {
     } catch (e) {
       if (e is SocialException)
         throw SocialException(e.error);
-      else
-        throw SocialException(Error.NETWORK_ERROR);
+      else {
+        if (e is DioError) if (e.type == DioErrorType.CANCEL) {
+          throw e;
+        } else
+          throw SocialException(Error.NETWORK_ERROR);
+        else
+          throw SocialException(Error.NETWORK_ERROR);
+      }
     }
   }
 }

@@ -189,7 +189,7 @@ class _ClubEventsPageState extends State<ClubEventsPage> {
                                   }
                                 }
                               }, builder: (context, state) {
-                                if (state is EventsLoadingState) {
+                                if (state is EventsLoadingState && _page == 0) {
                                   return Padding(
                                       padding: EdgeInsets.only(top: 64),
                                       child: Center(

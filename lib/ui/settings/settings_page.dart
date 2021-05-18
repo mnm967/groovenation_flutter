@@ -279,7 +279,7 @@ class _SettingsPageState extends State<SettingsPage> {
   _logUserOut() {
     final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
     authCubit.logout();
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => true);
+    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
   }
 
   Widget logoutItem(BuildContext context) {

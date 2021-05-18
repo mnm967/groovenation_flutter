@@ -114,8 +114,11 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushReplacementNamed(context, '/signup');
   }
 
-  Future<void> _showAlertDialog(String title, String desc) async {
-    await _hideLoadingDialog();
+  Future<void> _showAlertDialog(BuildContext context, String title, String desc) async {
+    try{
+      await _hideLoadingDialog();
+    }catch(e){}
+    
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -166,14 +169,14 @@ class _LoginPageState extends State<LoginPage> {
           authCubit.loginFacebook(email, name, facebookId);
           break;
         case FacebookLoginStatus.error:
-          _showAlertDialog("Something Went Wrong", UNKNOWN_ERROR_PROMPT);
+          _showAlertDialog(context, "Something Went Wrong", UNKNOWN_ERROR_PROMPT);
           break;
         default:
           break;
       }
     } catch (e) {
       _hideLoadingDialog();
-      _showAlertDialog("Something Went Wrong", UNKNOWN_ERROR_PROMPT);
+      _showAlertDialog(context, "Something Went Wrong", UNKNOWN_ERROR_PROMPT);
     }
   }
 
@@ -198,7 +201,8 @@ class _LoginPageState extends State<LoginPage> {
       final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
       authCubit.loginGoogle(email, name, googleId);
     } catch (e) {
-      _showAlertDialog("Something Went Wrong", UNKNOWN_ERROR_PROMPT);
+      print(e);
+      _showAlertDialog(context, "Something Went Wrong", UNKNOWN_ERROR_PROMPT);
     }
   }
 
@@ -216,8 +220,7 @@ class _LoginPageState extends State<LoginPage> {
             if (sharedPrefs.userCity == null)
               Navigator.pushReplacementNamed(context, '/city_picker');
             else if (sharedPrefs.username == null)
-              Navigator.pushReplacementNamed(
-                  context, '/create_username'); //TODO Create Username Page
+              Navigator.pushReplacementNamed(context, '/create_username');
             else
               Navigator.pushReplacementNamed(context, '/main');
           } else if (state is AuthLoginErrorState) {
@@ -229,7 +232,7 @@ class _LoginPageState extends State<LoginPage> {
               default:
                 desc = UNKNOWN_ERROR_PROMPT;
             }
-            _showAlertDialog("Something Went Wrong", desc);
+            _showAlertDialog(context, "Something Went Wrong", desc);
           }
         },
         child: SafeArea(

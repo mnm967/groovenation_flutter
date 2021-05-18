@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:groovenation_flutter/constants/error.dart';
 import 'package:groovenation_flutter/cubit/auth_cubit.dart';
 import 'package:groovenation_flutter/cubit/change_password_cubit.dart';
 import 'package:groovenation_flutter/cubit/club_reviews_cubit.dart';
@@ -20,20 +21,34 @@ import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //SharedPreferences.setMockInitialValues({});
   await sharedPrefs.init();
   HydratedCubit.storage = await HydratedStorage.build();
   await locationUtil.init();
-  runApp(MyApp());
+  
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = 'https://f834be9ae7964ee3a96fc777800c9bcf@o405222.ingest.sentry.io/5772349';
+    },
+    appRunner: () => runApp(MyApp()),
+  );
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    try {
+      throw ClubException(Error.NETWORK_ERROR);
+    } catch (exception, stackTrace) {
+      Sentry.captureException(
+        exception,
+        stackTrace: stackTrace,
+      );
+    }
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => NearbyClubsCubit(ClubsRepository())),
@@ -60,13 +75,8 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => TicketPurchaseCubit(TicketsRepository())),
         BlocProvider(create: (context) => UserCubit(SocialRepository())),
       ],
-      child: MaterialApp(
-        title: 'GrooveNation',
-        theme: ThemeData(
-          primarySwatch: Colors.purple,
-        ),
-        home: MainAppPage(),
-      ),
+      child: Directionality(textDirection: TextDirection.ltr,child: MainAppPage()),
+      
     );
   }
 }

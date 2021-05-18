@@ -50,6 +50,18 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
+  void createUsername(String username) async {
+    emit(AuthCreateUsernameLoadingState());
+    try {
+      bool isSuccess = await authRepository.createUsername(username);
+      if(isSuccess) sharedPrefs.username = username;
+
+      emit(AuthCreateUsernameSuccessState());
+    } on AuthSignUpException catch (e) {
+      emit(AuthCreateUsernameErrorState(e.errorType));
+    }
+  }
+
   void loginGoogle(String email, String name, String googleId) async {
     emit(AuthLoginLoadingState());
     try {

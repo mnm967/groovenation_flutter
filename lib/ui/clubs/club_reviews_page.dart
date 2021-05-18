@@ -123,7 +123,7 @@ class _ClubReviewsPageState extends State<ClubReviewsPage> {
                                 color: Colors.deepPurple,
                                 borderRadius: BorderRadius.circular(900)),
                             child: FlatButton(
-                              padding: EdgeInsets.zero,
+                              padding: EdgeInsets.only(left: 8),
                               onPressed: () {
                                 Navigator.pop(context);
                               },
@@ -150,8 +150,8 @@ class _ClubReviewsPageState extends State<ClubReviewsPage> {
                       controller: _reviewsRefreshController,
                       header: WaterDropMaterialHeader(),
                       footer: _classicFooter,
-                      onLoading: _onLoading(),
-                      onRefresh: _onRefresh(),
+                      onLoading: () => _onLoading(),
+                      onRefresh: () => _onRefresh(),
                       enablePullDown: true,
                       enablePullUp: true,
                       child: BlocConsumer<ClubReviewsCubit, ClubReviewsState>(
@@ -181,7 +181,7 @@ class _ClubReviewsPageState extends State<ClubReviewsPage> {
                           }
                         }
                       }, builder: (context, state) {
-                        if (state is ClubReviewsLoadingState) {
+                        if (state is ClubReviewsLoadingState && _page == 0) {
                           return Padding(
                               padding: EdgeInsets.only(top: 64),
                               child: Center(
@@ -222,7 +222,7 @@ class _ClubReviewsPageState extends State<ClubReviewsPage> {
                                                 borderRadius: BorderRadius.all(
                                                     Radius.circular(12.0))),
                                             child: Padding(
-                                              padding: EdgeInsets.all(4),
+                                              padding: EdgeInsets.fromLTRB(16, 4, 16, 4),
                                               child: ReviewItem(
                                                   clubReviews[index]),
                                             ))),

@@ -1,3 +1,5 @@
+const String PASSWORD_SHA_SALT = "irn65940wjv.rogm5iuh8402n434";
+
 const String PREF_USER_ID_KEY = "PREF_USER_ID_KEY";
 const String PREF_USERNAME_KEY = "PREF_USERNAME_KEY";
 const String PREF_EMAIL_KEY = "PREF_EMAIL_KEY";
@@ -35,3 +37,5 @@ const String UNKNOWN_ERROR_PROMPT =
     "An unknown error occured. Please check your connection and try again.";
 const String NEW_PASSWORDS_ERROR_PROMPT =
     "Your new passwords do not match. Please check them again.";
+const String INCORRECT_OLD_PASSWORD_ERROR_PROMPT =
+    "Your old password is incorrect. Please try agiain.";

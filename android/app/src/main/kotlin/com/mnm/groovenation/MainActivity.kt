@@ -1,4 +1,4 @@
-package com.example.groovenation_flutter
+package com.mnm.groovenation
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterFragmentActivity;

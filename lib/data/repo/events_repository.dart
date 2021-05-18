@@ -154,8 +154,14 @@ class EventsRepository {
     } catch (e) {
       if (e is EventException)
         throw EventException(e.error);
-      else
-        throw EventException(Error.NETWORK_ERROR);
+      else {
+        if (e is DioError) if (e.type == DioErrorType.CANCEL) {
+          throw e;
+        } else
+          throw EventException(Error.NETWORK_ERROR);
+        else
+          throw EventException(Error.NETWORK_ERROR);
+      }
     }
   }
 }

@@ -1,21 +1,20 @@
 import 'dart:io';
 
+import 'package:crypt/crypt.dart';
 import 'package:dio/dio.dart';
 import 'package:groovenation_flutter/constants/auth_error_types.dart';
 import 'package:groovenation_flutter/constants/error.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/auth_user.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 
 class AuthRepository {
-  Future<AuthUser> loginUser(String username, String password) async {
-    // FormData formData = new FormData.fromMap({
-    //   "email": username,
-    //   "password": password,
-    // });
+  Future<AuthUser> loginUser(String email, String password) async {
+    final c1 = Crypt.sha256(password, rounds: 10000, salt: PASSWORD_SHA_SALT);
 
     Map<String, String> json = {
-      "email": username,
-      "password": password,
+      "email": email,
+      "password": c1.hash,
     };
 
     return authenticateUserLogin("$API_HOST/users/login/email", json);
@@ -23,12 +22,6 @@ class AuthRepository {
 
   Future<AuthUser> loginFacebook(
       String email, String name, String facebookId) async {
-    // FormData formData = new FormData.fromMap({
-    //   "email": email,
-    //   "name": name,
-    //   "facebookId": facebookId,
-    // });
-
     Map<String, String> json = {
       "email": email,
       "name": name,
@@ -40,12 +33,6 @@ class AuthRepository {
 
   Future<AuthUser> loginGoogle(
       String email, String name, String googleId) async {
-    // FormData formData = new FormData.fromMap({
-    //   "email": email,
-    //   "name": name,
-    //   "googleId": googleId,
-    // });
-
     Map<String, String> json = {
       "email": email,
       "name": name,
@@ -57,24 +44,38 @@ class AuthRepository {
 
   Future<AuthUser> signup(String email, String firstName, String lastName,
       String username, String password, DateTime dateOfBirth) async {
+    final c1 = Crypt.sha256(password, rounds: 10000, salt: PASSWORD_SHA_SALT);
+
     Map<String, dynamic> json = {
       "email": email,
       "firstName": firstName,
       "lastName": lastName,
       "username": username,
-      "password": password,
+      "password": c1.hash,
       "dateOfBirth": dateOfBirth.millisecondsSinceEpoch,
     };
 
     return authenticateUserSignup("$API_HOST/users/create/email", json);
   }
 
+  CancelToken _checkCancelToken;
   Future<bool> checkUsernameExists(String username) async {
+    if (_checkCancelToken != null) {
+      try {
+        _checkCancelToken.cancel();
+        _checkCancelToken = null;
+      } catch (e) {}
+    }
+
+    _checkCancelToken = CancelToken();
+
     try {
-      Response response =
-          await Dio().post("$API_HOST/users/check/username", data: {
-        "username": username,
-      }, options: Options(contentType: Headers.formUrlEncodedContentType));
+      Response response = await Dio().post("$API_HOST/users/check/username",
+          data: {
+            "username": username,
+          },
+          options: Options(contentType: Headers.formUrlEncodedContentType),
+          cancelToken: _checkCancelToken);
 
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;
@@ -92,8 +93,14 @@ class AuthRepository {
     } catch (e) {
       if (e is AuthException)
         throw AuthException(e.error);
-      else
-        throw AuthException(Error.NETWORK_ERROR);
+      else {
+        if (e is DioError) 
+        if (e.type == DioErrorType.CANCEL) {
+        } else
+          throw AuthException(Error.NETWORK_ERROR);
+        else
+          throw AuthException(Error.NETWORK_ERROR);
+      }
     }
   }
 
@@ -145,6 +152,33 @@ class AuthRepository {
                 AuthSignUpErrorType.USERNAME_EXISTS_ERROR);
           else
             return AuthUser.fromJson(jsonResponse['result']);
+        } else
+          throw AuthSignUpException(AuthSignUpErrorType.UNKNOWN_ERROR);
+      } else
+        throw AuthSignUpException(AuthSignUpErrorType.UNKNOWN_ERROR);
+    } catch (e) {
+      if (e is AuthSignUpException)
+        throw AuthSignUpException(e.errorType);
+      else
+        throw AuthSignUpException(AuthSignUpErrorType.UNKNOWN_ERROR);
+    }
+  }
+
+  Future<bool> createUsername(String username) async {
+    try {
+      Response response = await Dio().post("$API_HOST/users/create/username",
+          data: {'userId': sharedPrefs.userId, 'username': username},
+          options: Options(contentType: Headers.formUrlEncodedContentType));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = response.data;
+
+        if (jsonResponse['status'] == 1) {
+          if (jsonResponse['result'] == USERNAME_EXISTS)
+            throw AuthSignUpException(
+                AuthSignUpErrorType.USERNAME_EXISTS_ERROR);
+          else
+            return jsonResponse['result'];
         } else
           throw AuthSignUpException(AuthSignUpErrorType.UNKNOWN_ERROR);
       } else

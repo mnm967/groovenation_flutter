@@ -39,7 +39,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
                 sharedPrefs.userCity = selectedCity;
                 if (sharedPrefs.username != null)
                   //Navigator.pushReplacementNamed(context, '/main');
-                  Navigator.push(
+                  Navigator.pushReplacement(
                       context,
                       new MaterialPageRoute(
                           builder: (context) => new MainNavigationScreen()));

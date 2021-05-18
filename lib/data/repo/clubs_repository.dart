@@ -146,8 +146,12 @@ class ClubsRepository {
     List<ClubReview> clubReviews = [];
 
     try {
-      Response response = await Dio()
-          .get("$API_HOST/clubs/reviews/" + clubId + "/"+uid+"/" + page.toString());
+      Response response = await Dio().get("$API_HOST/clubs/reviews/" +
+          clubId +
+          "/" +
+          uid +
+          "/" +
+          page.toString());
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;
 
@@ -203,7 +207,7 @@ class ClubsRepository {
         throw ClubException(Error.NETWORK_ERROR);
     }
   }
-  
+
   CancelToken _searchCancelToken;
   Future<APIResult> searchClubs(String searchTerm, int page) async {
     List<Club> clubs = [];
@@ -226,7 +230,7 @@ class ClubsRepository {
             'user_city': sharedPrefs.userCity
           },
           cancelToken: _searchCancelToken);
-          
+
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;
 
@@ -249,16 +253,23 @@ class ClubsRepository {
       print(e);
       if (e is ClubException)
         throw ClubException(e.error);
-      else
-        throw ClubException(Error.NETWORK_ERROR);
+      else {
+        if (e is DioError) if (e.type == DioErrorType.CANCEL) {
+          throw e;
+        } else
+          throw ClubException(Error.NETWORK_ERROR);
+        else
+          throw ClubException(Error.NETWORK_ERROR);
+      }
     }
   }
-  
+
   Future<Club> getClub(String clubId) async {
     String uid = sharedPrefs.userId.toString();
 
     try {
-      Response response = await Dio().get("$API_HOST/clubs/club/"+clubId+"/"+uid);
+      Response response =
+          await Dio().get("$API_HOST/clubs/club/" + clubId + "/" + uid);
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;
 

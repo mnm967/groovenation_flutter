@@ -78,7 +78,8 @@ class _EventPageState extends State<EventPage> {
     };
   }
 
-  _openClubPage(Club club) {
+  _openClubPage(Club club) async {
+    await _hideLoadingDialog();
     Navigator.pushNamed(context, '/club', arguments: club);
   }
 
@@ -153,7 +154,6 @@ class _EventPageState extends State<EventPage> {
           body: BlocListener<EventPageClubCubit, ClubsState>(
               listener: (BuildContext context, state) {
                 if (state is ClubLoadedState) {
-                  _hideLoadingDialog();
                   Club club = state.club;
 
                   _openClubPage(club);

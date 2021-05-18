@@ -20,6 +20,7 @@ import 'package:groovenation_flutter/ui/settings/change_password_settings_page.d
 import 'package:groovenation_flutter/ui/settings/notification_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/profile_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/settings_page.dart';
+import 'package:groovenation_flutter/ui/sign_up/create_username.dart';
 import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
 import 'package:groovenation_flutter/ui/social/following_page.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
@@ -94,8 +95,11 @@ class MainAppPageState extends State<MainAppPage>
 
     return Stack(
       children: [
-        MaterialApp(
-          initialRoute: sharedPrefs.userId == null ? '/' : '/main',
+        MaterialApp(  
+          title: 'GrooveNation',
+          initialRoute: sharedPrefs.userId == null ? '/' : 
+            ((sharedPrefs.userCity == null ? '/city_picker' : 
+            (sharedPrefs.username == null ? '/create_username' : '/main'))),
           theme: ThemeData(
             primarySwatch: Colors.purple,
           ),
@@ -141,6 +145,8 @@ class MainAppPageState extends State<MainAppPage>
                 return buildPageTransition(ClubMomentsPageScreen(), settings);
               case '/club_reviews':
                 return buildPageTransition(ClubReviewsPageScreen(), settings);
+              case '/create_username':
+                return buildPageTransition(CreateUsernamePageScreen(), settings);
               default:
                 return null;
             }
@@ -157,12 +163,13 @@ class MainAppPageState extends State<MainAppPage>
         ),
         Visibility(
           visible: true,
+          child: MediaQuery( data: MediaQueryData(),
           child: SafeArea(
               child: SlideTransition(
             position: position,
-            child: alertItem(context),
+            child: Padding(padding: EdgeInsets.only(top: 16), child: alertItem(context)),
           )),
-        ),
+        )),
       ],
     );
   }
@@ -367,6 +374,13 @@ class SignUpPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBackgroundPage(child: SignUpPage());
+  }
+}
+
+class CreateUsernamePageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return AppBackgroundPage(child: CreateUsernamePage());
   }
 }
 

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "318973813922",
+    "project_id": "groovenation-bd339",
+    "storage_bucket": "groovenation-bd339.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:318973813922:android:cf4f1a730c6563a76ae3fb",
+        "android_client_info": {
+          "package_name": "com.mnm.groovenation"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "318973813922-s5fjbrqg0h3d0lt7epihv3jr7b0nnkla.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mnm.groovenation",
+            "certificate_hash": "0f9a6b3170fc7d5dd246d2ad2282e10efaf1debf"
+          }
+        },
+        {
+          "client_id": "318973813922-bl40rklus8a59u0arhli902seq0vpvn2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVC1u3ElJH8qB3vRO9xXCBh6-TNbcnTYM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "318973813922-bl40rklus8a59u0arhli902seq0vpvn2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

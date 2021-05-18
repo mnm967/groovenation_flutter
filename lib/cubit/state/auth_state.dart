@@ -28,6 +28,25 @@ class AuthLoginErrorState extends AuthState {
   List<Object> get props => [error];
 }
 
+class AuthCreateUsernameLoadingState extends AuthState {
+  @override
+  List<Object> get props => [];
+}
+
+class AuthCreateUsernameSuccessState extends AuthState {
+  @override
+  List<Object> get props => [];
+}
+
+class AuthCreateUsernameErrorState extends AuthState {
+  AuthCreateUsernameErrorState(this.error);
+
+  final AuthSignUpErrorType error;
+
+  @override
+  List<Object> get props => [error];
+}
+
 class AuthSignupLoadingState extends AuthState {
   @override
   List<Object> get props => [];
