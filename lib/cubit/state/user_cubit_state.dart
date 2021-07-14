@@ -35,3 +35,30 @@ class UserFollowingErrorState extends UserState {
   @override
   List<Object> get props => [error];
 }
+
+class SocialUsersSearchLoadingState extends UserState {
+  @override
+  List<Object> get props => [];
+}
+
+class SocialUsersSearchLoadedState extends UserState {
+  final List<SocialPerson> socialPeople;
+  final bool hasReachedMax;
+
+  SocialUsersSearchLoadedState({
+    this.socialPeople,
+    this.hasReachedMax,
+  });
+
+  @override
+  List<Object> get props => [socialPeople, hasReachedMax];
+}
+
+class SocialUsersSearchErrorState extends UserState {
+  SocialUsersSearchErrorState(this.error);
+
+  final Error error;
+
+  @override
+  List<Object> get props => [error];
+}

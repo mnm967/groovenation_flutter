@@ -21,13 +21,15 @@ import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await sharedPrefs.init();
-  HydratedCubit.storage = await HydratedStorage.build();
+  HydratedBloc.storage = await HydratedStorage.build(
+    storageDirectory: await getTemporaryDirectory(),
+  );
   await locationUtil.init();
   
   await SentryFlutter.init(
@@ -41,14 +43,6 @@ void main() async {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    try {
-      throw ClubException(Error.NETWORK_ERROR);
-    } catch (exception, stackTrace) {
-      Sentry.captureException(
-        exception,
-        stackTrace: stackTrace,
-      );
-    }
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => NearbyClubsCubit(ClubsRepository())),
@@ -66,6 +60,10 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => TrendingSocialCubit(SocialRepository())),
         BlocProvider(create: (context) => SocialCommentsCubit(SocialRepository())),
         BlocProvider(create: (context) => UserSocialCubit(SocialRepository())),
+        BlocProvider(create: (context) => SocialPostCubit(SocialRepository())),
+        BlocProvider(create: (context) => SearchUsersCubit(SocialRepository())),
+        BlocProvider(create: (context) => ClubMomentsCubit(SocialRepository())),
+        BlocProvider(create: (context) => SocialCommentsLikeCubit(SocialRepository())),
         BlocProvider(create: (context) => ChangePasswordCubit(SocialRepository())),
         BlocProvider(create: (context) => ClubReviewsCubit(ClubsRepository())),
         BlocProvider(create: (context) => AddClubReviewCubit(ClubsRepository())),
@@ -76,7 +74,6 @@ class MyApp extends StatelessWidget {
         BlocProvider(create: (context) => UserCubit(SocialRepository())),
       ],
       child: Directionality(textDirection: TextDirection.ltr,child: MainAppPage()),
-      
     );
   }
 }

@@ -10,8 +10,8 @@ import 'package:groovenation_flutter/cubit/state/events_state.dart';
 import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:intl/intl.dart';
-import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
-import 'package:optimized_cached_image/widgets.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class EventsHomePage extends StatefulWidget {
@@ -274,8 +274,8 @@ class _EventsHomePageState extends State<EventsHomePage> {
                 BlocProvider.of<UpcomingEventsCubit>(context);
 
             setState(() {
-                upcomingPage++;
-              });
+              upcomingPage++;
+            });
 
             upcomingEventsCubit.getEvents(upcomingPage);
           },
@@ -370,8 +370,7 @@ class _EventsHomePageState extends State<EventsHomePage> {
                                         BlocProvider.of<FavouritesEventsCubit>(
                                             context);
                                     if (isFavourite) {
-                                      favouritesEventsCubit
-                                          .removeEvent(event);
+                                      favouritesEventsCubit.removeEvent(event);
                                     } else
                                       favouritesEventsCubit.addEvent(event);
                                   },

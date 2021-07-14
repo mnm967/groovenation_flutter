@@ -35,24 +35,23 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     if (pickedFile == null) return;
 
     File croppedFile = await ImageCropper.cropImage(
-        sourcePath: pickedFile.path,
-        aspectRatioPresets: [
-          CropAspectRatioPreset.square,
-        ],
-        androidUiSettings: AndroidUiSettings(
-            toolbarTitle: 'Edit Image',
-            toolbarColor: Colors.deepPurple,
-            toolbarWidgetColor: Colors.white,
-            initAspectRatio: CropAspectRatioPreset.original,
-            lockAspectRatio: true),
-        iosUiSettings: IOSUiSettings(
-          minimumAspectRatio: 1.0,
-        ));
-    
+      sourcePath: pickedFile.path,
+      aspectRatioPresets: [
+        CropAspectRatioPreset.square,
+      ],
+      androidUiSettings: AndroidUiSettings(
+          toolbarTitle: 'Edit Image',
+          toolbarColor: Colors.deepPurple,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.original,
+          lockAspectRatio: true),
+      iosUiSettings: IOSUiSettings(
+        minimumAspectRatio: 1.0,
+      ));
+
     setState(() {
       newProfileImagePath = croppedFile.path;
     });
-    
   }
 
   Future<void> _chooseCoverImage() async {

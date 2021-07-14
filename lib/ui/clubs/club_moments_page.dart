@@ -209,6 +209,7 @@ class _ClubMomentsPageState extends State<ClubMomentsPage> {
                                   padding: EdgeInsets.fromLTRB(12, 16, 12, 0),
                                   child: Align(
                                     child: SocialItem(
+                                      key: Key(clubSocial[index].postID),
                                         socialPost: clubSocial[index],
                                         showClose: false),
                                     alignment: Alignment.topCenter,

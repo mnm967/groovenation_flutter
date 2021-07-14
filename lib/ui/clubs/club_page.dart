@@ -105,7 +105,7 @@ class _ClubPageState extends State<ClubPage> {
                                     fontSize: 36,
                                     fontFamily: 'LatoBold'),
                               )),
-                          RatingBar(
+                          RatingBar.builder(
                             initialRating: club.averageRating.toDouble(),
                             direction: Axis.horizontal,
                             allowHalfRating: true,
@@ -595,7 +595,7 @@ class _ClubPageState extends State<ClubPage> {
                         ),
                       ],
                     ),
-                    RatingBar(
+                    RatingBar.builder(
                       initialRating: _currentUserRating,
                       direction: Axis.horizontal,
                       allowHalfRating: true,
@@ -878,7 +878,6 @@ class _ReviewItemState extends State<ReviewItem> {
 
   @override
   Widget build(BuildContext context) {
-    print(review);
     return FlatButton(
       onPressed: () {
         setState(() {
@@ -916,7 +915,7 @@ class _ReviewItemState extends State<ReviewItem> {
                       fontSize: 20,
                       color: Colors.white),
                 ),
-                RatingBar(
+                RatingBar.builder(
                   initialRating: review.rating.toDouble(),
                   direction: Axis.horizontal,
                   allowHalfRating: true,
@@ -983,10 +982,10 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                 overflow: Overflow.visible,
                 children: [
                   Positioned.fill(
-                      child: OptimizedCacheImage(
-                    imageUrl: imageUrl,
-                    fit: BoxFit.cover,
-                  )),
+                      child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                )),
                   Positioned.fill(
                     child: Container(
                       color: Colors.black.withOpacity(0.2),
@@ -1126,5 +1125,5 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
   double get minExtent => statusBarHeight;
 
   @override
-  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) => true;
+  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) => false;
 }

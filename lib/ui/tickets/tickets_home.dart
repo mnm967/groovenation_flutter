@@ -14,7 +14,7 @@ import 'package:groovenation_flutter/models/ticket.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:intl/intl.dart';
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:qr_flutter/qr_flutter.dart';

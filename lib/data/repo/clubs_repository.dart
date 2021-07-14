@@ -254,7 +254,7 @@ class ClubsRepository {
       if (e is ClubException)
         throw ClubException(e.error);
       else {
-        if (e is DioError) if (e.type == DioErrorType.CANCEL) {
+        if (e is DioError) if (e.type == DioErrorType.cancel) {
           throw e;
         } else
           throw ClubException(Error.NETWORK_ERROR);

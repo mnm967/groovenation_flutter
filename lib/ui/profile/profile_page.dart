@@ -3,8 +3,12 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/cubit/social_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/social_state.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
+import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_grid_item.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
@@ -47,6 +51,11 @@ class _ProfilePageState extends State<ProfilePage> {
         }
       }
     });
+
+    final ProfileSocialCubit socialCubit =
+        BlocProvider.of<ProfileSocialCubit>(context);
+
+    socialCubit.getSocialPosts(0, socialPerson);
   }
 
   @override
@@ -57,15 +66,25 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  _changeUserBlocked(){
+  _changeUserBlocked() {
     //TODO Block/Unblock User
   }
-  _changeUserFollowingStatus(){
-    //TODO Follow/Unfollow
+
+  _changeUserFollowingStatus() {
+    final ProfileSocialCubit profileSocialCubit =
+        BlocProvider.of<ProfileSocialCubit>(context);
+
+    socialPerson.isUserFollowing = !socialPerson.isUserFollowing;
+    profileSocialCubit.updateUserFollowing(context, socialPerson);
+
+    setState(() {});
   }
-  _openMessages(){
+
+  _openMessages() {
     //TODO Open Messages
   }
+
+  List<SocialPost> posts = [];
 
   Stack topAppBar() => Stack(children: [
         Row(mainAxisSize: MainAxisSize.max, children: [
@@ -149,8 +168,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                                         child: FlatButton(
                                                           padding:
                                                               EdgeInsets.zero,
-                                                          onPressed:
-                                                              _openMessages(),
+                                                          onPressed: () {
+                                                            _openMessages();
+                                                          },
                                                           child: Text(
                                                             "MESSAGE",
                                                             style: TextStyle(
@@ -185,8 +205,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                                         child: FlatButton(
                                                           padding:
                                                               EdgeInsets.zero,
-                                                          onPressed:
-                                                              _changeUserFollowingStatus(),
+                                                          onPressed: () {
+                                                            _changeUserFollowingStatus();
+                                                          },
                                                           child: Text(
                                                             socialPerson
                                                                     .isUserFollowing
@@ -198,9 +219,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                                                 color: socialPerson
                                                                         .isUserFollowing
                                                                     ? Colors
-                                                                        .white
+                                                                        .purple
                                                                     : Colors
-                                                                        .purple),
+                                                                        .white),
                                                           ),
                                                         )),
                                                   )
@@ -289,6 +310,8 @@ class _ProfilePageState extends State<ProfilePage> {
     return mainView(context);
   }
 
+  int listPage = 0;
+
   Widget mainView(BuildContext context) {
     return DefaultTabController(
         length: 2,
@@ -331,9 +354,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ],
                               ))),
                       flexibleSpace: Stack(children: [
+                        // Positioned.fill(
+                        //     child: OptimizedCacheImage(
+                        //   imageUrl: socialPerson.personCoverPicURL,
+                        //   fit: BoxFit.cover,
+                        // )),
                         Positioned.fill(
-                            child: OptimizedCacheImage(
-                          imageUrl: socialPerson.personCoverPicURL,
+                            child: Image.network(
+                          socialPerson.personCoverPicURL,
                           fit: BoxFit.cover,
                         )),
                         Positioned.fill(
@@ -352,18 +380,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 },
                 body: TabBarView(children: [
                   NotificationListener<ScrollNotification>(
-                    onNotification: (ScrollNotification scrollInfo) {
-                      if (scrollInfo.metrics.pixels >=
-                          (scrollInfo.metrics.maxScrollExtent - 256)) {
-                        if (_gridRefreshController.footerStatus ==
-                            LoadStatus.idle) {
-                          _gridRefreshController.requestLoading(
-                              needMove: false);
-                        }
+                      onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.pixels >=
+                        (scrollInfo.metrics.maxScrollExtent - 256)) {
+                      if (_gridRefreshController.footerStatus ==
+                          LoadStatus.idle) {
+                        _gridRefreshController.requestLoading(needMove: false);
                       }
-                      return false;
-                    },
-                    child: SmartRefresher(
+                    }
+                    return false;
+                  }, child: BlocBuilder<ProfileSocialCubit, SocialState>(
+                          builder: (context, socialState) {
+                    if (socialState is SocialLoadedState) {
+                      if (listPage == 0)
+                        posts = socialState.socialPosts;
+                      else
+                        posts.addAll(socialState.socialPosts);
+
+                      _gridRefreshController.refreshCompleted();
+                      if (socialState.hasReachedMax)
+                        _gridRefreshController.loadNoData();
+                    }
+                    return SmartRefresher(
                         controller: _gridRefreshController,
                         header: WaterDropMaterialHeader(),
                         footer: ClassicFooter(
@@ -375,14 +413,17 @@ class _ProfilePageState extends State<ProfilePage> {
                           failedText: "Something Went Wrong",
                         ),
                         onLoading: () {
-                          print("Started Loading");
-                          Future.delayed(const Duration(seconds: 5), () {
-                            // setState(() {
-                            //   upcomingCount = upcomingCount + 4;
-                            // });
-                            _listRefreshController.loadNoData();
-                            print("Finished Loading");
-                          });
+                          if (!(socialState is SocialLoadedState)) {
+                            _gridRefreshController.loadComplete();
+                            return;
+                          }
+
+                          final ProfileSocialCubit socialCubit =
+                              BlocProvider.of<ProfileSocialCubit>(context);
+
+                          socialCubit.getSocialPosts(
+                              listPage + 1, socialPerson);
+                          listPage = listPage + 1;
                         },
                         enablePullUp: true,
                         child: CustomScrollView(
@@ -396,67 +437,86 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                                 delegate: SliverChildBuilderDelegate(
                                   (BuildContext context, int index) {
-                                    return SocialGridItem();
+                                    return SocialGridItem(
+                                      key: Key(posts[index].postID + "-grid"),
+                                      socialPost: posts[index],
+                                    );
                                   },
-                                  childCount: 160,
+                                  childCount: posts.length,
                                 )),
                           ],
-                        )),
-                  ),
+                        ));
+                  })),
                   NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels >=
-                            (scrollInfo.metrics.maxScrollExtent - 756)) {
-                          if (_listRefreshController.footerStatus ==
-                              LoadStatus.idle) {
-                            _listRefreshController.requestLoading(
-                                needMove: false);
+                    if (scrollInfo.metrics.pixels >=
+                        (scrollInfo.metrics.maxScrollExtent - 756)) {
+                      if (_listRefreshController.footerStatus ==
+                          LoadStatus.idle) {
+                        _listRefreshController.requestLoading(needMove: false);
+                      }
+                    }
+                    return false;
+                  }, child: BlocBuilder<ProfileSocialCubit, SocialState>(
+                          builder: (context, socialState) {
+                    if (socialState is SocialLoadedState) {
+                      // if (listPage == 0)
+                      //   posts = socialState.socialPosts;
+                      // else
+                      //   posts.addAll(socialState.socialPosts);
+
+                      _listRefreshController.refreshCompleted();
+                      if (socialState.hasReachedMax)
+                        _listRefreshController.loadNoData();
+                    }
+
+                    return SmartRefresher(
+                        controller: _listRefreshController,
+                        header: WaterDropMaterialHeader(),
+                        footer: ClassicFooter(
+                          textStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 16,
+                              fontFamily: 'Lato'),
+                          noDataText: "You've reached the end of the line",
+                          failedText: "Something Went Wrong",
+                        ),
+                        onLoading: () {
+                          if (!(socialState is SocialLoadedState)) {
+                            _listRefreshController.loadComplete();
+                            return;
                           }
-                        }
-                        return false;
-                      },
-                      child: SmartRefresher(
-                          controller: _listRefreshController,
-                          header: WaterDropMaterialHeader(),
-                          footer: ClassicFooter(
-                            textStyle: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontSize: 16,
-                                fontFamily: 'Lato'),
-                            noDataText: "You've reached the end of the line",
-                            failedText: "Something Went Wrong",
-                          ),
-                          onLoading: () {
-                            print("Started Loading");
-                            Future.delayed(const Duration(seconds: 5), () {
-                              // setState(() {
-                              //   upcomingCount = upcomingCount + 4;
-                              // });
-                              _listRefreshController.loadNoData();
-                              print("Finished Loading");
-                            });
-                          },
-                          enablePullUp: true,
-                          child: CustomScrollView(
-                            physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
-                            slivers: [
-                              SliverPadding(
-                                padding: EdgeInsets.only(top: 24),
-                                sliver: SliverList(
-                                    delegate: SliverChildBuilderDelegate(
-                                  (BuildContext context, int index) {
-                                    return Padding(
-                                        padding:
-                                            EdgeInsets.fromLTRB(16, 0, 16, 16),
-                                        child: SocialItem(showClose: false));
-                                  },
-                                  childCount: 8,
-                                )),
-                              )
-                            ],
-                          ))),
-                ])),
+
+                          final ProfileSocialCubit socialCubit =
+                              BlocProvider.of<ProfileSocialCubit>(context);
+
+                          socialCubit.getSocialPosts(
+                              listPage + 1, socialPerson);
+                          listPage = listPage + 1;
+                        },
+                        enablePullUp: true,
+                        child: CustomScrollView(
+                          physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics()),
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.only(top: 24),
+                              sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                      (BuildContext context, int index) {
+                                return Padding(
+                                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                    child: SocialItem(
+                                        key: Key(posts[index].postID),
+                                        socialPost: posts[index],
+                                        showClose: false));
+                              }, childCount: posts.length)),
+                            )
+                          ],
+                        ));
+                  })),
+                ])
+                ),
           ),
           AnimatedOpacity(
               opacity: _scrollToTopVisible ? 1.0 : 0.0,

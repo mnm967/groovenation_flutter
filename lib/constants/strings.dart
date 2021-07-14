@@ -39,3 +39,11 @@ const String NEW_PASSWORDS_ERROR_PROMPT =
     "Your new passwords do not match. Please check them again.";
 const String INCORRECT_OLD_PASSWORD_ERROR_PROMPT =
     "Your old password is incorrect. Please try agiain.";
+
+const String SOCIAL_POST_SUCCESS_TITLE =
+    "Upload Successful";
+const String SOCIAL_POST_SUCCESS_DESC =
+    "Your post was uploaded successfully.";
+
+const String SOCIAL_POST_ERROR_TITLE =
+    "An Error Occurred";

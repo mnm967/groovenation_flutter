@@ -155,7 +155,7 @@ class EventsRepository {
       if (e is EventException)
         throw EventException(e.error);
       else {
-        if (e is DioError) if (e.type == DioErrorType.CANCEL) {
+        if (e is DioError) if (e.type == DioErrorType.cancel) {
           throw e;
         } else
           throw EventException(Error.NETWORK_ERROR);

@@ -21,16 +21,10 @@ class TicketPurchaseDialog extends StatefulWidget {
 
 class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
   var publicKey = 'pk_test_e0bc926082eeaa6e1bff2f37c1c785a129642f0c';
+  final plugin = PaystackPlugin();
 
   final Event event;
   _TicketPurchaseDialogState(this.event);
-
-  // _purchaseTicket() {
-  //   final TicketPurchaseCubit ticketPurchaseCubit =
-  //       BlocProvider.of<TicketPurchaseCubit>(context);
-  //   ticketPurchaseCubit.executePurchase(
-  //       event.eventID, selectedTicketType, selectedNoOfPeople);
-  // }
 
   String userPaymentReference;
 
@@ -44,7 +38,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
       ..reference = paymentReference
       ..email = sharedPrefs.email;
 
-    CheckoutResponse response = await PaystackPlugin.checkout(
+    CheckoutResponse response = await plugin.checkout(
       context,
       method: CheckoutMethod.card,
       charge: charge,
@@ -72,7 +66,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
         BlocProvider.of<TicketPurchaseCubit>(context);
     ticketPurchaseCubit.getTicketPrices(event.eventID);
 
-    PaystackPlugin.initialize(publicKey: publicKey);
+    plugin.initialize(publicKey: publicKey);
   }
 
   List<TicketPrice> ticketPrices;

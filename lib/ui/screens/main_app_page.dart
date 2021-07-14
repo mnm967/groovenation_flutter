@@ -15,6 +15,7 @@ import 'package:groovenation_flutter/ui/login/login.dart';
 import 'package:groovenation_flutter/ui/profile/profile_page.dart';
 import 'package:groovenation_flutter/ui/screens/app_background_page.dart';
 import 'package:groovenation_flutter/ui/screens/main_home_navigation.dart';
+import 'package:groovenation_flutter/ui/search/club_search.dart';
 import 'package:groovenation_flutter/ui/search/search_page.dart';
 import 'package:groovenation_flutter/ui/settings/change_password_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/notification_settings_page.dart';
@@ -22,9 +23,12 @@ import 'package:groovenation_flutter/ui/settings/profile_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/settings_page.dart';
 import 'package:groovenation_flutter/ui/sign_up/create_username.dart';
 import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
+import 'package:groovenation_flutter/ui/social/create_post_page.dart';
 import 'package:groovenation_flutter/ui/social/following_page.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:groovenation_flutter/util/create_post_arguments.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:page_transition/page_transition.dart';
 
 class MainAppPage extends StatefulWidget {
@@ -33,9 +37,12 @@ class MainAppPage extends StatefulWidget {
 }
 
 class MainAppPageState extends State<MainAppPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   AnimationController controller;
   Animation<Offset> position;
+
+  AnimationController welcomeController;
+  Animation<Offset> welcomePosition;
 
   String dialogTitle;
   String dialogText;
@@ -57,14 +64,20 @@ class MainAppPageState extends State<MainAppPage>
         .animate(
             CurvedAnimation(parent: controller, curve: Curves.bounceInOut));
 
+    welcomeController =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 750));
+    welcomePosition = Tween<Offset>(begin: Offset(0.0, -4.0), end: Offset.zero)
+        .animate(CurvedAnimation(
+            parent: welcomeController, curve: Curves.bounceInOut));
+
     alertUtil.init(this);
 
     //alertUtil.sendAlert(dialogTitle, dialogText, backgroundColor, icon);
 
-    // controller.forward();
+    if(sharedPrefs.userId != null) welcomeController.forward();
 
-    // Future.delayed(const Duration(seconds: 5), () {
-    //   controller.animateBack(-4.0);
+    // Future.delayed(const Duration(seconds: 10), () {
+    //   welcomeController.animateBack(-4.0);
     // });
   }
 
@@ -91,21 +104,25 @@ class MainAppPageState extends State<MainAppPage>
 
   @override
   Widget build(BuildContext context) {
-    print("uid: "+sharedPrefs.userId.toString());
+    print("uid: " + sharedPrefs.userId.toString());
 
     return Stack(
       children: [
-        MaterialApp(  
+        MaterialApp(
           title: 'GrooveNation',
-          initialRoute: sharedPrefs.userId == null ? '/' : 
-            ((sharedPrefs.userCity == null ? '/city_picker' : 
-            (sharedPrefs.username == null ? '/create_username' : '/main'))),
+          initialRoute: sharedPrefs.userId == null
+              ? '/log'
+              : ((sharedPrefs.userCity == null
+                  ? '/city_picker'
+                  : (sharedPrefs.username == null
+                      ? '/create_username'
+                      : '/main'))),
           theme: ThemeData(
             primarySwatch: Colors.purple,
           ),
           onGenerateRoute: (settings) {
             switch (settings.name) {
-              case '/':
+              case '/log':
                 return buildPageTransition(LoginPageScreen(), settings);
               case '/main':
                 return buildPageTransition(MainNavigationScreen(), settings);
@@ -131,6 +148,10 @@ class MainAppPageState extends State<MainAppPage>
                 return buildPageTransition(CityPickerPageScreen(), settings);
               case '/following':
                 return buildPageTransition(FollowingPageScreen(), settings);
+              case '/create_post':
+                return buildPageTransition(CreatePostPageScreen(), settings);
+              case '/club_search':
+                return buildPageTransition(ClubSearchPageScreen(), settings);
               case '/city_picker_settings':
                 return buildPageTransition(
                     CityPickerSettingsPageScreen(), settings);
@@ -146,7 +167,8 @@ class MainAppPageState extends State<MainAppPage>
               case '/club_reviews':
                 return buildPageTransition(ClubReviewsPageScreen(), settings);
               case '/create_username':
-                return buildPageTransition(CreateUsernamePageScreen(), settings);
+                return buildPageTransition(
+                    CreateUsernamePageScreen(), settings);
               default:
                 return null;
             }
@@ -162,14 +184,29 @@ class MainAppPageState extends State<MainAppPage>
           // },
         ),
         Visibility(
-          visible: true,
-          child: MediaQuery( data: MediaQueryData(),
-          child: SafeArea(
-              child: SlideTransition(
-            position: position,
-            child: Padding(padding: EdgeInsets.only(top: 16), child: alertItem(context)),
-          )),
-        )),
+            visible: true,
+            child: MediaQuery(
+              data: MediaQueryData(),
+              child: SafeArea(
+                  child: SlideTransition(
+                position: position,
+                child: Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: alertItem(context)),
+              )),
+            )),
+        Visibility(
+            visible: true,
+            child: MediaQuery(
+              data: MediaQueryData(),
+              child: SafeArea(
+                  child: SlideTransition(
+                position: welcomePosition,
+                child: Padding(
+                    padding: EdgeInsets.only(top: 16),
+                    child: welcomeItem(context)),
+              )),
+            )),
       ],
     );
   }
@@ -307,6 +344,203 @@ class MainAppPageState extends State<MainAppPage>
               ])),
         ));
   }
+
+  Widget welcomeItem(BuildContext context) {
+    return Padding(
+        padding: EdgeInsets.only(top: 24, left: 10, right: 10, bottom: 10),
+        child: Card(
+          elevation: 7,
+          color: Colors.purple,
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12.0))),
+          child: Container(
+              
+              decoration: BoxDecoration(
+                color: Colors.black,
+                image: DecorationImage(
+                  colorFilter: new ColorFilter.mode(Colors.black.withOpacity(0.8), BlendMode.dstATop),
+                  image: AssetImage("assets/images/main_background.png"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: FlatButton(
+                  onPressed: () {
+                    welcomeController.animateBack(-4.0);
+                  },
+                  padding: EdgeInsets.zero,
+                  child: Wrap(children: [
+                    Column(
+                      children: [
+                        Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.max,
+                                  children: [
+                                    Padding(
+                                        padding: EdgeInsets.zero,
+                                        child: SizedBox(
+                                            height: 64,
+                                            width: 64,
+                                            child: CircleAvatar(
+                                              backgroundColor: Colors.purple,
+                                                backgroundImage:
+                                                    OptimizedCacheImageProvider(
+                                                        "${sharedPrefs.profilePicUrl}")))),
+                                    Expanded(
+                                        child: Padding(
+                                            padding: EdgeInsets.only(left: 12),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.end,
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                left: 4,
+                                                                right: 3),
+                                                        child: Text(
+                                                          "Welcome Back, ${sharedPrefs.username}",
+                                                          textAlign:
+                                                              TextAlign.start,
+                                                          maxLines: 2,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  'LatoBold',
+                                                              fontSize: 20,
+                                                              color:
+                                                                  Colors.white),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ))),
+                                    Icon(
+                                      Icons.close,
+                                      color: Colors.white,
+                                      size: 24,
+                                    )
+                                  ],
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.only(top: 8),
+                                  child: Card(
+                                    color: Colors.white,
+                                    elevation: 0,
+                                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(12.0))),
+                                    child: Container(
+                                      height: 192,
+                                      width: double.infinity,
+                                      child: Image.asset(
+                                        "assets/images/welcome_image.png",
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                // GridView.count(
+                                //                     physics:
+                                //                         NeverScrollableScrollPhysics(),
+                                //                     shrinkWrap: true,
+                                //                     childAspectRatio: 3,
+                                //                     padding: EdgeInsets.only(
+                                //                         right: 16,
+                                //                         left: 16,
+                                //                         top: 24),
+                                //                     crossAxisCount: 2,
+                                //                     children: [
+                                //                       Padding(
+                                //                         padding: EdgeInsets.only(
+                                //                             left: 12, right: 8),
+                                //                         child: Container(
+                                //                             width: double.infinity,
+                                //                             decoration:
+                                //                                 BoxDecoration(
+                                //                               border: Border.all(
+                                //                                   width: 1.0,
+                                //                                   color:
+                                //                                       Colors.white),
+                                //                               borderRadius:
+                                //                                   BorderRadius.all(
+                                //                                       Radius
+                                //                                           .circular(
+                                //                                               10.0)),
+                                //                             ),
+                                //                             child: FlatButton(
+                                //                               padding:
+                                //                                   EdgeInsets.zero,
+                                //                               onPressed: () {
+
+                                //                               },
+                                //                               child: Text(
+                                //                                 "OPEN SOCIAL",
+                                //                                 style: TextStyle(
+                                //                                     fontFamily:
+                                //                                         'LatoBold',
+                                //                                     color: Colors
+                                //                                         .white),
+                                //                               ),
+                                //                             )),
+                                //                       ),
+                                //                       Padding(
+                                //                         padding: EdgeInsets.only(
+                                //                             right: 12, left: 8),
+                                //                         child: Container(
+                                //                             width: double.infinity,
+                                //                             decoration:
+                                //                                 BoxDecoration(
+                                //                               border: Border.all(
+                                //                                   width: 1.0,
+                                //                                   color:
+                                //                                       Colors.white),
+                                //                               borderRadius:
+                                //                                   BorderRadius.all(
+                                //                                       Radius
+                                //                                           .circular(
+                                //                                               10.0)),
+                                //                             ),
+                                //                             child: FlatButton(
+                                //                               padding:
+                                //                                   EdgeInsets.zero,
+                                //                               onPressed: () {
+
+                                //                               },
+                                //                               child: Text(
+                                //                                 "VIEW CLUBS",
+                                //                                 style: TextStyle(
+                                //                                     fontFamily:
+                                //                                         'LatoBold',
+                                //                                     color: Colors
+                                //                                             .white),
+                                //                               ),
+                                //                             )),
+                                //                       )
+                                //                     ]),
+                              ],
+                            )),
+                      ],
+                    )
+                  ]))),
+        ));
+  }
 }
 
 class MainNavigationScreen extends StatelessWidget {
@@ -423,6 +657,26 @@ class FollowingPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBackgroundPage(child: FollowingPage());
+  }
+}
+
+class CreatePostPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final CreatePostArguments args = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(
+        child: CreatePostPage(args.mediaPath, args.isVideo));
+  }
+}
+
+class ClubSearchPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final Function onClubSelected = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(
+        child: ClubSearchPage(
+      onClubSelected: onClubSelected,
+    ));
   }
 }
 

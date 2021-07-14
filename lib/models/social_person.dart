@@ -3,7 +3,7 @@ class SocialPerson {
   final String personUsername;
   final String personProfilePicURL;
   final String personCoverPicURL;
-  final bool isUserFollowing;
+  bool isUserFollowing;
   final bool hasUserBlocked;
   final bool personBlockedUser;
 

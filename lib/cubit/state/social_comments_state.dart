@@ -14,6 +14,11 @@ class SocialCommentsLoadingState extends SocialCommentsState {
   List<Object> get props => [];
 }
 
+class SocialCommentsMoreLoadingState extends SocialCommentsState {
+  @override
+  List<Object> get props => [];
+}
+
 class SocialCommentsLoadedState extends SocialCommentsState {
   final List<SocialComment> socialComments;
   final bool hasReachedMax;
@@ -34,4 +39,33 @@ class SocialCommentsErrorState extends SocialCommentsState {
 
   @override
   List<Object> get props => [error];
+}
+
+class SocialCommentLikeLoadingState extends SocialCommentsState {
+  @override
+  List<Object> get props => [];
+}
+
+class SocialCommentLikeErrorState extends SocialCommentsState {
+  SocialCommentLikeErrorState(this.error);
+
+  final Error error;
+
+  @override
+  List<Object> get props => [error];
+}
+
+class SocialCommentLikeUpdatingState extends SocialCommentsState {
+  SocialCommentLikeUpdatingState(this.comment);
+
+  final SocialComment comment;
+
+  @override
+  List<Object> get props => [comment];
+}
+
+class SocialCommentLikeSuccessState extends SocialCommentsState {
+
+  @override
+  List<Object> get props => [];
 }

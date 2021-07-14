@@ -35,3 +35,56 @@ class SocialErrorState extends SocialState {
   @override
   List<Object> get props => [error];
 }
+
+class SocialPostUploadLoadingState extends SocialState {
+  @override
+  List<Object> get props => [];
+}
+
+class SocialPostUploadErrorState extends SocialState {
+  SocialPostUploadErrorState(this.error);
+
+  final Error error;
+
+  @override
+  List<Object> get props => [error];
+}
+
+class SocialPostUploadSuccessState extends SocialState {
+  SocialPostUploadSuccessState(this.post);
+
+  final SocialPost post;
+
+  @override
+  List<Object> get props => [post];
+}
+
+
+class SocialPostLikeLoadingState extends SocialState {
+  @override
+  List<Object> get props => [];
+}
+
+class SocialPostLikeErrorState extends SocialState {
+  SocialPostLikeErrorState(this.error);
+
+  final Error error;
+
+  @override
+  List<Object> get props => [error];
+}
+
+class SocialPostLikeUpdatingState extends SocialState {
+  SocialPostLikeUpdatingState(this.post);
+
+  final SocialPost post;
+
+  @override
+  List<Object> get props => [post];
+}
+
+class SocialPostLikeSuccessState extends SocialState {
+
+  @override
+  List<Object> get props => [];
+}

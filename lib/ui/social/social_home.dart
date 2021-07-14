@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,7 +7,14 @@ import 'package:groovenation_flutter/cubit/social_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
+import 'package:groovenation_flutter/util/create_post_arguments.dart';
+import 'package:groovenation_flutter/widgets/expandable_fab.dart';
+import 'package:image_cropper/image_cropper.dart';
+import 'package:image_editor_pro/image_editor_pro.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:video_trimmer/video_trimmer.dart';
 
 class SocialHomePage extends StatefulWidget {
   final _SocialHomePageState state = _SocialHomePageState();
@@ -21,8 +29,36 @@ class SocialHomePage extends StatefulWidget {
   }
 }
 
-class _SocialHomePageState extends State<SocialHomePage> {
+class _SocialHomePageState extends State<SocialHomePage>
+    with SingleTickerProviderStateMixin {
   bool _isFirstView = true;
+
+  final picker = ImagePicker();
+
+  Future<void> _chooseSocialImage(bool isCamera) async {
+    final pickedFile = await picker.getImage(
+        source: isCamera ? ImageSource.camera : ImageSource.gallery);
+
+    if (pickedFile == null) return;
+
+    File croppedFile = await ImageCropper.cropImage(
+        sourcePath: pickedFile.path,
+        aspectRatioPresets: [
+          CropAspectRatioPreset.square,
+        ],
+        androidUiSettings: AndroidUiSettings(
+            toolbarTitle: 'Edit Image',
+            toolbarColor: Colors.deepPurple,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: true),
+        iosUiSettings: IOSUiSettings(
+          minimumAspectRatio: 1.0,
+        ));
+
+    Navigator.pushNamed(context, '/create_post',
+        arguments: CreatePostArguments(croppedFile.path, false));
+  }
 
   runBuild() {
     if (_isFirstView) {
@@ -66,9 +102,16 @@ class _SocialHomePageState extends State<SocialHomePage> {
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
 
+  TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(
+      vsync: this,
+      length: 3,
+      initialIndex: 1,
+    );
   }
 
   @override
@@ -128,6 +171,7 @@ class _SocialHomePageState extends State<SocialHomePage> {
                   ))),
         ),
         TabBar(
+          controller: _tabController,
           tabs: [
             Tab(
               icon: Icon(Icons.local_bar),
@@ -186,295 +230,396 @@ class _SocialHomePageState extends State<SocialHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-        child: DefaultTabController(
-            length: 3,
-            initialIndex: 1,
-            child: Column(
-              children: [
-                topAppBar(),
-                Expanded(
-                  child: TabBarView(children: [
-                    NotificationListener<ScrollNotification>(
-                        onNotification: getScrollNotificationListener(
-                            _nearbyRefreshController),
-                        child: BlocConsumer<NearbySocialCubit, SocialState>(
-                            listener: getBlocListener(_nearbyRefreshController),
-                            builder: (context, socialState) {
-                              bool hasReachedMax = false;
+    return Scaffold(
+        backgroundColor: Colors.transparent,
+        floatingActionButton: ExpandableFab(
+          distance: 84.0,
+          children: [
+            ActionButton(
+              icon: const Icon(FontAwesomeIcons.cameraRetro),
+              onPressed: () {
+                _tabController.animateTo(1);
+                _chooseSocialImage(true);
+              },
+            ),
+            ActionButton(
+              icon: const Icon(FontAwesomeIcons.images),
+              onPressed: () {
+                _tabController.animateTo(1);
+                _chooseSocialImage(false);
+              },
+            ),
+            ActionButton(
+              icon: const Icon(FontAwesomeIcons.video),
+              onPressed: () async {
+                _tabController.animateTo(1);
+                FilePickerResult result = await FilePicker.platform.pickFiles(
+                  type: FileType.video,
+                  allowCompression: false,
+                );
+                if (result != null) {
+                  File file = File(result.files.single.path);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (videoContext) {
+                      return TrimmerView(file, (path) {
+                        print('PATH: $path');
 
-                              if (socialState is SocialLoadedState) {
-                                nearbySocialPosts = socialState.socialPosts;
-                                // if (nearbyPage == 0)
-                                //   nearbySocialPosts = socialState.socialPosts;
-                                // else {
-                                //   nearbySocialPosts
-                                //       .addAll(socialState.socialPosts);
-                                // }
-                                hasReachedMax = socialState.hasReachedMax;
-                              }
+                        Navigator.pop(videoContext);
 
-                              return SocialPostList(nearbySocialPosts,
-                                  hasReachedMax, _nearbyRefreshController, () {
-                                final NearbySocialCubit socialCubit =
-                                    BlocProvider.of<NearbySocialCubit>(context);
+                        Navigator.pushNamed(context, '/create_post',
+                            arguments: CreatePostArguments(path, true));
+                        Navigator.pushNamed(context, '/create_post',
+                            arguments: CreatePostArguments(path, true));
+                      });
+                    }),
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+        body: SafeArea(
+            child: DefaultTabController(
+                length: 3,
+                initialIndex: 1,
+                child: Column(
+                  children: [
+                    topAppBar(),
+                    Expanded(
+                      child: TabBarView(controller: _tabController, children: [
+                        NotificationListener<ScrollNotification>(
+                            onNotification: getScrollNotificationListener(
+                                _nearbyRefreshController),
+                            child: BlocConsumer<NearbySocialCubit, SocialState>(
+                                listener:
+                                    getBlocListener(_nearbyRefreshController),
+                                builder: (context, socialState) {
+                                  bool hasReachedMax = false;
 
-                                if ((socialCubit.state is SocialLoadedState ||
-                                        socialCubit.state
-                                            is SocialErrorState) &&
-                                    !_isFirstView) {
-                                  nearbyPage = 0;
-                                  socialCubit.getSocialPosts(nearbyPage);
+                                  if (socialState is SocialLoadedState) {
+                                    nearbySocialPosts = socialState.socialPosts;
+
+                                    // if (nearbyPage == 0)
+                                    //   nearbySocialPosts = socialState.socialPosts;
+                                    // else {
+                                    //   nearbySocialPosts
+                                    //       .addAll(socialState.socialPosts);
+                                    // }
+                                    hasReachedMax = socialState.hasReachedMax;
+                                  }
+
+                                  return SocialPostList(
+                                      (socialState is SocialLoadedState)
+                                          ? socialState.socialPosts
+                                          : nearbySocialPosts,
+                                      hasReachedMax,
+                                      _nearbyRefreshController, () {
+                                    final NearbySocialCubit socialCubit =
+                                        BlocProvider.of<NearbySocialCubit>(
+                                            context);
+
+                                    if ((socialCubit.state
+                                                is SocialLoadedState ||
+                                            socialCubit.state
+                                                is SocialErrorState) &&
+                                        !_isFirstView) {
+                                      nearbyPage = 0;
+                                      socialCubit.getSocialPosts(nearbyPage);
+                                    }
+                                  }, () {
+                                    if (_isFirstView ||
+                                        nearbySocialPosts.length == 0 ||
+                                        socialState is SocialLoadingState) {
+                                      _nearbyRefreshController.loadComplete();
+                                      return;
+                                    }
+
+                                    final NearbySocialCubit socialCubit =
+                                        BlocProvider.of<NearbySocialCubit>(
+                                            context);
+
+                                    nearbyPage++;
+                                    socialCubit.getSocialPosts(nearbyPage);
+                                  });
+                                })),
+                        NotificationListener<ScrollNotification>(
+                          onNotification: getScrollNotificationListener(
+                              _followingRefreshController),
+                          child: BlocConsumer<FollowingSocialCubit,
+                                  SocialState>(
+                              listener:
+                                  getBlocListener(_followingRefreshController),
+                              builder: (context, socialState) {
+                                bool hasReachedMax = false;
+
+                                if (socialState is SocialLoadedState) {
+                                  followingSocialPosts =
+                                      socialState.socialPosts;
+                                  hasReachedMax = socialState.hasReachedMax;
+                                  // if (followingPage == 0)
+                                  //   followingSocialPosts = socialState.socialPosts;
+                                  // else {
+                                  //   followingSocialPosts
+                                  //       .addAll(socialState.socialPosts);
+                                  // }
                                 }
-                              }, () {
-                                if (_isFirstView ||
-                                    nearbySocialPosts.length == 0 ||
-                                    socialState is SocialLoadingState) {
-                                  _nearbyRefreshController.loadComplete();
-                                  return;
+
+                                return SmartRefresher(
+                                    controller: _followingRefreshController,
+                                    header: WaterDropMaterialHeader(),
+                                    footer: ClassicFooter(
+                                      textStyle: TextStyle(
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontSize: 16,
+                                          fontFamily: 'Lato'),
+                                      noDataText:
+                                          "You've reached the end of the line",
+                                      failedText: "Something Went Wrong",
+                                    ),
+                                    onLoading: () {
+                                      if (_isFirstView ||
+                                          followingSocialPosts.length == 0 ||
+                                          socialState is SocialLoadingState) {
+                                        _followingRefreshController
+                                            .loadComplete();
+                                        return;
+                                      }
+
+                                      final FollowingSocialCubit socialCubit =
+                                          BlocProvider.of<FollowingSocialCubit>(
+                                              context);
+
+                                      followingPage++;
+                                      socialCubit.getSocialPosts(followingPage);
+                                    },
+                                    onRefresh: () {
+                                      final FollowingSocialCubit socialCubit =
+                                          BlocProvider.of<FollowingSocialCubit>(
+                                              context);
+
+                                      if ((socialCubit.state
+                                                  is SocialLoadedState ||
+                                              socialCubit.state
+                                                  is SocialErrorState) &&
+                                          !_isFirstView) {
+                                        followingPage = 0;
+                                        socialCubit
+                                            .getSocialPosts(followingPage);
+                                      }
+                                    },
+                                    enablePullUp: true,
+                                    enablePullDown: true,
+                                    child: CustomScrollView(
+                                      physics: const BouncingScrollPhysics(
+                                          parent:
+                                              AlwaysScrollableScrollPhysics()),
+                                      slivers: [
+                                        SliverPadding(
+                                          padding: EdgeInsets.only(top: 24),
+                                          sliver: SliverList(
+                                              delegate:
+                                                  SliverChildBuilderDelegate(
+                                            (BuildContext context, int index) {
+                                              return Padding(
+                                                  padding: EdgeInsets.fromLTRB(
+                                                      16, 0, 16, 16),
+                                                  child: SocialItem(
+                                                      key: Key((socialState
+                                                              is SocialLoadedState)
+                                                          ? socialState
+                                                              .socialPosts[
+                                                                  index]
+                                                              .postID
+                                                          : followingSocialPosts[index]
+                                                              .postID),
+                                                      socialPost: (socialState
+                                                              is SocialLoadedState)
+                                                          ? socialState
+                                                                  .socialPosts[
+                                                              index]
+                                                          : followingSocialPosts[
+                                                              index],
+                                                      showClose: false));
+                                            },
+                                            childCount: (socialState
+                                                    is SocialLoadedState)
+                                                ? socialState.socialPosts.length
+                                                : followingSocialPosts.length,
+                                          )),
+                                        )
+                                      ],
+                                    ));
+
+                                // return SocialPostList(followingSocialPosts,
+                                //     hasReachedMax, _followingRefreshController, () {
+                                //   final FollowingSocialCubit socialCubit =
+                                //       BlocProvider.of<FollowingSocialCubit>(
+                                //           context);
+
+                                //   if ((socialCubit.state is SocialLoadedState ||
+                                //           socialCubit.state is SocialErrorState) &&
+                                //       !_isFirstView) {
+                                //     followingPage = 0;
+                                //     socialCubit.getSocialPosts(followingPage);
+                                //   }
+                                // }, () {
+                                //   if (_isFirstView ||
+                                //       followingSocialPosts.length == 0 ||
+                                //       socialState is SocialLoadingState) {
+                                //     _followingRefreshController.loadComplete();
+                                //     return;
+                                //   }
+
+                                //   final FollowingSocialCubit socialCubit =
+                                //       BlocProvider.of<FollowingSocialCubit>(
+                                //           context);
+
+                                //   followingPage++;
+                                //   socialCubit.getSocialPosts(followingPage);
+                                // });
+                              }),
+                        ),
+                        NotificationListener<ScrollNotification>(
+                          onNotification: getScrollNotificationListener(
+                              _trendingRefreshController),
+                          child: BlocConsumer<TrendingSocialCubit, SocialState>(
+                              listener:
+                                  getBlocListener(_trendingRefreshController),
+                              builder: (context, socialState) {
+                                bool hasReachedMax = false;
+
+                                if (socialState is SocialLoadedState) {
+                                  trendingSocialPosts = socialState.socialPosts;
+                                  // if (trendingPage == 0)
+                                  //   trendingSocialPosts = socialState.socialPosts;
+                                  // else {
+                                  //   trendingSocialPosts
+                                  //       .addAll(socialState.socialPosts);
+                                  // }
+                                  hasReachedMax = socialState.hasReachedMax;
+                                  _trendingRefreshController.refreshCompleted();
                                 }
 
-                                final NearbySocialCubit socialCubit =
-                                    BlocProvider.of<NearbySocialCubit>(context);
+                                if (hasReachedMax)
+                                  _trendingRefreshController.loadNoData();
 
-                                nearbyPage++;
-                                socialCubit.getSocialPosts(nearbyPage);
-                              });
-                            })),
-                    NotificationListener<ScrollNotification>(
-                      onNotification: getScrollNotificationListener(
-                          _followingRefreshController),
-                      child: BlocConsumer<FollowingSocialCubit, SocialState>(
-                          listener:
-                              getBlocListener(_followingRefreshController),
-                          builder: (context, socialState) {
-                            bool hasReachedMax = false;
+                                return SmartRefresher(
+                                    controller: _trendingRefreshController,
+                                    header: WaterDropMaterialHeader(),
+                                    footer: ClassicFooter(
+                                      textStyle: TextStyle(
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontSize: 16,
+                                          fontFamily: 'Lato'),
+                                      noDataText:
+                                          "You've reached the end of the line",
+                                      failedText: "Something Went Wrong",
+                                    ),
+                                    onLoading: () {
+                                      if (_isFirstView ||
+                                          trendingSocialPosts.length == 0 ||
+                                          socialState is SocialLoadingState) {
+                                        _trendingRefreshController
+                                            .loadComplete();
+                                        return;
+                                      }
 
-                            if (socialState is SocialLoadedState) {
-                              followingSocialPosts = socialState.socialPosts;
-                              // if (followingPage == 0)
-                              //   followingSocialPosts = socialState.socialPosts;
-                              // else {
-                              //   followingSocialPosts
-                              //       .addAll(socialState.socialPosts);
-                              // }
-                              hasReachedMax = socialState.hasReachedMax;
-                            }
+                                      final TrendingSocialCubit socialCubit =
+                                          BlocProvider.of<TrendingSocialCubit>(
+                                              context);
 
-                            return SmartRefresher(
-                                controller: _followingRefreshController,
-                                header: WaterDropMaterialHeader(),
-                                footer: ClassicFooter(
-                                  textStyle: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: 16,
-                                      fontFamily: 'Lato'),
-                                  noDataText:
-                                      "You've reached the end of the line",
-                                  failedText: "Something Went Wrong",
-                                ),
-                                onLoading: () {
-                                  if (_isFirstView ||
-                                      followingSocialPosts.length == 0 ||
-                                      socialState is SocialLoadingState) {
-                                    _followingRefreshController.loadComplete();
-                                    return;
-                                  }
+                                      trendingPage++;
+                                      socialCubit.getSocialPosts(trendingPage);
+                                    },
+                                    onRefresh: () {
+                                      final TrendingSocialCubit socialCubit =
+                                          BlocProvider.of<TrendingSocialCubit>(
+                                              context);
 
-                                  final FollowingSocialCubit socialCubit =
-                                      BlocProvider.of<FollowingSocialCubit>(
-                                          context);
+                                      if ((socialCubit.state
+                                                  is SocialLoadedState ||
+                                              socialCubit.state
+                                                  is SocialErrorState) &&
+                                          !_isFirstView) {
+                                        trendingPage = 0;
+                                        socialCubit
+                                            .getSocialPosts(trendingPage);
+                                      }
+                                    },
+                                    enablePullUp: true,
+                                    enablePullDown: true,
+                                    child: CustomScrollView(
+                                      physics: const BouncingScrollPhysics(
+                                          parent:
+                                              AlwaysScrollableScrollPhysics()),
+                                      slivers: [
+                                        SliverPadding(
+                                          padding: EdgeInsets.only(top: 24),
+                                          sliver: SliverList(
+                                              delegate:
+                                                  SliverChildBuilderDelegate(
+                                            (BuildContext context, int index) {
+                                              return Padding(
+                                                  padding: EdgeInsets.fromLTRB(
+                                                      16, 0, 16, 16),
+                                                  child: SocialItem(
+                                                      key: Key((socialState
+                                                              is SocialLoadedState)
+                                                          ? socialState
+                                                              .socialPosts[
+                                                                  index]
+                                                              .postID
+                                                          : trendingSocialPosts[index]
+                                                              .postID),
+                                                      socialPost: (socialState
+                                                              is SocialLoadedState)
+                                                          ? socialState
+                                                                  .socialPosts[
+                                                              index]
+                                                          : trendingSocialPosts[
+                                                              index],
+                                                      showClose: false));
+                                            },
+                                            childCount: (socialState
+                                                    is SocialLoadedState)
+                                                ? socialState.socialPosts.length
+                                                : trendingSocialPosts.length,
+                                          )),
+                                        )
+                                      ],
+                                    ));
 
-                                  followingPage++;
-                                  socialCubit.getSocialPosts(followingPage);
-                                },
-                                onRefresh: () {
-                                  final FollowingSocialCubit socialCubit =
-                                      BlocProvider.of<FollowingSocialCubit>(
-                                          context);
+                                // return SocialPostList(trendingSocialPosts,
+                                //     hasReachedMax, _trendingRefreshController, () {
+                                //   final TrendingSocialCubit socialCubit =
+                                //       BlocProvider.of<TrendingSocialCubit>(context);
 
-                                  if ((socialCubit.state is SocialLoadedState ||
-                                          socialCubit.state
-                                              is SocialErrorState) &&
-                                      !_isFirstView) {
-                                    followingPage = 0;
-                                    socialCubit.getSocialPosts(followingPage);
-                                  }
-                                },
-                                enablePullUp: true,
-                                enablePullDown: true,
-                                child: CustomScrollView(
-                                  physics: const BouncingScrollPhysics(
-                                      parent: AlwaysScrollableScrollPhysics()),
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: EdgeInsets.only(top: 24),
-                                      sliver: SliverList(
-                                          delegate: SliverChildBuilderDelegate(
-                                        (BuildContext context, int index) {
-                                          return Padding(
-                                              padding: EdgeInsets.fromLTRB(
-                                                  16, 0, 16, 16),
-                                              child: SocialItem(
-                                                  socialPost:
-                                                      followingSocialPosts[
-                                                          index],
-                                                  showClose: false));
-                                        },
-                                        childCount: followingSocialPosts.length,
-                                      )),
-                                    )
-                                  ],
-                                ));
+                                //   if ((socialCubit.state is SocialLoadedState ||
+                                //           socialCubit.state is SocialErrorState) &&
+                                //       !_isFirstView) {
+                                //     trendingPage = 0;
+                                //     socialCubit.getSocialPosts(trendingPage);
+                                //   }
+                                // }, () {
+                                //   if (_isFirstView ||
+                                //       trendingSocialPosts.length == 0 ||
+                                //       socialState is SocialLoadingState) {
+                                //     _trendingRefreshController.loadComplete();
+                                //     return;
+                                //   }
 
-                            // return SocialPostList(followingSocialPosts,
-                            //     hasReachedMax, _followingRefreshController, () {
-                            //   final FollowingSocialCubit socialCubit =
-                            //       BlocProvider.of<FollowingSocialCubit>(
-                            //           context);
+                                //   final TrendingSocialCubit socialCubit =
+                                //       BlocProvider.of<TrendingSocialCubit>(context);
 
-                            //   if ((socialCubit.state is SocialLoadedState ||
-                            //           socialCubit.state is SocialErrorState) &&
-                            //       !_isFirstView) {
-                            //     followingPage = 0;
-                            //     socialCubit.getSocialPosts(followingPage);
-                            //   }
-                            // }, () {
-                            //   if (_isFirstView ||
-                            //       followingSocialPosts.length == 0 ||
-                            //       socialState is SocialLoadingState) {
-                            //     _followingRefreshController.loadComplete();
-                            //     return;
-                            //   }
-
-                            //   final FollowingSocialCubit socialCubit =
-                            //       BlocProvider.of<FollowingSocialCubit>(
-                            //           context);
-
-                            //   followingPage++;
-                            //   socialCubit.getSocialPosts(followingPage);
-                            // });
-                          }),
-                    ),
-                    NotificationListener<ScrollNotification>(
-                      onNotification: getScrollNotificationListener(
-                          _trendingRefreshController),
-                      child: BlocConsumer<TrendingSocialCubit, SocialState>(
-                          listener: getBlocListener(_trendingRefreshController),
-                          builder: (context, socialState) {
-                            bool hasReachedMax = false;
-
-                            if (socialState is SocialLoadedState) {
-                              trendingSocialPosts = socialState.socialPosts;
-                              // if (trendingPage == 0)
-                              //   trendingSocialPosts = socialState.socialPosts;
-                              // else {
-                              //   trendingSocialPosts
-                              //       .addAll(socialState.socialPosts);
-                              // }
-                              hasReachedMax = socialState.hasReachedMax;
-                            }
-
-                            if (hasReachedMax)
-                              _trendingRefreshController.loadNoData();
-
-                            return SmartRefresher(
-                                controller: _followingRefreshController,
-                                header: WaterDropMaterialHeader(),
-                                footer: ClassicFooter(
-                                  textStyle: TextStyle(
-                                      color: Colors.white.withOpacity(0.5),
-                                      fontSize: 16,
-                                      fontFamily: 'Lato'),
-                                  noDataText:
-                                      "You've reached the end of the line",
-                                  failedText: "Something Went Wrong",
-                                ),
-                                onLoading: () {
-                                  if (_isFirstView ||
-                                      trendingSocialPosts.length == 0 ||
-                                      socialState is SocialLoadingState) {
-                                    _trendingRefreshController.loadComplete();
-                                    return;
-                                  }
-
-                                  final TrendingSocialCubit socialCubit =
-                                      BlocProvider.of<TrendingSocialCubit>(
-                                          context);
-
-                                  trendingPage++;
-                                  socialCubit.getSocialPosts(trendingPage);
-                                },
-                                onRefresh: () {
-                                  final TrendingSocialCubit socialCubit =
-                                      BlocProvider.of<TrendingSocialCubit>(
-                                          context);
-
-                                  if ((socialCubit.state is SocialLoadedState ||
-                                          socialCubit.state
-                                              is SocialErrorState) &&
-                                      !_isFirstView) {
-                                    trendingPage = 0;
-                                    socialCubit.getSocialPosts(trendingPage);
-                                  }
-                                },
-                                enablePullUp: true,
-                                enablePullDown: true,
-                                child: CustomScrollView(
-                                  physics: const BouncingScrollPhysics(
-                                      parent: AlwaysScrollableScrollPhysics()),
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: EdgeInsets.only(top: 24),
-                                      sliver: SliverList(
-                                          delegate: SliverChildBuilderDelegate(
-                                        (BuildContext context, int index) {
-                                          return Padding(
-                                              padding: EdgeInsets.fromLTRB(
-                                                  16, 0, 16, 16),
-                                              child: SocialItem(
-                                                  socialPost:
-                                                      trendingSocialPosts[
-                                                          index],
-                                                  showClose: false));
-                                        },
-                                        childCount: trendingSocialPosts.length,
-                                      )),
-                                    )
-                                  ],
-                                ));
-
-                            // return SocialPostList(trendingSocialPosts,
-                            //     hasReachedMax, _trendingRefreshController, () {
-                            //   final TrendingSocialCubit socialCubit =
-                            //       BlocProvider.of<TrendingSocialCubit>(context);
-
-                            //   if ((socialCubit.state is SocialLoadedState ||
-                            //           socialCubit.state is SocialErrorState) &&
-                            //       !_isFirstView) {
-                            //     trendingPage = 0;
-                            //     socialCubit.getSocialPosts(trendingPage);
-                            //   }
-                            // }, () {
-                            //   if (_isFirstView ||
-                            //       trendingSocialPosts.length == 0 ||
-                            //       socialState is SocialLoadingState) {
-                            //     _trendingRefreshController.loadComplete();
-                            //     return;
-                            //   }
-
-                            //   final TrendingSocialCubit socialCubit =
-                            //       BlocProvider.of<TrendingSocialCubit>(context);
-
-                            //   trendingPage++;
-                            //   socialCubit.getSocialPosts(trendingPage);
-                            // });
-                          }),
-                    ),
-                  ]),
-                )
-              ],
-            )));
+                                //   trendingPage++;
+                                //   socialCubit.getSocialPosts(trendingPage);
+                                // });
+                              }),
+                        ),
+                      ]),
+                    )
+                  ],
+                ))));
   }
 }
 
@@ -537,7 +682,9 @@ class _SocialListState extends State<SocialPostList>
                   return Padding(
                       padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
                       child: SocialItem(
-                          socialPost: socialPosts[index], showClose: false));
+                          key: Key(socialPosts[index].postID),
+                          socialPost: socialPosts[index],
+                          showClose: false));
                 },
                 childCount: socialPosts.length,
               )),
@@ -548,4 +695,142 @@ class _SocialListState extends State<SocialPostList>
 
   @override
   bool get wantKeepAlive => true;
+}
+
+class TrimmerView extends StatefulWidget {
+  final File file;
+  final Function _onVideoPicked;
+
+  TrimmerView(this.file, this._onVideoPicked);
+
+  @override
+  _TrimmerViewState createState() => _TrimmerViewState(_onVideoPicked);
+}
+
+class _TrimmerViewState extends State<TrimmerView> {
+  final Trimmer _trimmer = Trimmer();
+  final Function onVideoPicked;
+
+  _TrimmerViewState(this.onVideoPicked);
+
+  double _startValue = 0.0;
+  double _endValue = 0.0;
+
+  bool _isPlaying = false;
+  bool _progressVisibility = false;
+
+  Future<String> _saveVideo() async {
+    setState(() {
+      _progressVisibility = true;
+    });
+
+    String _value;
+
+    await _trimmer
+        .saveTrimmedVideo(startValue: _startValue, endValue: _endValue)
+        .then((value) {
+      setState(() {
+        _progressVisibility = false;
+        _value = value;
+      });
+    });
+
+    return _value;
+  }
+
+  void _loadVideo() {
+    _trimmer.loadVideo(videoFile: widget.file);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadVideo();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Edit Video"),
+      ),
+      body: Builder(
+        builder: (context) => Center(
+          child: Container(
+            padding: EdgeInsets.only(bottom: 30.0),
+            color: Colors.black,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: <Widget>[
+                Visibility(
+                  visible: _progressVisibility,
+                  child: LinearProgressIndicator(
+                    backgroundColor: Colors.red,
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: _progressVisibility
+                      ? null
+                      : () async {
+                          _saveVideo().then((outputPath) {
+                            onVideoPicked(outputPath);
+                            Navigator.pop(context);
+                          });
+                        },
+                  child: Text("DONE"),
+                ),
+                Expanded(
+                  child: VideoViewer(trimmer: _trimmer),
+                ),
+                Center(
+                  child: TrimEditor(
+                    trimmer: _trimmer,
+                    viewerHeight: 50.0,
+                    viewerWidth: MediaQuery.of(context).size.width,
+                    maxVideoLength: Duration(seconds: 60),
+                    fit: BoxFit.contain,
+                    onChangeStart: (value) {
+                      _startValue = value;
+                    },
+                    onChangeEnd: (value) {
+                      _endValue = value;
+                    },
+                    onChangePlaybackState: (value) {
+                      setState(() {
+                        _isPlaying = value;
+                      });
+                    },
+                  ),
+                ),
+                TextButton(
+                  child: _isPlaying
+                      ? Icon(
+                          Icons.pause,
+                          size: 80.0,
+                          color: Colors.white,
+                        )
+                      : Icon(
+                          Icons.play_arrow,
+                          size: 80.0,
+                          color: Colors.white,
+                        ),
+                  onPressed: () async {
+                    bool playbackState = await _trimmer.videPlaybackControl(
+                      startValue: _startValue,
+                      endValue: _endValue,
+                    );
+                    setState(() {
+                      _isPlaying = playbackState;
+                    });
+                  },
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

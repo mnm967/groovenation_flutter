@@ -11,6 +11,6 @@ class SocialItemDialog extends StatelessWidget {
         padding: EdgeInsets.all(16),
         physics: const BouncingScrollPhysics(
             parent: AlwaysScrollableScrollPhysics()),
-        child: SocialItem(socialPost: socialPost, showClose: true));
+        child: SocialItem(key: Key(socialPost.postID), socialPost: socialPost, showClose: true));
   }
 }

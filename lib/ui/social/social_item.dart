@@ -1,18 +1,28 @@
+import 'dart:io';
+
+import 'package:cached_video_player/cached_video_player.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/constants/integers.dart';
+import 'package:groovenation_flutter/cubit/social_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/social_state.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/comment_item.dart';
 import 'package:groovenation_flutter/ui/social/comments_dialog.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
 import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class SocialItem extends StatefulWidget {
   final SocialPost socialPost;
   final bool showClose;
-  SocialItem({@required this.socialPost, @required this.showClose});
+  SocialItem(
+      {@required this.socialPost, @required this.showClose, @required Key key})
+      : super(key: key);
 
   @override
   _SocialItemState createState() =>
@@ -22,18 +32,58 @@ class SocialItem extends StatefulWidget {
 class _SocialItemState extends State<SocialItem> {
   SocialPost socialPost;
   bool showClose = false;
+  VideoPlayerController _controller;
+  bool isVideoPlaying = false;
 
   _SocialItemState({this.socialPost, this.showClose});
 
   final FlareControls flareControls = FlareControls();
 
   @override
+  void initState() {
+    super.initState();
+
+    if (socialPost.postType == SOCIAL_POST_TYPE_VIDEO) {
+      _controller = VideoPlayerController.network(socialPost.mediaURL)
+        ..initialize().then((_) {
+          _controller.play();
+          _controller.pause();
+        });
+
+      _controller.setLooping(true);
+    }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    if (_controller != null) {
+      _controller.dispose();
+      _controller = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return socialItem(context);
+    return BlocListener<SocialPostCubit, SocialState>(
+        listener: (context, socialState) {
+          if (socialState is SocialPostLikeUpdatingState) {
+            if (socialState.post.postID == socialPost.postID) {
+              setState(() {
+                socialPost = socialState.post;
+              });
+            }
+          }
+        },
+        child: socialItem(context));
   }
 
   _likePost(bool canUnlike) {
-    //TODO Like Post
+    if ((socialPost.hasUserLiked && canUnlike) || !socialPost.hasUserLiked) {
+      final SocialPostCubit socialPostCubit =
+          BlocProvider.of<SocialPostCubit>(context);
+      socialPostCubit.changeLikePost(context, socialPost);
+    }
   }
 
   _sharePost() {
@@ -45,7 +95,21 @@ class _SocialItemState extends State<SocialItem> {
   }
 
   _openSocialPerson(SocialPerson socialPerson) {
-    //TODO Open Social Person
+    Navigator.pushNamed(context, '/profile_page', arguments: socialPerson);
+  }
+
+  _playVideo() {
+    setState(() {
+      isVideoPlaying = true;
+    });
+    _controller.play();
+  }
+
+  _pauseVideo() {
+    setState(() {
+      isVideoPlaying = false;
+    });
+    _controller.pause();
   }
 
   Widget socialItem(BuildContext context) {
@@ -69,8 +133,8 @@ class _SocialItemState extends State<SocialItem> {
                           width: 64,
                           child: CircleAvatar(
                             backgroundColor: Colors.purple.withOpacity(0.5),
-                            // backgroundImage: OptimizedCacheImageProvider(
-                            //     socialPost.person.personProfilePicURL),
+                            backgroundImage: OptimizedCacheImageProvider(
+                                socialPost.person.personProfilePicURL),
                             child: FlatButton(
                                 onPressed: () {
                                   _openSocialPerson(socialPost.person);
@@ -168,7 +232,9 @@ class _SocialItemState extends State<SocialItem> {
               Padding(
                   padding: EdgeInsets.only(top: 16, bottom: 0),
                   child: AspectRatio(
-                      aspectRatio: 1,
+                      aspectRatio: socialPost.postType == SOCIAL_POST_TYPE_IMAGE
+                          ? 1.0
+                          : 0.9,
                       child: Stack(
                         children: [
                           GestureDetector(
@@ -178,7 +244,114 @@ class _SocialItemState extends State<SocialItem> {
                               },
                               child: Stack(
                                 children: [
-                                  CroppedCacheImage(url: socialPost.mediaURL),
+                                  socialPost.postType == SOCIAL_POST_TYPE_IMAGE
+                                      ? CroppedCacheImage(
+                                          url: socialPost.mediaURL)
+                                      : VisibilityDetector(
+                                          key: Key('social-item-' +
+                                              socialPost.postID.toString()),
+                                          onVisibilityChanged:
+                                              (visibilityInfo) {
+                                            if (_controller == null) return;
+
+                                            var visiblePercentage =
+                                                visibilityInfo.visibleFraction *
+                                                    100;
+
+                                            if (visiblePercentage > 75) {
+                                              if (!isVideoPlaying) _playVideo();
+                                            } else {
+                                              if (isVideoPlaying) _pauseVideo();
+                                            }
+
+                                            debugPrint(
+                                                'Widget ${visibilityInfo.key} is ${visiblePercentage}% visible');
+                                          },
+                                          child: Container(
+                                            color: socialPost.postType ==
+                                                    SOCIAL_POST_TYPE_IMAGE
+                                                ? Colors.deepPurple
+                                                : Colors.black,
+                                            child:
+                                                // _controller.value.isInitialized
+                                                true
+                                                    ? Stack(children: [
+                                                        Center(
+                                                            child: AspectRatio(
+                                                          aspectRatio:
+                                                              _controller.value
+                                                                  .aspectRatio,
+                                                          child: VideoPlayer(
+                                                            _controller,
+                                                          ),
+                                                        )),
+                                                        (_controller.value
+                                                                    .isBuffering ||
+                                                                !_controller
+                                                                    .value
+                                                                    .isInitialized)
+                                                            ? Center(
+                                                                child:
+                                                                    CircularProgressIndicator(
+                                                                valueColor: new AlwaysStoppedAnimation<
+                                                                        Color>(
+                                                                    Colors.white
+                                                                        .withOpacity(
+                                                                            0.7)),
+                                                                strokeWidth: 2,
+                                                              ))
+                                                            : Center()
+                                                        // isVideoPlaying
+                                                        //     ? TextButton(
+                                                        //         style: TextButton
+                                                        //             .styleFrom(
+                                                        //                 padding:
+                                                        //                     EdgeInsets
+                                                        //                         .zero),
+                                                        //         onPressed: () {
+                                                        //           _pauseVideo();
+                                                        //         },
+                                                        //         child: AspectRatio(
+                                                        //             aspectRatio:
+                                                        //                 0.8,
+                                                        //             child:
+                                                        //                 Container()))
+                                                        //     : TextButton(
+                                                        //         style: TextButton
+                                                        //             .styleFrom(
+                                                        //                 padding:
+                                                        //                     EdgeInsets
+                                                        //                         .zero),
+                                                        //         onPressed: () {
+                                                        //           _playVideo();
+                                                        //         },
+                                                        //         child: AspectRatio(
+                                                        //           aspectRatio: 0.8,
+                                                        //           child: Center(
+                                                        //             child: Icon(
+                                                        //               Icons
+                                                        //                   .play_circle_fill,
+                                                        //               color: Colors
+                                                        //                   .white
+                                                        //                   .withOpacity(
+                                                        //                       0.6),
+                                                        //               size: 96,
+                                                        //             ),
+                                                        //           ),
+                                                        //         )),
+                                                      ])
+                                                    : Center(
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                        valueColor:
+                                                            new AlwaysStoppedAnimation<
+                                                                    Color>(
+                                                                Colors.white
+                                                                    .withOpacity(
+                                                                        0.7)),
+                                                        strokeWidth: 2,
+                                                      )),
+                                          )),
                                   Container(
                                     child: Center(
                                       child: SizedBox(
@@ -216,7 +389,9 @@ class _SocialItemState extends State<SocialItem> {
                     padding: EdgeInsets.only(top: 16, left: 16, bottom: 16),
                     child: GestureDetector(
                         child: Icon(
-                          FontAwesomeIcons.heart,
+                          socialPost.hasUserLiked
+                              ? FontAwesomeIcons.solidHeart
+                              : FontAwesomeIcons.heart,
                           size: 28,
                           color: Colors.white,
                         ),

@@ -16,11 +16,11 @@ class CroppedCacheImage extends StatelessWidget {
             image: imageProvider, fit: BoxFit.cover),
         ),
       ),
-      placeholder: (context, url) => CircularProgressIndicator(
+      placeholder: (context, url) => Center(child: CircularProgressIndicator(
         valueColor: new AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.7)),
         strokeWidth: 2,
-      ),
-      errorWidget: (context, url, error) => Icon(Icons.error, color: Colors.white, size: 56,),
+      )),
+      errorWidget: (context, url, error) => Center(child: Icon(Icons.error, color: Colors.white, size: 56,)),
     );
   }
 }

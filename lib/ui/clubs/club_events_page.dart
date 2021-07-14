@@ -10,7 +10,7 @@ import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:intl/intl.dart';
-import 'package:optimized_cached_image/widgets.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ClubEventsPage extends StatefulWidget {

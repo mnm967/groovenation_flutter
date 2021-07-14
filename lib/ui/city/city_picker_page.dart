@@ -5,7 +5,7 @@ import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:location/location.dart';
-import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 
 class CityPickerPage extends StatefulWidget {
   @override

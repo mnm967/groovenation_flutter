@@ -21,7 +21,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   final EventsHomePage page1 = EventsHomePage(1);
   final ClubsHomePage page2 = ClubsHomePage();
   final TicketsHomePage page3 = TicketsHomePage();
-  //final SocialHomePage page4 = SocialHomePage();
+  final SocialHomePage page4 = SocialHomePage();
   final ProfileHomePage page5 = ProfileHomePage();
 
   @override
@@ -46,8 +46,8 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                 navPageItem(0, page1),
                 navPageItem(1, page2),
                 navPageItem(2, page3),
-                //navPageItem(3, page4),
-                //navPageItem(3, page5),
+                navPageItem(3, page4),
+                navPageItem(4, page5),
               ],
             ),
           ),
@@ -62,7 +62,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                     child: BottomNavigationBar(
                       currentIndex: index,
                       onTap: (int index) {
-                        if (index != 3)
+                        // if (index != 4)
                           setState(() {
                             this.index = index;
                           });
@@ -76,15 +76,16 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                           case 2:
                             page3.runBuild();
                             return;
-                          // case 3:
-                          //   page4.runBuild();
-                          //   return;
                           case 3:
-                            Navigator.push(
-                                context,
-                                new MaterialPageRoute(
-                                    builder: (context) =>
-                                        new SettingsPageScreen()));
+                            page4.runBuild();
+                            return;
+                          case 4:
+                          page5.runBuild();
+                            // Navigator.push(
+                            //     context,
+                            //     new MaterialPageRoute(
+                            //         builder: (context) =>
+                            //             new SettingsPageScreen()));
                             // Navigator.pushReplacementNamed(
                             //     context, '/settings');
 
@@ -114,15 +115,15 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                           icon: new Icon(FontAwesomeIcons.ticketAlt),
                           title: new Text('Tickets'),
                         ),
-                        // BottomNavigationBarItem(
-                        //     icon: FaIcon(FontAwesomeIcons.users),
-                        //     title: Text('Social')),
-                        // BottomNavigationBarItem(
-                        //     icon: Icon(Icons.person_pin),
-                        //     title: Text('Profile')),
                         BottomNavigationBarItem(
-                            icon: Icon(Icons.settings),
-                            title: Text('Settings')),
+                            icon: FaIcon(FontAwesomeIcons.users),
+                            title: Text('Social')),
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.person_pin),
+                            title: Text('Profile')),
+                        // BottomNavigationBarItem(
+                        //     icon: Icon(Icons.settings),
+                        //     title: Text('Settings')),
                       ],
                     )))),
       ],

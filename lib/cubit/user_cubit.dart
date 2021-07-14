@@ -40,3 +40,39 @@ class UserCubit extends Cubit<UserState> {
     }
   }
 }
+
+class SearchUsersCubit extends Cubit<UserState> {
+  SearchUsersCubit(this.socialRepository) : super(UserInitialState());
+
+  final SocialRepository socialRepository;
+
+  void searchUsers(int page, String searchTerm) async {
+    List<SocialPerson> people = [];
+
+    if (state is SocialUsersSearchLoadedState) {
+      people = (state as SocialUsersSearchLoadedState).socialPeople;
+    }
+
+    emit(SocialUsersSearchLoadingState());
+
+    try {
+      List<SocialPerson> newPeople;
+
+      APIResult result;
+
+      result = await socialRepository.searchUsers(searchTerm, page);
+
+      newPeople = result.result as List<SocialPerson>;
+      bool hasReachedMax = result.hasReachedMax;
+
+      if (page != 0)
+        people.addAll(newPeople);
+      else
+        people = newPeople;
+
+      emit(SocialUsersSearchLoadedState(socialPeople: people, hasReachedMax: hasReachedMax));
+    } on SocialException catch (e) {
+      emit(SocialUsersSearchErrorState(e.error));
+    }
+  }
+}

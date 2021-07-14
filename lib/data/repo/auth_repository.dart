@@ -95,7 +95,7 @@ class AuthRepository {
         throw AuthException(e.error);
       else {
         if (e is DioError) 
-        if (e.type == DioErrorType.CANCEL) {
+        if (e.type == DioErrorType.cancel) {
         } else
           throw AuthException(Error.NETWORK_ERROR);
         else

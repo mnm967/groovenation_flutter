@@ -11,8 +11,12 @@ import 'package:groovenation_flutter/cubit/clubs_cubit.dart';
 import 'package:groovenation_flutter/cubit/events_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
 import 'package:groovenation_flutter/cubit/state/events_state.dart';
+import 'package:groovenation_flutter/cubit/state/social_state.dart';
+import 'package:groovenation_flutter/cubit/state/user_cubit_state.dart';
+import 'package:groovenation_flutter/cubit/user_cubit.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
 import 'package:intl/intl.dart';
@@ -37,11 +41,15 @@ class _SearchPageState extends State<SearchPage>
   ScrollController _clubScrollController = new ScrollController();
   RefreshController _clubsRefreshController =
       RefreshController(initialRefresh: false);
+  
+  ScrollController _profileScrollController = new ScrollController();
+  RefreshController _profileRefreshController =
+      RefreshController(initialRefresh: false);
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(vsync: this, length: 2);
+    _tabController = TabController(vsync: this, length: 3);
     _tabController.addListener(() {
       if (searchTextController.text.isEmpty) return;
       
@@ -101,12 +109,29 @@ class _SearchPageState extends State<SearchPage>
         }
       }
     });
+    
+    _profileScrollController.addListener(() {
+      if (_profileScrollController.position.pixels <= 30) {
+        if (_scrollToTopVisible != false) {
+          setState(() {
+            _scrollToTopVisible = false;
+          });
+        }
+      } else {
+        if (_scrollToTopVisible != true) {
+          setState(() {
+            _scrollToTopVisible = true;
+          });
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
     _scrollController.dispose();
     _clubScrollController.dispose();
+    _profileScrollController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -129,7 +154,7 @@ class _SearchPageState extends State<SearchPage>
                 if (text.isNotEmpty) {
                   if (_tabController.index == 0)
                     _eventsRefreshController.requestRefresh();
-                  else {
+                  else if(_tabController.index == 1) {
                     final SearchClubsCubit searchClubsCubit =
                         BlocProvider.of<SearchClubsCubit>(context);
                     setState(() {
@@ -140,6 +165,17 @@ class _SearchPageState extends State<SearchPage>
                     _clubsRefreshController.loadComplete();
 
                     searchClubsCubit.searchClubs(0, searchTextController.text);
+                  }else {
+                    final SearchUsersCubit searchUsersCubit =
+                        BlocProvider.of<SearchUsersCubit>(context);
+                    setState(() {
+                      profilePage= 0;
+                      searchUsers = [];
+                    });
+
+                    _profileRefreshController.loadComplete();
+
+                    searchUsersCubit.searchUsers(0, searchTextController.text);
                   }
                 }
               },
@@ -191,10 +227,10 @@ class _SearchPageState extends State<SearchPage>
             //   icon: Icon(FontAwesomeIcons.ticketAlt),
             //   text: "Tickets",
             // ),
-            // Tab(
-            //   icon: Icon(FontAwesomeIcons.users),
-            //   text: "People",
-            // ),
+            Tab(
+              icon: Icon(FontAwesomeIcons.users),
+              text: "People",
+            ),
           ],
         )
       ]);
@@ -311,6 +347,97 @@ class _SearchPageState extends State<SearchPage>
               }));
     });
   }
+
+  int profilePage = 0;
+  List<SocialPerson> searchUsers = [];
+
+  Widget profileList() {
+    return BlocConsumer<SearchUsersCubit, UserState>(
+        listener: (context, state) {
+      if (state is SocialUsersSearchLoadedState) {
+        if (_profileRefreshController.isRefresh) {
+          _profileScrollController.jumpTo(0.0);
+          _profileRefreshController.refreshCompleted();
+          _profileRefreshController.loadComplete();
+
+          _profileRefreshController = RefreshController(initialRefresh: false);
+        } else if (_profileRefreshController.isLoading) {
+          if (state.hasReachedMax)
+            _profileRefreshController.loadNoData();
+          else
+            _profileRefreshController.loadComplete();
+        }
+      }
+    }, builder: (context, searchUsersState) {
+      if (searchUsersState is SocialUsersSearchLoadedState)
+        searchUsers = searchUsersState.socialPeople;
+
+      if (searchUsersState is SocialUsersSearchErrorState) {
+        switch (searchUsersState.error) {
+          case Error.NETWORK_ERROR:
+            alertUtil.sendAlert(BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT,
+                Colors.red, Icons.error);
+            break;
+          default:
+            alertUtil.sendAlert(BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT,
+                Colors.red, Icons.error);
+            break;
+        }
+      }
+
+      return SmartRefresher(
+          controller: _profileRefreshController,
+          header: WaterDropMaterialHeader(),
+          footer: ClassicFooter(
+            textStyle: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 16,
+                fontFamily: 'Lato'),
+            noDataText: "You've reached the end of the line",
+            failedText: "Something Went Wrong",
+          ),
+          onRefresh: () {
+            final SearchUsersCubit searchUsersCubit =
+                BlocProvider.of<SearchUsersCubit>(context);
+            setState(() {
+              profilePage = 0;
+              searchUsers = [];
+            });
+
+            _profileRefreshController.loadComplete();
+
+            searchUsersCubit.searchUsers(0, searchTextController.text);
+          },
+          onLoading: () {
+            if (searchUsers.length == 0) {
+              _profileRefreshController.loadComplete();
+              return;
+            }
+
+            final SearchUsersCubit searchUsersCubit =
+                BlocProvider.of<SearchUsersCubit>(context);
+
+            setState(() {
+              profilePage++;
+            });
+
+            searchUsersCubit.searchUsers(profilePage, searchTextController.text);
+          },
+          enablePullUp: true,
+          child: ListView.builder(
+              controller: _profileScrollController,
+              padding: EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              itemCount: searchUsers.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: profileItem(context, searchUsers[index]));
+              }));
+    });
+  }
+
 
   int clubsPage = 0;
   List<Club> searchClubs = [];
@@ -698,13 +825,7 @@ class _SearchPageState extends State<SearchPage>
                       children: [
                         eventList(),
                         clubList(),
-                        //Icon(Icons.directions_transit, color: Colors.white),
-                        // Padding(
-                        //     padding: EdgeInsets.all(16),
-                        //     child: Align(
-                        //       child: profileItem(context),
-                        //       alignment: Alignment.topCenter,
-                        // )),
+                        profileList()
                       ],
                     ),
                   )
@@ -751,7 +872,7 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  Widget profileItem(BuildContext context) {
+  Widget profileItem(BuildContext context, SocialPerson person) {
     return Padding(
         padding: EdgeInsets.symmetric(vertical: 6),
         child: Card(
@@ -761,7 +882,9 @@ class _SearchPageState extends State<SearchPage>
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: FlatButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamed(context, '/profile_page', arguments: person);
+              },
               padding: EdgeInsets.zero,
               child: Wrap(children: [
                 Column(
@@ -784,8 +907,7 @@ class _SearchPageState extends State<SearchPage>
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
                                           backgroundImage:
-                                              OptimizedCacheImageProvider(
-                                                  'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
+                                              OptimizedCacheImageProvider(person.personProfilePicURL),
                                         ))),
                                 Expanded(
                                     child: Padding(
@@ -805,7 +927,7 @@ class _SearchPageState extends State<SearchPage>
                                                     padding: EdgeInsets.only(
                                                         left: 4, right: 3),
                                                     child: Text(
-                                                      "professor_mnm967",
+                                                      person.personUsername,
                                                       textAlign:
                                                           TextAlign.start,
                                                       maxLines: 1,

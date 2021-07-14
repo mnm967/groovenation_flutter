@@ -11,7 +11,7 @@ import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
-import 'package:optimized_cached_image/image_provider/optimized_cached_image_provider.dart';
+import 'package:optimized_cached_image/optimized_cached_image.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -327,7 +327,7 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
         builder: (context, topClubsState) {
           if (topClubsState is ClubsLoadedState) topClubs = topClubsState.clubs;
 
-        if (topClubsState is ClubsErrorState) {
+          if (topClubsState is ClubsErrorState) {
             _topRatedRefreshController.refreshFailed();
 
             switch (topClubsState.error) {
@@ -472,8 +472,7 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                                         BlocProvider.of<FavouritesClubsCubit>(
                                             context);
                                     if (isFavourite) {
-                                      favouritesClubsCubit
-                                          .removeClub(club);
+                                      favouritesClubsCubit.removeClub(club);
                                     } else
                                       favouritesClubsCubit.addClub(club);
                                   },
@@ -504,7 +503,10 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                                 circularStrokeCap: CircularStrokeCap.round,
                                 lineWidth: 5.0,
                                 percent: club.averageRating / 5.0,
-                                center: new Text(club.averageRating.toDouble().toStringAsFixed(1),
+                                center: new Text(
+                                    club.averageRating
+                                        .toDouble()
+                                        .toStringAsFixed(1),
                                     style: TextStyle(
                                         fontFamily: 'LatoBold',
                                         color: Colors.white,

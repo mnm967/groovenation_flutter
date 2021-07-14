@@ -436,10 +436,10 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                 overflow: Overflow.visible,
                 children: [
                   Positioned.fill(
-                      child: OptimizedCacheImage(
-                    imageUrl: imageUrl,
-                    fit: BoxFit.cover,
-                  )),
+                      child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                )),
                   Positioned.fill(
                     child: Container(
                       color: Colors.black.withOpacity(0.2),

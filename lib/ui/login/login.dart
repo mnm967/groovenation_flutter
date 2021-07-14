@@ -114,11 +114,12 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushReplacementNamed(context, '/signup');
   }
 
-  Future<void> _showAlertDialog(BuildContext context, String title, String desc) async {
-    try{
+  Future<void> _showAlertDialog(
+      BuildContext context, String title, String desc) async {
+    try {
       await _hideLoadingDialog();
-    }catch(e){}
-    
+    } catch (e) {}
+
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -169,7 +170,8 @@ class _LoginPageState extends State<LoginPage> {
           authCubit.loginFacebook(email, name, facebookId);
           break;
         case FacebookLoginStatus.error:
-          _showAlertDialog(context, "Something Went Wrong", UNKNOWN_ERROR_PROMPT);
+          _showAlertDialog(
+              context, "Something Went Wrong", UNKNOWN_ERROR_PROMPT);
           break;
         default:
           break;
@@ -208,6 +210,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+
     var myTheme = SystemUiOverlayStyle.light
         .copyWith(systemNavigationBarColor: Colors.deepPurple);
 

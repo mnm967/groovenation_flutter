@@ -55,7 +55,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
   }
 
   final _listRefreshController = RefreshController(initialRefresh: false);
-  final _gridRefreshController = RefreshController(initialRefresh: true);
+  final _gridRefreshController = RefreshController(initialRefresh: false);
 
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
@@ -117,9 +117,11 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                                               height: 116,
                                               width: 116,
                                               child: CircleAvatar(
-                                                  backgroundImage:
-                                                      OptimizedCacheImageProvider(
-                                                          "${sharedPrefs.profilePicUrl}")),
+                                                  backgroundImage: NetworkImage(
+                                                      "${sharedPrefs.profilePicUrl}")
+                                                  // OptimizedCacheImageProvider(
+                                                  //     "${sharedPrefs.profilePicUrl}")
+                                                  ),
                                             ),
                                             Padding(
                                                 padding: EdgeInsets.only(
@@ -172,11 +174,6 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    var myTheme = SystemUiOverlayStyle.light
-        .copyWith(systemNavigationBarColor: Colors.deepPurple);
-
-    SystemChrome.setSystemUIOverlayStyle(myTheme);
-
     return mainView(context);
   }
 
@@ -189,6 +186,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
         child: Stack(children: [
           Scaffold(
             backgroundColor: Colors.transparent,
+            
             body: NestedScrollView(
                 controller: _scrollController,
                 physics: const BouncingScrollPhysics(
@@ -225,9 +223,14 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                                 ],
                               ))),
                       flexibleSpace: Stack(children: [
+                        // Positioned.fill(
+                        //     child: OptimizedCacheImage(
+                        //   imageUrl: "${sharedPrefs.coverPicUrl}",
+                        //   fit: BoxFit.cover,
+                        // )),
                         Positioned.fill(
-                            child: OptimizedCacheImage(
-                          imageUrl: "${sharedPrefs.coverPicUrl}",
+                            child: Image.network(
+                          "${sharedPrefs.coverPicUrl}",
                           fit: BoxFit.cover,
                         )),
                         Positioned.fill(
@@ -244,110 +247,253 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                     ),
                   ];
                 },
-                body: BlocConsumer<UserSocialCubit, SocialState>(
-                    listener: (context, socialState) {
-                  if (socialState is SocialLoadedState) {
-                    _listRefreshController.refreshCompleted();
-                    if (socialState.socialPosts.length > 0 &&
-                        socialPostsPage == 0)
-                      _listRefreshController.loadComplete();
-                    else
-                      _listRefreshController.loadNoData();
 
-                    _gridRefreshController.refreshCompleted();
-                    if (socialState.socialPosts.length > 0 &&
-                        socialPostsPage == 0)
-                      _gridRefreshController.loadComplete();
-                    else
-                      _gridRefreshController.loadNoData();
-                  }
+                body: 
 
-                  if (socialState is SocialErrorState) {
-                    _listRefreshController.refreshFailed();
-                    _listRefreshController.loadFailed();
-
-                    _gridRefreshController.refreshFailed();
-                    _gridRefreshController.loadFailed();
-                  }
-                }, builder: (context, socialState) {
-                  bool hasReachedMax = false;
-
-                  if (socialState is SocialLoadedState) {
-                    socialPosts = socialState.socialPosts;
-                    // if (socialPostsPage == 0)
-                    //   socialPosts = socialState.socialPosts;
-                    // else {
-                    //   socialPosts.addAll(socialState.socialPosts);
-                    // }
-                    hasReachedMax = socialState.hasReachedMax;
-                  }
-
-                  return TabBarView(children: [
-                    NotificationListener<ScrollNotification>(
+                TabBarView(children: [
+                  NotificationListener<ScrollNotification>(
                       onNotification: (ScrollNotification scrollInfo) {
-                        if (scrollInfo.metrics.pixels >=
-                            (scrollInfo.metrics.maxScrollExtent - 256)) {
-                          if (_gridRefreshController.footerStatus ==
-                              LoadStatus.idle) {
-                            _gridRefreshController.requestLoading(
-                                needMove: false);
-                          }
-                        }
-                        return false;
-                      },
-                      child: SocialGridList(
-                          socialPosts, hasReachedMax, _gridRefreshController,
-                          () {
-                        final UserSocialCubit socialCubit =
-                            BlocProvider.of<UserSocialCubit>(context);
+                    if (scrollInfo.metrics.pixels >=
+                        (scrollInfo.metrics.maxScrollExtent - 256)) {
+                      if (_gridRefreshController.footerStatus ==
+                          LoadStatus.idle) {
+                        _gridRefreshController.requestLoading(needMove: false);
+                      }
+                    }
+                    return false;
+                  }, child: BlocBuilder<UserSocialCubit, SocialState>(
+                          builder: (context, socialState) {
+                    if (socialState is SocialLoadedState) {
+                      if (socialPostsPage == 0)
+                        socialPosts = socialState.socialPosts;
+                      else
+                        socialPosts.addAll(socialState.socialPosts);
 
-                        if ((socialCubit.state is SocialLoadedState ||
-                                socialCubit.state is SocialErrorState) &&
-                            !isFirstView) {
-                          socialPostsPage = 0;
-                          socialCubit.getSocialPosts(socialPostsPage);
-                        }
-                      }, () {
-                        final UserSocialCubit socialCubit =
-                            BlocProvider.of<UserSocialCubit>(context);
-
-                        socialPostsPage++;
-                        socialCubit.getSocialPosts(socialPostsPage);
-                      }),
-                    ),
-                    NotificationListener<ScrollNotification>(
-                        onNotification: (ScrollNotification scrollInfo) {
-                          if (scrollInfo.metrics.pixels >=
-                              (scrollInfo.metrics.maxScrollExtent - 756)) {
-                            if (_listRefreshController.footerStatus ==
-                                LoadStatus.idle) {
-                              _listRefreshController.requestLoading(
-                                  needMove: false);
-                            }
+                      _gridRefreshController.refreshCompleted();
+                      if (socialState.hasReachedMax)
+                        _gridRefreshController.loadNoData();
+                    }
+                    return SmartRefresher(
+                        controller: _gridRefreshController,
+                        header: WaterDropMaterialHeader(),
+                        footer: ClassicFooter(
+                          textStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 16,
+                              fontFamily: 'Lato'),
+                          noDataText: "You've reached the end of the line",
+                          failedText: "Something Went Wrong",
+                        ),
+                        onLoading: () {
+                          if (!(socialState is SocialLoadedState)) {
+                            _gridRefreshController.loadComplete();
+                            return;
                           }
-                          return false;
+
+                          final UserSocialCubit socialCubit =
+                              BlocProvider.of<UserSocialCubit>(context);
+
+                          socialCubit.getSocialPosts(
+                              socialPostsPage + 1);
+                          socialPostsPage = socialPostsPage + 1;
                         },
-                        child: SocialPostList(
-                            socialPosts, hasReachedMax, _listRefreshController,
-                            () {
-                          final UserSocialCubit socialCubit =
-                              BlocProvider.of<UserSocialCubit>(context);
+                        enablePullUp: true,
+                        child: CustomScrollView(
+                          physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics()),
+                          slivers: [
+                            SliverGrid(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                ),
+                                delegate: SliverChildBuilderDelegate(
+                                  (BuildContext context, int index) {
+                                    return SocialGridItem(
+                                      key: Key(socialPosts[index].postID + "-grid"),
+                                      socialPost: socialPosts[index],
+                                    );
+                                  },
+                                  childCount: socialPosts.length,
+                                )),
+                          ],
+                        ));
+                  })),
+                  NotificationListener<ScrollNotification>(
+                      onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo.metrics.pixels >=
+                        (scrollInfo.metrics.maxScrollExtent - 756)) {
+                      if (_listRefreshController.footerStatus ==
+                          LoadStatus.idle) {
+                        _listRefreshController.requestLoading(needMove: false);
+                      }
+                    }
+                    return false;
+                  }, child: BlocBuilder<UserSocialCubit, SocialState>(
+                          builder: (context, socialState) {
+                    if (socialState is SocialLoadedState) {
+                      // if (socialPostsPage == 0)
+                      //   socialPosts = socialState.socialPosts;
+                      // else
+                      //   socialPosts.addAll(socialState.socialPosts);
 
-                          if ((socialCubit.state is SocialLoadedState ||
-                                  socialCubit.state is SocialErrorState) &&
-                              !isFirstView) {
-                            socialPostsPage = 0;
-                            socialCubit.getSocialPosts(socialPostsPage);
+                      _listRefreshController.refreshCompleted();
+                      if (socialState.hasReachedMax)
+                        _listRefreshController.loadNoData();
+                    }
+
+                    return SmartRefresher(
+                        controller: _listRefreshController,
+                        header: WaterDropMaterialHeader(),
+                        footer: ClassicFooter(
+                          textStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
+                              fontSize: 16,
+                              fontFamily: 'Lato'),
+                          noDataText: "You've reached the end of the line",
+                          failedText: "Something Went Wrong",
+                        ),
+                        onLoading: () {
+                          if (!(socialState is SocialLoadedState)) {
+                            _listRefreshController.loadComplete();
+                            return;
                           }
-                        }, () {
+
                           final UserSocialCubit socialCubit =
                               BlocProvider.of<UserSocialCubit>(context);
 
-                          socialPostsPage++;
-                          socialCubit.getSocialPosts(socialPostsPage);
-                        })),
-                  ]);
-                })),
+                          socialCubit.getSocialPosts(
+                              socialPostsPage + 1);
+                          socialPostsPage = socialPostsPage + 1;
+                        },
+                        enablePullUp: true,
+                        child: CustomScrollView(
+                          physics: const BouncingScrollPhysics(
+                              parent: AlwaysScrollableScrollPhysics()),
+                          slivers: [
+                            SliverPadding(
+                              padding: EdgeInsets.only(top: 24),
+                              sliver: SliverList(
+                                  delegate: SliverChildBuilderDelegate(
+                                      (BuildContext context, int index) {
+                                return Padding(
+                                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                    child: SocialItem(
+                                        key: Key(socialPosts[index].postID),
+                                        socialPost: socialPosts[index],
+                                        showClose: false));
+                              }, childCount: socialPosts.length)),
+                            )
+                          ],
+                        ));
+                  })),
+                ]))
+                
+                // BlocConsumer<UserSocialCubit, SocialState>(
+                //     listener: (context, socialState) {
+                //   if (socialState is SocialLoadedState) {
+                //     _listRefreshController.refreshCompleted();
+                //     if (socialState.socialPosts.length > 0 &&
+                //         socialPostsPage == 0)
+                //       _listRefreshController.loadComplete();
+                //     else
+                //       _listRefreshController.loadNoData();
+
+                //     _gridRefreshController.refreshCompleted();
+                //     if (socialState.socialPosts.length > 0 &&
+                //         socialPostsPage == 0)
+                //       _gridRefreshController.loadComplete();
+                //     else
+                //       _gridRefreshController.loadNoData();
+                //   }
+
+                //   if (socialState is SocialErrorState) {
+                //     _listRefreshController.refreshFailed();
+                //     _listRefreshController.loadFailed();
+
+                //     _gridRefreshController.refreshFailed();
+                //     _gridRefreshController.loadFailed();
+                //   }
+                // }, builder: (context, socialState) {
+                //   bool hasReachedMax = false;
+
+                //   if (socialState is SocialLoadedState) {
+                //     socialPosts = socialState.socialPosts;
+                //     // if (socialPostsPage == 0)
+                //     //   socialPosts = socialState.socialPosts;
+                //     // else {
+                //     //   socialPosts.addAll(socialState.socialPosts);
+                //     // }
+                //     hasReachedMax = socialState.hasReachedMax;
+                //   }
+
+                //   return TabBarView(children: [
+                //     NotificationListener<ScrollNotification>(
+                //       onNotification: (ScrollNotification scrollInfo) {
+                //         if (scrollInfo.metrics.pixels >=
+                //             (scrollInfo.metrics.maxScrollExtent - 256)) {
+                //           if (_gridRefreshController.footerStatus ==
+                //               LoadStatus.idle) {
+                //             _gridRefreshController.requestLoading(
+                //                 needMove: false);
+                //           }
+                //         }
+                //         return false;
+                //       },
+                //       child: SocialGridList(
+                //           socialPosts, hasReachedMax, _gridRefreshController,
+                //           () {
+                //         final UserSocialCubit socialCubit =
+                //             BlocProvider.of<UserSocialCubit>(context);
+
+                //         if ((socialCubit.state is SocialLoadedState ||
+                //                 socialCubit.state is SocialErrorState) &&
+                //             !isFirstView) {
+                //           socialPostsPage = 0;
+                //           socialCubit.getSocialPosts(socialPostsPage);
+                //         }
+                //       }, () {
+                //         final UserSocialCubit socialCubit =
+                //             BlocProvider.of<UserSocialCubit>(context);
+
+                //         socialPostsPage++;
+                //         socialCubit.getSocialPosts(socialPostsPage);
+                //       }),
+                //     ),
+                //     NotificationListener<ScrollNotification>(
+                //         onNotification: (ScrollNotification scrollInfo) {
+                //           if (scrollInfo.metrics.pixels >=
+                //               (scrollInfo.metrics.maxScrollExtent - 756)) {
+                //             if (_listRefreshController.footerStatus ==
+                //                 LoadStatus.idle) {
+                //               _listRefreshController.requestLoading(
+                //                   needMove: false);
+                //             }
+                //           }
+                //           return false;
+                //         },
+                //         child: SocialPostList(
+                //             socialPosts, hasReachedMax, _listRefreshController,
+                //             () {
+                //           final UserSocialCubit socialCubit =
+                //               BlocProvider.of<UserSocialCubit>(context);
+
+                //           if ((socialCubit.state is SocialLoadedState ||
+                //                   socialCubit.state is SocialErrorState) &&
+                //               !isFirstView) {
+                //             socialPostsPage = 0;
+                //             socialCubit.getSocialPosts(socialPostsPage);
+                //           }
+                //         }, () {
+                //           final UserSocialCubit socialCubit =
+                //               BlocProvider.of<UserSocialCubit>(context);
+
+                //           socialPostsPage++;
+                //           socialCubit.getSocialPosts(socialPostsPage);
+                //         })),
+                //   ]);
+                // })),
+          
           ),
           AnimatedOpacity(
               opacity: _scrollToTopVisible ? 1.0 : 0.0,
@@ -386,6 +532,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                       ))))
         ]));
   }
+
 }
 
 class SocialPostList extends StatefulWidget {
@@ -420,40 +567,50 @@ class _SocialListState extends State<SocialPostList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return SmartRefresher(
-        controller: refreshController,
-        header: WaterDropMaterialHeader(),
-        footer: ClassicFooter(
-          textStyle: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 16,
-              fontFamily: 'Lato'),
-          noDataText: "Nothing to See Here",
-          failedText: "Something Went Wrong",
-        ),
-        onLoading: onLoading,
-        onRefresh: onRefresh,
-        enablePullUp: true,
-        enablePullDown: true,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
-          slivers: [
-            SliverPadding(
-              padding: EdgeInsets.only(top: 24),
-              sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                (BuildContext context, int index) {
-                  return Padding(
-                      padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      child: SocialItem(
-                          socialPost: socialPosts[index], showClose: false));
-                },
-                childCount: socialPosts.length,
-              )),
-            )
-          ],
-        ));
+    return BlocListener<SocialPostCubit, SocialState>(
+        listener: (context, socialState) {
+          if (socialState is SocialPostUploadSuccessState) {
+            setState(() {
+              socialPosts.insert(0, socialState.post);
+            });
+          }
+        },
+        child: SmartRefresher(
+            controller: refreshController,
+            header: WaterDropMaterialHeader(),
+            footer: ClassicFooter(
+              textStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 16,
+                  fontFamily: 'Lato'),
+              noDataText: "Nothing to See Here",
+              failedText: "Something Went Wrong",
+            ),
+            onLoading: onLoading,
+            onRefresh: onRefresh,
+            enablePullUp: true,
+            enablePullDown: true,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverPadding(
+                  padding: EdgeInsets.only(top: 24),
+                  sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                    (BuildContext context, int index) {
+                      return Padding(
+                          padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: SocialItem(
+                              key: Key(socialPosts[index].postID),
+                              socialPost: socialPosts[index],
+                              showClose: false));
+                    },
+                    childCount: socialPosts.length,
+                  )),
+                )
+              ],
+            )));
   }
 
   @override
@@ -492,43 +649,51 @@ class _SocialGridListState extends State<SocialGridList>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return SmartRefresher(
-        controller: refreshController,
-        header: WaterDropMaterialHeader(),
-        footer: ClassicFooter(
-          textStyle: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 16,
-              fontFamily: 'Lato'),
-          noDataText: "Nothing to See Here",
-          failedText: "Something Went Wrong",
-        ),
-        onLoading: () => {
-          onLoading()
-          },
-        onRefresh: () => onRefresh(),
-        enablePullUp: true,
-        enablePullDown: true,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(
-              parent: AlwaysScrollableScrollPhysics()),
-          slivers: [
-            SliverPadding(
-                padding: socialPosts.length == 0
-                    ? EdgeInsets.only(top: 24)
-                    : EdgeInsets.zero,
-                sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (BuildContext context, int index) {
-                        return SocialGridItem(socialPost: socialPosts[index]);
-                      },
-                      childCount: socialPosts.length,
-                    ))),
-          ],
-        ));
+    return BlocListener<SocialPostCubit, SocialState>(
+        listener: (context, socialState) {
+          if (socialState is SocialPostUploadSuccessState) {
+            setState(() {
+              socialPosts.insert(0, socialState.post);
+            });
+          }
+        },
+        child: SmartRefresher(
+            controller: refreshController,
+            header: WaterDropMaterialHeader(),
+            footer: ClassicFooter(
+              textStyle: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 16,
+                  fontFamily: 'Lato'),
+              noDataText: "Nothing to See Here",
+              failedText: "Something Went Wrong",
+            ),
+            onLoading: () => {onLoading()},
+            onRefresh: () => onRefresh(),
+            enablePullUp: true,
+            enablePullDown: true,
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverPadding(
+                    padding: socialPosts.length == 0
+                        ? EdgeInsets.only(top: 24)
+                        : EdgeInsets.zero,
+                    sliver: SliverGrid(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (BuildContext context, int index) {
+                            return SocialGridItem(
+                                key: Key(socialPosts[index].postID + "-grid"),
+                                socialPost: socialPosts[index]);
+                          },
+                          childCount: socialPosts.length,
+                        ))),
+              ],
+            )));
   }
 
   @override

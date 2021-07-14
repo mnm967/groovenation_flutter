@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:groovenation_flutter/cubit/social_comments_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_comments_state.dart';
 import 'package:groovenation_flutter/models/social_comment.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/post_comment_item.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class CommentsDialog extends StatefulWidget {
@@ -18,9 +20,11 @@ class CommentsDialog extends StatefulWidget {
 
 class _CommentsDialogState extends State<CommentsDialog> {
   SocialPost socialPost;
+
   _CommentsDialogState({@required this.socialPost});
 
   final _commentsRefreshController = RefreshController(initialRefresh: false);
+  final TextEditingController _textEditingController = TextEditingController();
 
   @override
   void initState() {
@@ -30,6 +34,13 @@ class _CommentsDialogState extends State<CommentsDialog> {
           BlocProvider.of<SocialCommentsCubit>(context);
       commentsSocialCubit.getComments(commentsPage, socialPost.postID);
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _textEditingController.dispose();
+    _commentsRefreshController.dispose();
   }
 
   @override
@@ -50,8 +61,35 @@ class _CommentsDialogState extends State<CommentsDialog> {
     );
   }
 
+  void addSocialComment(String comment) {
+    final SocialCommentsCubit commentsSocialCubit =
+        BlocProvider.of<SocialCommentsCubit>(context);
+    commentAdded = true;
+    setState(() {
+      SocialComment newCom = SocialComment(
+          null,
+          SocialPerson(
+              sharedPrefs.userId,
+              sharedPrefs.username,
+              sharedPrefs.profilePicUrl,
+              sharedPrefs.coverPicUrl,
+              false,
+              false,
+              false),
+          DateTime.now(),
+          0,
+          false,
+          comment);
+
+      comments.insert(0, newCom);
+    });
+
+    commentsSocialCubit.addComment(socialPost.postID, comment);
+  }
+
   List<SocialComment> comments = [];
   int commentsPage = 0;
+  bool commentAdded = false;
 
   Widget commentPage() {
     return Material(
@@ -105,6 +143,10 @@ class _CommentsDialogState extends State<CommentsDialog> {
                       children: [
                         Expanded(
                           child: TextField(
+                            controller: _textEditingController,
+                            onChanged: (text) {
+                              setState(() {});
+                            },
                             keyboardType: TextInputType.multiline,
                             maxLines: null,
                             cursorColor: Colors.white.withOpacity(0.7),
@@ -114,7 +156,11 @@ class _CommentsDialogState extends State<CommentsDialog> {
                                 fontSize: 18),
                             decoration: InputDecoration(
                                 hintMaxLines: 3,
-                                hintText: "Type your comment",
+                                hintText: "Add Your Comment",
+                                hintStyle: TextStyle(
+                                    fontFamily: 'Lato',
+                                    color: Colors.white.withOpacity(0.2),
+                                    fontSize: 18),
                                 border: OutlineInputBorder(
                                     borderRadius: const BorderRadius.all(
                                       const Radius.circular(10.0),
@@ -129,14 +175,22 @@ class _CommentsDialogState extends State<CommentsDialog> {
                                     borderSide: BorderSide(
                                         color: Colors.white.withOpacity(0.5),
                                         width: 1.0)),
-                                suffixIcon: IconButton(
-                                    icon: Icon(Icons.send),
-                                    color: Colors.white.withOpacity(0.5),
-                                    padding: EdgeInsets.only(right: 20),
-                                    iconSize: 20,
-                                    onPressed: () {
-                                      FocusScope.of(context).unfocus();
-                                    })),
+                                suffixIcon: Visibility(
+                                    visible:
+                                        _textEditingController.text.isNotEmpty,
+                                    child: IconButton(
+                                        icon: Icon(Icons.send),
+                                        color: Colors.white.withOpacity(0.5),
+                                        padding: EdgeInsets.only(right: 20),
+                                        iconSize: 20,
+                                        onPressed: () {
+                                          addSocialComment(
+                                              _textEditingController.text);
+                                          setState(() {
+                                            _textEditingController.text = "";
+                                          });
+                                          FocusScope.of(context).unfocus();
+                                        }))),
                           ),
                         ),
                       ],
@@ -167,25 +221,17 @@ class _CommentsDialogState extends State<CommentsDialog> {
                   }
 
                   bool hasReachedMax = false;
-                  bool hasCaption = socialPost.caption != null;
-                  SocialComment captionComment;
 
                   if (socialState is SocialCommentsLoadedState) {
-                    if (commentsPage == 0)
+                    if (commentsPage == 0 && !commentAdded)
                       comments = socialState.socialComments;
-                    else {
+                    else if (commentAdded) {
+                      commentAdded = false;
+                    } else {
                       comments.addAll(socialState.socialComments);
+                      _commentsRefreshController.loadComplete();
                     }
-                    try {
-                      if (hasCaption) {
-                        captionComment = comments.firstWhere((element) =>
-                            (captionComment.person.personID ==
-                                    socialPost.person.personID &&
-                                element.comment == socialPost.caption));
 
-                        comments.remove(captionComment);
-                      }
-                    } catch (e) {}
                     hasReachedMax = socialState.hasReachedMax;
                   }
 
@@ -205,35 +251,26 @@ class _CommentsDialogState extends State<CommentsDialog> {
                             noDataText: "You've reached the end of the line",
                             failedText: "Something Went Wrong",
                           ),
+                          onLoading: () {
+                            final SocialCommentsCubit commentsSocialCubit =
+                                BlocProvider.of<SocialCommentsCubit>(context);
+                            commentsSocialCubit.getMoreComments(
+                                commentsPage + 1, socialPost.postID);
+
+                            commentsPage = commentsPage + 1;
+                          },
                           enablePullDown: false,
                           enablePullUp: true,
                           child: SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(
-                                parent: AlwaysScrollableScrollPhysics()),
                             child: Column(
                               children: [
-                                Visibility(
-                                    visible: captionComment != null,
-                                    child: Container(
-                                      padding: EdgeInsets.only(bottom: 8),
-                                      child: PostCommentItem(captionComment),
-                                    )),
-                                Visibility(
-                                    visible: captionComment != null,
-                                    child: Container(
-                                      width: double.infinity,
-                                      margin:
-                                          EdgeInsets.only(right: 16, left: 16),
-                                      height: 1,
-                                      color: Colors.white.withOpacity(0.5),
-                                    )),
                                 ListView.builder(
                                     physics: NeverScrollableScrollPhysics(),
                                     shrinkWrap: true,
                                     padding: EdgeInsets.only(top: 8, bottom: 8),
                                     itemCount: comments.length,
                                     itemBuilder: (context, index) {
-                                      return PostCommentItem(comments[index]);
+                                      return PostCommentItem(Key(comments[index].hashCode.toString()), comments[index]);
                                     }),
                               ],
                             ),
