@@ -10,8 +10,7 @@ import 'package:groovenation_flutter/cubit/state/events_state.dart';
 import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:intl/intl.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class EventsHomePage extends StatefulWidget {
@@ -39,19 +38,18 @@ class _EventsHomePageState extends State<EventsHomePage> {
       print("Running Build: $pg");
       _isFirstView = false;
 
-      final FavouritesEventsCubit favouriteEventsCubit =
-          BlocProvider.of<FavouritesEventsCubit>(context);
+      // final FavouritesEventsCubit favouriteEventsCubit =
+      //     BlocProvider.of<FavouritesEventsCubit>(context);
 
-      favouriteEventsCubit.getEvents(0);
+      // favouriteEventsCubit.getEvents(0);
     }
   }
 
   final FlareControls flareControls = FlareControls();
   final ScrollController _upcomingScrollController = new ScrollController();
-  final ScrollController _favouritesScrollController = new ScrollController();
 
   RefreshController _upcomingRefreshController =
-      RefreshController(initialRefresh: false);
+      RefreshController(initialRefresh: true);
   final _favouritesRefreshController = RefreshController(initialRefresh: false);
 
   void setListScrollListener(
@@ -60,7 +58,7 @@ class _EventsHomePageState extends State<EventsHomePage> {
       if (controller.position.pixels >=
           (controller.position.maxScrollExtent - 456)) {
         if (refreshController.footerStatus == LoadStatus.idle) {
-          refreshController.requestLoading(needMove: false);
+          if(mounted) refreshController.requestLoading(needMove: false);
         }
       }
     });
@@ -69,8 +67,15 @@ class _EventsHomePageState extends State<EventsHomePage> {
   @override
   void initState() {
     super.initState();
-    setListScrollListener(
-        _upcomingScrollController, _upcomingRefreshController);
+
+      final FavouritesEventsCubit favouriteEventsCubit =
+        BlocProvider.of<FavouritesEventsCubit>(context);
+
+      favouriteEventsCubit.getEvents(0);
+
+      WidgetsBinding.instance
+        .addPostFrameCallback((_) => setListScrollListener(
+        _upcomingScrollController, _upcomingRefreshController));
   }
 
   openSearchPage() {
@@ -349,7 +354,7 @@ class _EventsHomePageState extends State<EventsHomePage> {
                       height: 256,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(event.imageUrl),
+                            image: CachedNetworkImageProvider(event.imageUrl),
                             fit: BoxFit.cover),
                       ),
                       child: Align(

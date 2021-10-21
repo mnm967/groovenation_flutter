@@ -12,7 +12,7 @@ import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -252,7 +252,9 @@ class _ClubSearchPageState extends State<ClubSearchPage>
     });
   }
 
-  double _getDistanceToClub() {}
+  double _getDistanceToClub() {
+    return 0.0;
+  }
 
   Widget clubItem(
       BuildContext context, Club club, bool isFavourite, int index) {
@@ -277,7 +279,7 @@ class _ClubSearchPageState extends State<ClubSearchPage>
                       height: 236,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(club.images[0]),
+                            image: CachedNetworkImageProvider(club.images[0]),
                             fit: BoxFit.cover),
                       ),
                     ),

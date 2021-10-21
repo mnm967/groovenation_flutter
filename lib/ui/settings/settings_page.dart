@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/cubit/auth_cubit.dart';
 import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 
@@ -279,7 +278,7 @@ class _SettingsPageState extends State<SettingsPage> {
   _logUserOut() {
     final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
     authCubit.logout();
-    Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, '/log', (route) => false);
   }
 
   Widget logoutItem(BuildContext context) {

@@ -1,6 +1,5 @@
 import 'package:crypt/crypt.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/constants/error.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/api_result.dart';
@@ -390,16 +389,15 @@ class SocialRepository {
       }
     }
   }
-  
+
   Future<bool> changeUserFollowing(SocialPerson person) async {
     var uid = sharedPrefs.userId;
 
     try {
-      Response response = await Dio().get(
-          person.isUserFollowing
-              ? "$API_HOST/social/follow/${person.personID}/$uid"
-              : "$API_HOST/social/unfollow/${person.personID}/$uid");
-              
+      Response response = await Dio().get(person.isUserFollowing
+          ? "$API_HOST/social/follow/${person.personID}/$uid"
+          : "$API_HOST/social/unfollow/${person.personID}/$uid");
+
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;
 
@@ -472,6 +470,76 @@ class SocialRepository {
         "post_id": postId,
         "comment": comment,
       });
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = response.data;
+
+        print(response);
+
+        if (jsonResponse['status'] == 1) {
+          return true;
+        } else
+          throw SocialException(Error.UNKNOWN_ERROR);
+      } else
+        throw SocialException(Error.UNKNOWN_ERROR);
+    } catch (e) {
+      if (e is SocialException)
+        throw SocialException(e.error);
+      else {
+        if (e is DioError) if (e.type == DioErrorType.cancel) {
+          throw e;
+        } else
+          throw SocialException(Error.NETWORK_ERROR);
+        else
+          throw SocialException(Error.NETWORK_ERROR);
+      }
+    }
+  }
+
+  Future<bool> sendReport(String reportType, String comment, SocialPost post,
+      SocialPerson person) async {
+    try {
+      Response response = await Dio().post("$API_HOST/social/report", data: {
+        "report_type": reportType,
+        "report_comment": comment,
+        "report_user": person != null ? person.personID : null,
+        "report_post": post != null ? post.postID : null,
+      });
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = response.data;
+
+        print(response);
+
+        if (jsonResponse['status'] == 1) {
+          return true;
+        } else
+          throw SocialException(Error.UNKNOWN_ERROR);
+      } else
+        throw SocialException(Error.UNKNOWN_ERROR);
+    } catch (e) {
+      if (e is SocialException)
+        throw SocialException(e.error);
+      else {
+        if (e is DioError) if (e.type == DioErrorType.cancel) {
+          throw e;
+        } else
+          throw SocialException(Error.NETWORK_ERROR);
+        else {
+          print(e);
+          throw SocialException(Error.NETWORK_ERROR);
+        }
+      }
+    }
+  }
+
+  Future<bool> changeUserBlock(String personId, bool isBlocked) async {
+    var uid = sharedPrefs.userId;
+
+    try {
+      Response response = isBlocked
+          ? await Dio().get("$API_HOST/social/block/$uid/$personId")
+          : await Dio().get("$API_HOST/social/unblock/$uid/$personId");
 
       if (response.statusCode == 200) {
         Map<String, dynamic> jsonResponse = response.data;

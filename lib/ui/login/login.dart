@@ -93,7 +93,10 @@ class _LoginPageState extends State<LoginPage> {
       await Future.delayed(Duration(seconds: 1));
     }
 
-    Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+    try {
+      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+    } catch (e) {}
+
   }
 
   final usernameController = TextEditingController();
@@ -159,7 +162,7 @@ class _LoginPageState extends State<LoginPage> {
           _showLoadingDialog(context);
           final token = result.accessToken.token;
           final graphResponse = await Dio().get(
-              'https://graph.facebook.com/v2.12/me?fields=name,first_name,last_name,email&access_token=${token}');
+              'https://graph.facebook.com/v2.12/me?fields=name,first_name,last_name,email&access_token=$token');
           final profile = jsonDecode(graphResponse.data.toString());
 
           String name = profile['name'];
@@ -210,7 +213,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-
     var myTheme = SystemUiOverlayStyle.light
         .copyWith(systemNavigationBarColor: Colors.deepPurple);
 

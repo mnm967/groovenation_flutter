@@ -1,11 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/cubit/state/social_comments_state.dart';
 import 'package:groovenation_flutter/data/repo/social_repository.dart';
 import 'package:groovenation_flutter/models/api_result.dart';
 import 'package:groovenation_flutter/models/social_comment.dart';
-import 'package:groovenation_flutter/models/social_person.dart';
-import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 class SocialCommentsCubit extends Cubit<SocialCommentsState> {
@@ -17,8 +18,9 @@ class SocialCommentsCubit extends Cubit<SocialCommentsState> {
   void addComment(String postID, String comment) async {
     try {
       socialRepository.addSocialComment(postID, comment);
-    } on SocialException catch (e) {
-      //TODO Show Error Dialog...
+    } on SocialException catch (_) {
+      alertUtil.sendAlert(
+          BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT, Colors.red, Icons.error);
     }
   }
 

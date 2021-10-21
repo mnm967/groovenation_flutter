@@ -26,7 +26,6 @@ class TicketPurchaseCubit extends Cubit<TicketPurchaseState> {
 
   void verifyPurchase(BuildContext context, String eventId, String clubId,
       TicketPrice ticketType, int noOfPeople, String reference) async {
-    //TODO Ticket Purchase
     emit(TicketPurchaseLoadingState());
 
     try {

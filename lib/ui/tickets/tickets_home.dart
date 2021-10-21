@@ -14,11 +14,11 @@ import 'package:groovenation_flutter/models/ticket.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:intl/intl.dart';
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class TicketsHomePage extends StatefulWidget {
   final _TicketsHomePageState state = _TicketsHomePageState();
@@ -146,10 +146,12 @@ class _TicketsHomePageState extends State<TicketsHomePage> {
         }
       }
     }, builder: (context, ticketsState) {
-      List<Ticket> up = ticketsState is TicketsLoadedState ? (ticketsState).tickets.where((ticket) {
-          DateTime now = DateTime.now();
-          return (now.isBefore(ticket.endDate) && !ticket.isScanned);
-        }).toList() : [];
+      List<Ticket> up = ticketsState is TicketsLoadedState
+          ? (ticketsState).tickets.where((ticket) {
+              DateTime now = DateTime.now();
+              return (now.isBefore(ticket.endDate) && !ticket.isScanned);
+            }).toList()
+          : [];
 
       if (ticketsState is TicketsLoadedState) {
         upcoming = ticketsState.tickets.where((ticket) {
@@ -175,8 +177,7 @@ class _TicketsHomePageState extends State<TicketsHomePage> {
                   Expanded(
                     child: TabBarView(
                       children: [
-                        TicketsList(up, false, _upcomingRefreshController,
-                            () {
+                        TicketsList(up, false, _upcomingRefreshController, () {
                           final TicketsCubit ticketsCubit =
                               BlocProvider.of<TicketsCubit>(context);
 
@@ -206,26 +207,6 @@ class _TicketsHomePageState extends State<TicketsHomePage> {
   }
 }
 
-// class TicketsList extends StatefulWidget {
-//   final List<Ticket> tickets;
-//   final bool isCompleted;
-//   final RefreshController refreshController;
-//   final Function onRefresh;
-
-//   TicketsList(
-//       this.tickets, this.isCompleted, this.refreshController, this.onRefresh);
-
-//   @override
-//   _TicketsListState createState() {
-//     print("len6:" + tickets.length.toString());
-//     final _TicketsListState state =
-//         _TicketsListState(tickets, isCompleted, refreshController, onRefresh);
-//     return state;
-//   }
-// }
-
-// class _TicketsListState extends State<TicketsList>
-//     with AutomaticKeepAliveClientMixin<TicketsList> {
 class TicketsList extends StatelessWidget {
   final List<Ticket> tickets;
   final bool isCompleted;
@@ -237,7 +218,10 @@ class TicketsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return smartRefresher();
+  }
 
+  Widget smartRefresher() {
     return SmartRefresher(
       controller: refreshController,
       header: WaterDropMaterialHeader(),
@@ -252,14 +236,12 @@ class TicketsList extends StatelessWidget {
       enablePullUp: false,
       enablePullDown: true,
       onRefresh: onRefresh,
-      child: isCompleted ? completedList(tickets) : upcomingList(tickets),
+      child: isCompleted ? pastTicketsList(tickets) : upcomingTicketsList(tickets),
     );
   }
 
-  Widget upcomingList(List<Ticket> tickets) {
+  Widget upcomingTicketsList(List<Ticket> tickets) {
     List<Ticket> upcoming = tickets;
-
-    print("mlen:" + tickets.length.toString());
 
     return ListView.builder(
         padding: EdgeInsets.only(top: 16, bottom: 0, left: 16, right: 16),
@@ -273,7 +255,7 @@ class TicketsList extends StatelessWidget {
         });
   }
 
-  Widget completedList(List<Ticket> tickets) {
+  Widget pastTicketsList(List<Ticket> tickets) {
     List<Ticket> completed = tickets;
 
     return ListView.builder(
@@ -352,7 +334,7 @@ class TicketsList extends StatelessWidget {
                                     height: double.infinity,
                                     width: 128,
                                     fit: BoxFit.cover,
-                                    image: OptimizedCacheImageProvider(
+                                    image: CachedNetworkImageProvider(
                                         ticket.imageUrl),
                                   ),
                                   Container(
@@ -466,10 +448,6 @@ class TicketsList extends StatelessWidget {
       Share.shareFiles(['${tempDir.path}/image.png'],
           text:
               "${ticket.eventName}\n• ${ticket.ticketType}\n• ${ticket.noOfPeople > 1 ? "•  " + ticket.noOfPeople.toString() + " People" : "•  1 Person"}• ${DateFormat("MMM dd, yyyy · HH:mm").format(ticket.startDate)}");
-
-      // final channel = const MethodChannel('channel:me.alfian.share/share');
-      // channel.invokeMethod('shareFile', 'image.png');
-
     } catch (e) {
       print(e.toString());
     }

@@ -274,8 +274,8 @@ class _SignUpPageState extends State<SignUpPage> {
             if (pendingSignup) {
               pendingSignup = false;
               if (usernameInputStatus ==
-                  UsernameInputStatus.USERNAME_AVAILABLE || usernameInputStatus ==
-                  UsernameInputStatus.NONE) {
+                      UsernameInputStatus.USERNAME_AVAILABLE ||
+                  usernameInputStatus == UsernameInputStatus.NONE) {
                 _showLoadingDialog(context);
                 final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
                 authCubit.signup(

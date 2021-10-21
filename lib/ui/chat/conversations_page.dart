@@ -1,22 +1,43 @@
 import 'dart:ui';
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:groovenation_flutter/cubit/chat_cubit.dart';
+import 'package:groovenation_flutter/cubit/state/chat_state.dart';
+import 'package:groovenation_flutter/models/conversation.dart';
+import 'package:groovenation_flutter/models/message.dart';
+import 'package:groovenation_flutter/util/chat_page_arguments.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:need_resume/need_resume.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class ConversationsPage extends StatefulWidget {
   @override
   _ConversationsPageState createState() => _ConversationsPageState();
 }
 
-class _ConversationsPageState extends State<ConversationsPage> {
+class _ConversationsPageState extends ResumableState<ConversationsPage> {
   bool _scrollToTopVisible = false;
   ScrollController _scrollController = new ScrollController();
+  bool isUserMessagesLoaded = true;
 
   @override
   void initState() {
     super.initState();
+
+    AwesomeNotifications().cancelAll();
+
+    isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
+    if (!isUserMessagesLoaded)
+      sharedPrefs.onUserMessagesValueChanged = () {
+        setState(() {
+          isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
+        });
+      };
+
     _scrollController.addListener(() {
       if (_scrollController.position.pixels <= 30) {
         if (_scrollToTopVisible != false) {
@@ -32,13 +53,30 @@ class _ConversationsPageState extends State<ConversationsPage> {
         }
       }
     });
+
+    final ConversationsCubit conversationsCubit =
+        BlocProvider.of<ConversationsCubit>(context);
+    // if (!conversationsCubit.isChatLoadedState())
+    conversationsCubit.getConversations();
+  }
+
+  @override
+  void onResume() {
+    final ConversationsCubit conversationsCubit =
+        BlocProvider.of<ConversationsCubit>(context);
+
+    conversationsCubit.getConversations();
+    super.onResume();
   }
 
   @override
   void dispose() {
+    sharedPrefs.onUserMessagesValueChanged = null;
     _scrollController.dispose();
     super.dispose();
   }
+
+  List<Conversation> conversations = [];
 
   @override
   Widget build(BuildContext context) {
@@ -77,8 +115,10 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                             borderRadius:
                                                 BorderRadius.circular(900)),
                                         child: FlatButton(
-                                          padding: EdgeInsets.zero,
-                                          onPressed: () {},
+                                          padding: EdgeInsets.only(left: 9),
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
                                           child: Icon(
                                             Icons.arrow_back_ios,
                                             color: Colors.white,
@@ -98,14 +138,75 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                       )),
                                 ],
                               ),
-                              ListView.builder(
-                                  physics: NeverScrollableScrollPhysics(),
-                                  shrinkWrap: true,
-                                  padding: EdgeInsets.only(top: 24, bottom: 8),
-                                  itemCount: 1,
-                                  itemBuilder: (context, index) {
-                                    return conversationItem(context);
-                                  }),
+                              BlocBuilder<ConversationsCubit, ChatState>(
+                                  builder: (context, chatState) {
+                                if (!isUserMessagesLoaded) {
+                                  return Padding(
+                                      padding: EdgeInsets.only(top: 96),
+                                      child: Column(
+                                        children: [
+                                          Center(
+                                              child: SizedBox(
+                                            height: 56,
+                                            width: 56,
+                                            child: CircularProgressIndicator(
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white),
+                                              strokeWidth: 2.0,
+                                            ),
+                                          )),
+                                          Padding(
+                                            padding: EdgeInsets.only(
+                                                top: 36, left: 16, right: 16),
+                                            child: Center(
+                                              child: Text(
+                                                "Loading Messages. Sit tight, this only needs to be done once...",
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    color: Colors.white
+                                                        .withOpacity(0.8),
+                                                    fontFamily: 'Lato',
+                                                    fontSize: 20),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ));
+                                }
+
+                                if (chatState is ConversationsLoadedState) {
+                                  conversations = chatState.conversations;
+                                }
+
+                                if (chatState is ConversationsLoadingState &&
+                                    conversations.isEmpty) {
+                                  return Padding(
+                                      padding: EdgeInsets.only(top: 64),
+                                      child: Center(
+                                          child: SizedBox(
+                                        height: 56,
+                                        width: 56,
+                                        child: CircularProgressIndicator(
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                  Colors.white),
+                                          strokeWidth: 2.0,
+                                        ),
+                                      )));
+                                }
+
+                                return ListView.builder(
+                                    physics: NeverScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    padding:
+                                        EdgeInsets.only(top: 24, bottom: 8),
+                                    itemCount: conversations.length,
+                                    itemBuilder: (context, index) {
+                                      return conversationItem(
+                                          context, conversations[index]);
+                                    });
+                              }),
                             ],
                           ))))
             ],
@@ -145,7 +246,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
     );
   }
 
-  Widget conversationItem(BuildContext context) {
+  Widget conversationItem(BuildContext context, Conversation conversation) {
     return Padding(
         padding: EdgeInsets.symmetric(vertical: 6),
         child: Card(
@@ -155,7 +256,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: FlatButton(
-              onPressed: () {},
+              onPressed: () {
+                pushNamed(context, '/chat',
+                    arguments: ChatPageArguments(conversation, null));
+                setState(() {});
+              },
               padding: EdgeInsets.zero,
               child: Wrap(children: [
                 Column(
@@ -177,13 +282,16 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                         child: CircleAvatar(
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
-                                          backgroundImage: OptimizedCacheImageProvider(
-                                              'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
-                                          child: FlatButton(
-                                              onPressed: () {
-                                                print("object");
-                                              },
-                                              child: Container()),
+                                          backgroundImage:
+                                              CachedNetworkImageProvider(
+                                                  conversation
+                                                      .conversationPerson
+                                                      .personProfilePicURL),
+                                          // child: FlatButton(
+                                          //     onPressed: () {
+                                          //       print("object");
+                                          //     },
+                                          //     child: Container()),
                                         ))),
                                 Expanded(
                                     child: Padding(
@@ -203,7 +311,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                                     padding: EdgeInsets.only(
                                                         left: 4, right: 3),
                                                     child: Text(
-                                                      "professor_mnm967",
+                                                      conversation
+                                                          .conversationPerson
+                                                          .personUsername,
                                                       textAlign:
                                                           TextAlign.start,
                                                       maxLines: 1,
@@ -218,7 +328,7 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  "Saturday",
+                                                  "${timeago.format(conversation.latestMessage.messageDateTime)}",
                                                   textAlign: TextAlign.start,
                                                   style: TextStyle(
                                                       fontFamily: 'LatoLight',
@@ -237,7 +347,11 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                                       CrossAxisAlignment.center,
                                                   children: [
                                                     Visibility(
-                                                        visible: false,
+                                                        visible: conversation
+                                                                .latestMessage
+                                                                .sender
+                                                                .personID ==
+                                                            sharedPrefs.userId,
                                                         child: Icon(Icons.check,
                                                             color: Colors.white
                                                                 .withOpacity(
@@ -249,7 +363,23 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                                                     left: 4,
                                                                     right: 1),
                                                             child: Text(
-                                                              "Yo wassup man. Yesterday was lit man",
+                                                              (conversation.latestMessage
+                                                                      is TextMessage)
+                                                                  ? (conversation.latestMessage
+                                                                          as TextMessage)
+                                                                      .text
+                                                                  : ((conversation
+                                                                              .latestMessage
+                                                                          is MediaMessage)
+                                                                      ? (conversation.latestMessage.receiverId ==
+                                                                              sharedPrefs
+                                                                                  .userId
+                                                                          ? "Sent you an Image"
+                                                                          : "Sent an Image")
+                                                                      : (conversation.latestMessage.receiverId ==
+                                                                              sharedPrefs.userId
+                                                                          ? "Sent you a Post"
+                                                                          : "Sent a Post")),
                                                               textAlign:
                                                                   TextAlign
                                                                       .start,
@@ -267,7 +397,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                                                           0.4)),
                                                             ))),
                                                     Visibility(
-                                                        visible: true,
+                                                        visible: conversation
+                                                                .newMessagesCount >
+                                                            0,
                                                         child: Padding(
                                                           padding:
                                                               EdgeInsets.only(
@@ -282,7 +414,9 @@ class _ConversationsPageState extends State<ConversationsPage> {
                                                               child: Container(
                                                                 child: Center(
                                                                   child: Text(
-                                                                    "1",
+                                                                    conversation
+                                                                        .newMessagesCount
+                                                                        .toString(),
                                                                     style: TextStyle(
                                                                         fontFamily:
                                                                             'Lato',

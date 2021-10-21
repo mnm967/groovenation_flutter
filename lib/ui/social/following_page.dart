@@ -8,7 +8,7 @@ import 'package:groovenation_flutter/cubit/state/user_cubit_state.dart';
 import 'package:groovenation_flutter/cubit/user_cubit.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class FollowingPage extends StatefulWidget {
@@ -332,7 +332,7 @@ class _FollowingPageState extends State<FollowingPage> {
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
                                           backgroundImage:
-                                              OptimizedCacheImageProvider(
+                                              CachedNetworkImageProvider(
                                                   socialPerson
                                                       .personCoverPicURL),
                                         ))),

@@ -1,14 +1,20 @@
 import 'dart:ui';
 
+import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/constants/settings_strings.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/cubit/chat_cubit.dart';
 import 'package:groovenation_flutter/ui/clubs/clubs_home.dart';
 import 'package:groovenation_flutter/ui/events/events_home.dart';
 import 'package:groovenation_flutter/ui/profile/profile_home.dart';
-import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/ui/social/social_home.dart';
 import 'package:groovenation_flutter/ui/tickets/tickets_home.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 
 class MainNavigationPage extends StatefulWidget {
   @override
@@ -27,6 +33,28 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   @override
   void initState() {
     super.initState();
+    final ConversationsCubit conversationsCubit =
+        BlocProvider.of<ConversationsCubit>(context);
+
+    conversationsCubit.init(context);
+
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+    messaging.getToken().then((value) async {
+      Dio().post("$API_HOST/users/fcm/token",
+          data: {"userId": sharedPrefs.userId, "token": value});
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      if (message.data.toString() == "{}") return;
+
+      var data = message.data;
+
+      conversationsCubit.updateConversation(data);
+    });
+
+    if (sharedPrefs.notificationSetting == NOTIFICATION_ALL_NEARBY)
+      FirebaseMessaging.instance.subscribeToTopic("new_event_topic");
   }
 
   @override
@@ -63,9 +91,9 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                       currentIndex: index,
                       onTap: (int index) {
                         // if (index != 4)
-                          setState(() {
-                            this.index = index;
-                          });
+                        setState(() {
+                          this.index = index;
+                        });
                         switch (index) {
                           case 0:
                             page1.runBuild();
@@ -80,7 +108,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                             page4.runBuild();
                             return;
                           case 4:
-                          page5.runBuild();
+                            page5.runBuild();
                             // Navigator.push(
                             //     context,
                             //     new MaterialPageRoute(
@@ -105,22 +133,22 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
                       items: [
                         BottomNavigationBarItem(
                           icon: new Icon(Icons.whatshot),
-                          title: new Text('Events'),
+                          label: 'Events',
                         ),
                         BottomNavigationBarItem(
                           icon: new Icon(Icons.local_bar),
-                          title: new Text('Clubs'),
+                          label: 'Clubs',
                         ),
                         BottomNavigationBarItem(
                           icon: new Icon(FontAwesomeIcons.ticketAlt),
-                          title: new Text('Tickets'),
+                          label: 'Tickets',
                         ),
                         BottomNavigationBarItem(
                             icon: FaIcon(FontAwesomeIcons.users),
-                            title: Text('Social')),
+                            label: 'Social'),
                         BottomNavigationBarItem(
                             icon: Icon(Icons.person_pin),
-                            title: Text('Profile')),
+                            label: 'Profile'),
                         // BottomNavigationBarItem(
                         //     icon: Icon(Icons.settings),
                         //     title: Text('Settings')),

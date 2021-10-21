@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/cubit/social_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
@@ -9,11 +9,12 @@ import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
 import 'package:groovenation_flutter/util/create_post_arguments.dart';
 import 'package:groovenation_flutter/widgets/expandable_fab.dart';
+import 'package:groovenation_flutter/widgets/filter/filter_widget.dart';
 import 'package:image_cropper/image_cropper.dart';
-import 'package:image_editor_pro/image_editor_pro.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:video_trimmer/video_trimmer.dart';
 
 class SocialHomePage extends StatefulWidget {
@@ -47,7 +48,7 @@ class _SocialHomePageState extends State<SocialHomePage>
           CropAspectRatioPreset.square,
         ],
         androidUiSettings: AndroidUiSettings(
-            toolbarTitle: 'Edit Image',
+            toolbarTitle: 'Crop & Rotate',
             toolbarColor: Colors.deepPurple,
             toolbarWidgetColor: Colors.white,
             initAspectRatio: CropAspectRatioPreset.original,
@@ -56,14 +57,38 @@ class _SocialHomePageState extends State<SocialHomePage>
           minimumAspectRatio: 1.0,
         ));
 
-    Navigator.pushNamed(context, '/create_post',
-        arguments: CreatePostArguments(croppedFile.path, false));
+    String imgPath = croppedFile.path;
+
+    print("Before size: "+(File(imgPath).lengthSync().toString()));
+
+    if (croppedFile.lengthSync() > 2000000) {
+      imgPath = (await _compressAndGetFile(croppedFile,
+              "${croppedFile.parent.path}/compressed-${croppedFile.path.split('/').last}"))
+          .path;
+    }
+
+    print("After size: "+(File(imgPath).lengthSync().toString()));
+
+    Navigator.push(context,
+        MaterialPageRoute(builder: (BuildContext context) => FilterWidget(imageFilePath: imgPath)));
+
+    // Navigator.pushNamed(context, '/create_post',
+    //     arguments: CreatePostArguments(imgPath, false));
+  }
+
+  Future<File> _compressAndGetFile(File file, String targetPath) async {
+    var result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      quality: 75,
+    );
+
+    return result;
   }
 
   runBuild() {
     if (_isFirstView) {
       print("Running Build: SocialHome");
-      _isFirstView = false;
 
       _scrollController.addListener(() {
         if (_scrollController.position.pixels <= 30) {
@@ -79,6 +104,10 @@ class _SocialHomePageState extends State<SocialHomePage>
             });
           }
         }
+      });
+
+      setState(() {
+        _isFirstView = false;
       });
 
       final NearbySocialCubit nearbySocialCubit =
@@ -129,47 +158,71 @@ class _SocialHomePageState extends State<SocialHomePage>
   }
 
   Column topAppBar() => Column(children: [
-        Padding(
-          padding: EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
-          child: FlatButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                openSearchPage();
-              },
-              child: Container(
-                  width: double.infinity,
-                  height: 56,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10.0),
-                      color: Colors.white.withOpacity(0.2)),
-                  child: Stack(
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 24),
-                          child: Text(
-                            "Search",
-                            style: TextStyle(
-                                color: Colors.white.withOpacity(0.5),
-                                fontFamily: 'Lato',
-                                fontSize: 17),
+        Row(mainAxisSize: MainAxisSize.max, children: [
+          Expanded(
+              child: Padding(
+            padding: EdgeInsets.only(top: 16, left: 16, bottom: 16),
+            child: FlatButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  openSearchPage();
+                },
+                child: Container(
+                    width: double.infinity,
+                    height: 56,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Colors.white.withOpacity(0.2)),
+                    child: Stack(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: EdgeInsets.only(left: 24),
+                            child: Text(
+                              "Search",
+                              style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontFamily: 'Lato',
+                                  fontSize: 17),
+                            ),
                           ),
                         ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                            padding: EdgeInsets.only(right: 24),
-                            child: Icon(
-                              Icons.search,
-                              size: 28,
-                              color: Colors.white.withOpacity(0.5),
-                            )),
-                      ),
-                    ],
-                  ))),
-        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                              padding: EdgeInsets.only(right: 24),
+                              child: Icon(
+                                Icons.search,
+                                size: 28,
+                                color: Colors.white.withOpacity(0.5),
+                              )),
+                        ),
+                      ],
+                    ))),
+          )),
+          Expanded(
+            flex: 0,
+            child: FlatButton(
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  Navigator.pushNamed(context, '/conversations');
+                },
+                child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10.0),
+                        color: Colors.white.withOpacity(0.2)),
+                    child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(
+                          Icons.send,
+                          size: 28,
+                          color: Colors.white.withOpacity(0.5),
+                        )))),
+          ),
+        ]),
         TabBar(
           controller: _tabController,
           tabs: [
@@ -230,6 +283,8 @@ class _SocialHomePageState extends State<SocialHomePage>
 
   @override
   Widget build(BuildContext context) {
+    if (_isFirstView) return Container();
+
     return Scaffold(
         backgroundColor: Colors.transparent,
         floatingActionButton: ExpandableFab(
@@ -314,6 +369,8 @@ class _SocialHomePageState extends State<SocialHomePage>
                                           : nearbySocialPosts,
                                       hasReachedMax,
                                       _nearbyRefreshController, () {
+                                    if (_isFirstView) return;
+
                                     final NearbySocialCubit socialCubit =
                                         BlocProvider.of<NearbySocialCubit>(
                                             context);
@@ -393,6 +450,8 @@ class _SocialHomePageState extends State<SocialHomePage>
                                       socialCubit.getSocialPosts(followingPage);
                                     },
                                     onRefresh: () {
+                                      if (_isFirstView) return;
+
                                       final FollowingSocialCubit socialCubit =
                                           BlocProvider.of<FollowingSocialCubit>(
                                               context);
@@ -532,6 +591,8 @@ class _SocialHomePageState extends State<SocialHomePage>
                                       socialCubit.getSocialPosts(trendingPage);
                                     },
                                     onRefresh: () {
+                                      if (_isFirstView) return;
+
                                       final TrendingSocialCubit socialCubit =
                                           BlocProvider.of<TrendingSocialCubit>(
                                               context);
@@ -666,8 +727,12 @@ class _SocialListState extends State<SocialPostList>
           noDataText: "You've reached the end of the line",
           failedText: "Something Went Wrong",
         ),
-        onLoading: onLoading,
-        onRefresh: onRefresh,
+        onLoading: () {
+          onLoading();
+        },
+        onRefresh: () {
+          onRefresh();
+        },
         enablePullUp: true,
         enablePullDown: true,
         child: CustomScrollView(
@@ -738,6 +803,16 @@ class _TrimmerViewState extends State<TrimmerView> {
     return _value;
   }
 
+  Future<String> _compressVideo(String videoPath) async {
+    MediaInfo mediaInfo = await VideoCompress.compressVideo(
+      videoPath,
+      quality: VideoQuality.MediumQuality,
+      deleteOrigin: true, // It's false by default
+    );
+
+    return mediaInfo.path;
+  }
+
   void _loadVideo() {
     _trimmer.loadVideo(videoFile: widget.file);
   }
@@ -775,8 +850,15 @@ class _TrimmerViewState extends State<TrimmerView> {
                       ? null
                       : () async {
                           _saveVideo().then((outputPath) {
-                            onVideoPicked(outputPath);
-                            Navigator.pop(context);
+                            if (File(outputPath).lengthSync() > 50000000)
+                              _compressVideo(outputPath).then((newPath) {
+                                onVideoPicked(newPath);
+                                Navigator.pop(context);
+                              });
+                            else {
+                              onVideoPicked(outputPath);
+                              Navigator.pop(context);
+                            }
                           });
                         },
                   child: Text("DONE"),

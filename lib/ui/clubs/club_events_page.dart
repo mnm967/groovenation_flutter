@@ -10,7 +10,7 @@ import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:intl/intl.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ClubEventsPage extends StatefulWidget {
@@ -303,7 +303,7 @@ class _ClubEventsPageState extends State<ClubEventsPage> {
                       height: 256,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(event.imageUrl),
+                            image: CachedNetworkImageProvider(event.imageUrl),
                             fit: BoxFit.cover),
                       ),
                       child: Align(

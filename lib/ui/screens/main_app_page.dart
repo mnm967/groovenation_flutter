@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
+import 'package:groovenation_flutter/ui/chat/chat_page.dart';
 import 'package:groovenation_flutter/ui/chat/conversations_page.dart';
 import 'package:groovenation_flutter/ui/city/city_picker_page.dart';
 import 'package:groovenation_flutter/ui/city/city_picker_settings_page.dart';
@@ -17,6 +18,7 @@ import 'package:groovenation_flutter/ui/screens/app_background_page.dart';
 import 'package:groovenation_flutter/ui/screens/main_home_navigation.dart';
 import 'package:groovenation_flutter/ui/search/club_search.dart';
 import 'package:groovenation_flutter/ui/search/search_page.dart';
+import 'package:groovenation_flutter/ui/search/social_people_search.dart';
 import 'package:groovenation_flutter/ui/settings/change_password_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/notification_settings_page.dart';
 import 'package:groovenation_flutter/ui/settings/profile_settings_page.dart';
@@ -26,9 +28,10 @@ import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
 import 'package:groovenation_flutter/ui/social/create_post_page.dart';
 import 'package:groovenation_flutter/ui/social/following_page.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:groovenation_flutter/util/chat_page_arguments.dart';
 import 'package:groovenation_flutter/util/create_post_arguments.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:page_transition/page_transition.dart';
 
 class MainAppPage extends StatefulWidget {
@@ -72,9 +75,9 @@ class MainAppPageState extends State<MainAppPage>
 
     alertUtil.init(this);
 
-    //alertUtil.sendAlert(dialogTitle, dialogText, backgroundColor, icon);
-
-    if(sharedPrefs.userId != null) welcomeController.forward();
+    if (sharedPrefs.userId != null) {
+      // welcomeController.forward();
+    }
 
     // Future.delayed(const Duration(seconds: 10), () {
     //   welcomeController.animateBack(-4.0);
@@ -132,6 +135,8 @@ class MainAppPageState extends State<MainAppPage>
                 return buildPageTransition(ClubPageScreen(), settings);
               case '/conversations':
                 return buildPageTransition(ConversationsPageScreen(), settings);
+              case '/chat':
+                return buildPageTransition(ChatPageScreen(), settings);
               case '/signup':
                 return buildPageTransition(SignUpPageScreen(), settings);
               case '/search':
@@ -152,6 +157,9 @@ class MainAppPageState extends State<MainAppPage>
                 return buildPageTransition(CreatePostPageScreen(), settings);
               case '/club_search':
                 return buildPageTransition(ClubSearchPageScreen(), settings);
+              case '/social_people_search':
+                return buildPageTransition(
+                    SocialPeopleSearchPageScreen(), settings);
               case '/city_picker_settings':
                 return buildPageTransition(
                     CityPickerSettingsPageScreen(), settings);
@@ -355,11 +363,11 @@ class MainAppPageState extends State<MainAppPage>
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: Container(
-              
               decoration: BoxDecoration(
                 color: Colors.black,
                 image: DecorationImage(
-                  colorFilter: new ColorFilter.mode(Colors.black.withOpacity(0.8), BlendMode.dstATop),
+                  colorFilter: new ColorFilter.mode(
+                      Colors.black.withOpacity(0.8), BlendMode.dstATop),
                   image: AssetImage("assets/images/main_background.png"),
                   fit: BoxFit.cover,
                 ),
@@ -387,9 +395,9 @@ class MainAppPageState extends State<MainAppPage>
                                             height: 64,
                                             width: 64,
                                             child: CircleAvatar(
-                                              backgroundColor: Colors.purple,
+                                                backgroundColor: Colors.purple,
                                                 backgroundImage:
-                                                    OptimizedCacheImageProvider(
+                                                    CachedNetworkImageProvider(
                                                         "${sharedPrefs.profilePicUrl}")))),
                                     Expanded(
                                         child: Padding(
@@ -597,6 +605,15 @@ class ConversationsPageScreen extends StatelessWidget {
   }
 }
 
+class ChatPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final ChatPageArguments args = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(
+        child: ChatPage(args.conversation, args.messageToSend));
+  }
+}
+
 class LoginPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -676,6 +693,17 @@ class ClubSearchPageScreen extends StatelessWidget {
     return AppBackgroundPage(
         child: ClubSearchPage(
       onClubSelected: onClubSelected,
+    ));
+  }
+}
+
+class SocialPeopleSearchPageScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final Function onUserSelected = ModalRoute.of(context).settings.arguments;
+    return AppBackgroundPage(
+        child: SocialPeopleSearchPage(
+      onUserSelected: onUserSelected,
     ));
   }
 }

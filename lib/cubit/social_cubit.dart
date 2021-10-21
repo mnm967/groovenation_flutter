@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:groovenation_flutter/constants/social_home_type.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/constants/user_location_status.dart';
+import 'package:groovenation_flutter/cubit/chat_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
 import 'package:groovenation_flutter/data/repo/social_repository.dart';
 import 'package:groovenation_flutter/models/api_result.dart';
-import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
@@ -18,6 +21,78 @@ class SocialCubit extends HydratedCubit<SocialState> {
 
   final SocialRepository socialRepository;
   final SocialHomeType type;
+
+  void sendReport(String reportType, String comment, SocialPost post,
+      SocialPerson person) async {
+    try {
+      socialRepository.sendReport(reportType, comment, post, person);
+    } on SocialException catch (_) {
+      alertUtil.sendAlert(
+          BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT, Colors.red, Icons.error);
+    }
+  }
+
+  Future<bool> blockUser(
+      BuildContext context, SocialPerson person, bool isBlocked) async {
+    try {
+      await socialRepository.changeUserBlock(person.personID, isBlocked);
+
+      final FollowingSocialCubit followingSocialCubit =
+          BlocProvider.of<FollowingSocialCubit>(context);
+      final TrendingSocialCubit trendingSocialCubit =
+          BlocProvider.of<TrendingSocialCubit>(context);
+      final NearbySocialCubit nearbySocialCubit =
+          BlocProvider.of<NearbySocialCubit>(context);
+      final UserSocialCubit userSocialCubit =
+          BlocProvider.of<UserSocialCubit>(context);
+      final ProfileSocialCubit profileSocialCubit =
+          BlocProvider.of<ProfileSocialCubit>(context);
+      final ClubMomentsCubit clubMomentsCubit =
+          BlocProvider.of<ClubMomentsCubit>(context);
+      final ConversationsCubit conversationsCubit =
+          BlocProvider.of<ConversationsCubit>(context);
+
+      followingSocialCubit.updateSocialPersonIfExists(person);
+      trendingSocialCubit.updateSocialPersonIfExists(person);
+      nearbySocialCubit.updateSocialPersonIfExists(person);
+      userSocialCubit.updateSocialPersonIfExists(person);
+      profileSocialCubit.updateSocialPersonIfExists(person);
+      clubMomentsCubit.updateSocialPersonIfExists(person);
+      conversationsCubit.updateSocialPersonIfExists(person);
+
+      return true;
+    } on SocialException catch (_) {
+      alertUtil.sendAlert(
+          BASIC_ERROR_TITLE, NETWORK_ERROR_PROMPT, Colors.red, Icons.error);
+
+      person.hasUserBlocked = !isBlocked;
+
+      final FollowingSocialCubit followingSocialCubit =
+          BlocProvider.of<FollowingSocialCubit>(context);
+      final TrendingSocialCubit trendingSocialCubit =
+          BlocProvider.of<TrendingSocialCubit>(context);
+      final NearbySocialCubit nearbySocialCubit =
+          BlocProvider.of<NearbySocialCubit>(context);
+      final UserSocialCubit userSocialCubit =
+          BlocProvider.of<UserSocialCubit>(context);
+      final ProfileSocialCubit profileSocialCubit =
+          BlocProvider.of<ProfileSocialCubit>(context);
+      final ClubMomentsCubit clubMomentsCubit =
+          BlocProvider.of<ClubMomentsCubit>(context);
+      final ConversationsCubit conversationsCubit =
+          BlocProvider.of<ConversationsCubit>(context);
+
+      followingSocialCubit.updateSocialPersonIfExists(person);
+      trendingSocialCubit.updateSocialPersonIfExists(person);
+      nearbySocialCubit.updateSocialPersonIfExists(person);
+      userSocialCubit.updateSocialPersonIfExists(person);
+      profileSocialCubit.updateSocialPersonIfExists(person);
+      clubMomentsCubit.updateSocialPersonIfExists(person);
+      conversationsCubit.updateSocialPersonIfExists(person);
+
+      return false;
+    }
+  }
 
   void updateSocialPersonIfExists(SocialPerson person) {
     if (state is SocialLoadedState) {
@@ -186,7 +261,6 @@ class ProfileSocialCubit extends Cubit<SocialState> {
   }
 
   void updateUserFollowing(BuildContext context, SocialPerson person) async {
-
     try {
       final FollowingSocialCubit followingSocialCubit =
           BlocProvider.of<FollowingSocialCubit>(context);
@@ -200,6 +274,8 @@ class ProfileSocialCubit extends Cubit<SocialState> {
           BlocProvider.of<ProfileSocialCubit>(context);
       final ClubMomentsCubit clubMomentsCubit =
           BlocProvider.of<ClubMomentsCubit>(context);
+      final ConversationsCubit conversationsCubit =
+          BlocProvider.of<ConversationsCubit>(context);
 
       followingSocialCubit.updateSocialPersonIfExists(person);
       trendingSocialCubit.updateSocialPersonIfExists(person);
@@ -207,6 +283,7 @@ class ProfileSocialCubit extends Cubit<SocialState> {
       userSocialCubit.updateSocialPersonIfExists(person);
       profileSocialCubit.updateSocialPersonIfExists(person);
       clubMomentsCubit.updateSocialPersonIfExists(person);
+      conversationsCubit.updateSocialPersonIfExists(person);
 
       await socialRepository.changeUserFollowing(person);
 
@@ -226,6 +303,8 @@ class ProfileSocialCubit extends Cubit<SocialState> {
           BlocProvider.of<ProfileSocialCubit>(context);
       final ClubMomentsCubit clubMomentsCubit =
           BlocProvider.of<ClubMomentsCubit>(context);
+      final ConversationsCubit conversationsCubit =
+          BlocProvider.of<ConversationsCubit>(context);
 
       followingSocialCubit.updateSocialPersonIfExists(person);
       trendingSocialCubit.updateSocialPersonIfExists(person);
@@ -233,6 +312,7 @@ class ProfileSocialCubit extends Cubit<SocialState> {
       userSocialCubit.updateSocialPersonIfExists(person);
       profileSocialCubit.updateSocialPersonIfExists(person);
       clubMomentsCubit.updateSocialPersonIfExists(person);
+      conversationsCubit.updateSocialPersonIfExists(person);
 
       emit(SocialPostLikeErrorState(e.error));
     }

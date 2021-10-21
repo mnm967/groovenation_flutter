@@ -5,7 +5,7 @@ import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:location/location.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CityPickerPage extends StatefulWidget {
   @override
@@ -38,14 +38,12 @@ class _CityPickerPageState extends State<CityPickerPage> {
               onPressed: () {
                 sharedPrefs.userCity = selectedCity;
                 if (sharedPrefs.username != null)
-                  //Navigator.pushReplacementNamed(context, '/main');
                   Navigator.pushReplacement(
                       context,
                       new MaterialPageRoute(
                           builder: (context) => new MainNavigationScreen()));
                 else
-                  Navigator.pushReplacementNamed(
-                      context, '/create_username'); //TODO Create Username Page
+                  Navigator.pushReplacementNamed(context, '/create_username');
               },
             ),
             FlatButton(
@@ -56,14 +54,12 @@ class _CityPickerPageState extends State<CityPickerPage> {
 
                 sharedPrefs.userCity = selectedCity;
                 if (sharedPrefs.username != null)
-                  //Navigator.pushReplacementNamed(context, '/main');
                   Navigator.push(
                       context,
                       new MaterialPageRoute(
                           builder: (context) => new MainNavigationScreen()));
                 else
-                  Navigator.pushReplacementNamed(
-                      context, '/create_username'); //TODO Create Username Page
+                  Navigator.pushReplacementNamed(context, '/create_username');
               },
             ),
           ],
@@ -197,7 +193,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
                                           backgroundImage:
-                                              OptimizedCacheImageProvider(
+                                              CachedNetworkImageProvider(
                                                   imageUrl),
                                         ))),
                                 Expanded(

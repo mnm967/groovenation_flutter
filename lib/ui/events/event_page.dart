@@ -12,7 +12,7 @@ import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/ui/tickets/ticket_purchase_dialog.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
 import 'package:intl/intl.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class EventPage extends StatefulWidget {
@@ -436,10 +436,10 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                 overflow: Overflow.visible,
                 children: [
                   Positioned.fill(
-                      child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                )),
+                      child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                  )),
                   Positioned.fill(
                     child: Container(
                       color: Colors.black.withOpacity(0.2),

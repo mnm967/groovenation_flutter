@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/constants/integers.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_item_dialog.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
-import 'package:video_thumbnail/video_thumbnail.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
 
 class SocialGridItem extends StatefulWidget {
   final SocialPost socialPost;
@@ -45,65 +45,58 @@ class _SocialGridItemState extends State<SocialGridItem> {
   void initState() {
     super.initState();
 
-    if(socialPost.postType == SOCIAL_POST_TYPE_VIDEO) _setupVideoImage();
+    // if (socialPost.postType == SOCIAL_POST_TYPE_VIDEO) _setupVideoImage();
   }
 
-  Image videoThumbnail;
+  // Image videoThumbnail;
 
-  _setupVideoImage() async {
-    final uint8list = await VideoThumbnail.thumbnailData(
-      video: socialPost.mediaURL,
-      imageFormat: ImageFormat.JPEG,
-      maxWidth: 512,
-      maxHeight: 512,
-      quality: 50,
-    );
+  // _setupVideoImage() async {
+  //   final uint8list = await VideoThumbnail.thumbnailData(
+  //     video: socialPost.mediaURL,
+  //     imageFormat: ImageFormat.JPEG,
+  //     maxWidth: 512,
+  //     maxHeight: 512,
+  //     quality: 50,
+  //   );
 
-    setState(() {
-      videoThumbnail = Image.memory(
-        uint8list,
-        height: double.infinity,
-        width: double.infinity,
-        fit: BoxFit.cover,
-      );
-    });
-  }
+  //   setState(() {
+  //     videoThumbnail = Image.memory(
+  //       uint8list,
+  //       height: double.infinity,
+  //       width: double.infinity,
+  //       fit: BoxFit.cover,
+  //     );
+  //   });
+  // }
 
   @override
   Widget build(BuildContext context) {
     if (socialPost.postType == SOCIAL_POST_TYPE_VIDEO) {
-      return videoThumbnail == null
-          ? Container(
-              color: Colors.deepPurple,
-              child: Center(
-                  child: CircularProgressIndicator(
-                valueColor: new AlwaysStoppedAnimation<Color>(
-                    Colors.white.withOpacity(0.7)),
-                strokeWidth: 2,
-              )),
-            )
-          : AspectRatio(
-              aspectRatio: 1.0,
-              child: FlatButton(
-                  padding: EdgeInsets.zero,
-                  onPressed: () {
-                    _showSocialDialog(context);
-                  },
-                  child: Stack(
-                    children: [
-                      videoThumbnail,
-                      Center(
-                        child: Icon(
-                          Icons.play_circle_fill,
-                          color: Colors.white.withOpacity(0.9),
-                          size: 72,
-                        ),
-                      ),
-                    ],
-                  )));
+      return AspectRatio(
+          aspectRatio: 1.0,
+          child: FlatButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                _showSocialDialog(context);
+              },
+              child: Stack(
+                children: [
+                  CroppedCacheImage(
+                      url: socialPost.mediaURL
+                          .replaceAll(".mp4", ".png")
+                          .replaceAll("/posts/", "/thumbnails/")),
+                  Center(
+                    child: Icon(
+                      Icons.play_circle_fill,
+                      color: Colors.white.withOpacity(0.9),
+                      size: 72,
+                    ),
+                  ),
+                ],
+              )));
     }
 
-    return OptimizedCacheImage(
+    return CachedNetworkImage(
       imageUrl: socialPost.mediaURL,
       imageBuilder: (context, imageProvider) => Ink.image(
         image: imageProvider,

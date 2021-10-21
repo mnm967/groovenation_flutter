@@ -74,8 +74,8 @@ class _CommentsDialogState extends State<CommentsDialog> {
               sharedPrefs.profilePicUrl,
               sharedPrefs.coverPicUrl,
               false,
-              false,
-              false),
+              false,),
+              
           DateTime.now(),
           0,
           false,

@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:groovenation_flutter/constants/error.dart';
-import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
 
 abstract class EventsState extends Equatable {}

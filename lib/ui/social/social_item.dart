@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:cached_video_player/cached_video_player.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
@@ -7,26 +5,39 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/constants/integers.dart';
+import 'package:groovenation_flutter/cubit/chat_cubit.dart';
 import 'package:groovenation_flutter/cubit/social_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
+import 'package:groovenation_flutter/models/conversation.dart';
+import 'package:groovenation_flutter/models/message.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/comment_item.dart';
 import 'package:groovenation_flutter/ui/social/comments_dialog.dart';
+import 'package:groovenation_flutter/util/chat_page_arguments.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:groovenation_flutter/widgets/report_dialog.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class SocialItem extends StatefulWidget {
   final SocialPost socialPost;
   final bool showClose;
+  final bool removeElevation;
+
   SocialItem(
-      {@required this.socialPost, @required this.showClose, @required Key key})
+      {@required this.socialPost,
+      @required this.showClose,
+      @required Key key,
+      this.removeElevation})
       : super(key: key);
 
   @override
-  _SocialItemState createState() =>
-      _SocialItemState(socialPost: socialPost, showClose: showClose);
+  _SocialItemState createState() => _SocialItemState(
+      socialPost: socialPost,
+      showClose: showClose,
+      removeElevation: removeElevation == null ? false : removeElevation);
 }
 
 class _SocialItemState extends State<SocialItem> {
@@ -34,8 +45,9 @@ class _SocialItemState extends State<SocialItem> {
   bool showClose = false;
   VideoPlayerController _controller;
   bool isVideoPlaying = false;
+  bool removeElevation = false;
 
-  _SocialItemState({this.socialPost, this.showClose});
+  _SocialItemState({this.socialPost, this.showClose, this.removeElevation});
 
   final FlareControls flareControls = FlareControls();
 
@@ -46,8 +58,11 @@ class _SocialItemState extends State<SocialItem> {
     if (socialPost.postType == SOCIAL_POST_TYPE_VIDEO) {
       _controller = VideoPlayerController.network(socialPost.mediaURL)
         ..initialize().then((_) {
-          _controller.play();
-          _controller.pause();
+          setState(() {});
+
+          _controller.setVolume(0.0);
+          if (showClose) _controller.play();
+          // _controller.pause();
         });
 
       _controller.setLooping(true);
@@ -87,14 +102,50 @@ class _SocialItemState extends State<SocialItem> {
   }
 
   _sharePost() {
-    //TODO Share Post
+    Navigator.pushNamed(context, '/social_people_search',
+        arguments: (SocialPerson sperson) async {
+      final ConversationsCubit conversationsCubit =
+          BlocProvider.of<ConversationsCubit>(context);
+
+      Conversation conversation =
+          await conversationsCubit.getPersonConversation(sperson.personID);
+
+      SocialPostMessage message = SocialPostMessage(
+          null,
+          conversation == null ? null : conversation.conversationID,
+          DateTime.now(),
+          SocialPerson(
+              sharedPrefs.userId,
+              sharedPrefs.username,
+              sharedPrefs.profilePicUrl,
+              sharedPrefs.coverPicUrl,
+              false,
+              false),
+              
+          socialPost,
+          sperson.personID);
+
+      if (conversation == null) {
+        Navigator.pushNamed(context, '/chat',
+            arguments: ChatPageArguments(
+                Conversation(null, sperson, 0, null), message));
+      } else {
+        Navigator.pushNamed(context, '/chat',
+            arguments: ChatPageArguments(conversation, message));
+      }
+    });
   }
 
   _reportPost() {
-    //TODO Report Post
+    showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return ReportDialog(null, socialPost);
+        });
   }
 
   _openSocialPerson(SocialPerson socialPerson) {
+    if (socialPerson.personID == sharedPrefs.userId) return;
     Navigator.pushNamed(context, '/profile_page', arguments: socialPerson);
   }
 
@@ -117,6 +168,7 @@ class _SocialItemState extends State<SocialItem> {
       Container(
         child: Card(
           color: Colors.deepPurple,
+          elevation: removeElevation ? 0 : 1,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
           child: Container(
@@ -133,7 +185,7 @@ class _SocialItemState extends State<SocialItem> {
                           width: 64,
                           child: CircleAvatar(
                             backgroundColor: Colors.purple.withOpacity(0.5),
-                            backgroundImage: OptimizedCacheImageProvider(
+                            backgroundImage: CachedNetworkImageProvider(
                                 socialPost.person.personProfilePicURL),
                             child: FlatButton(
                                 onPressed: () {
@@ -265,92 +317,104 @@ class _SocialItemState extends State<SocialItem> {
                                             }
 
                                             debugPrint(
-                                                'Widget ${visibilityInfo.key} is ${visiblePercentage}% visible');
+                                                'Widget ${visibilityInfo.key} is $visiblePercentage% visible');
                                           },
                                           child: Container(
                                             color: socialPost.postType ==
                                                     SOCIAL_POST_TYPE_IMAGE
                                                 ? Colors.deepPurple
                                                 : Colors.black,
-                                            child:
-                                                // _controller.value.isInitialized
-                                                true
-                                                    ? Stack(children: [
-                                                        Center(
-                                                            child: AspectRatio(
-                                                          aspectRatio:
-                                                              _controller.value
-                                                                  .aspectRatio,
-                                                          child: VideoPlayer(
-                                                            _controller,
-                                                          ),
-                                                        )),
-                                                        (_controller.value
-                                                                    .isBuffering ||
-                                                                !_controller
-                                                                    .value
-                                                                    .isInitialized)
-                                                            ? Center(
-                                                                child:
-                                                                    CircularProgressIndicator(
-                                                                valueColor: new AlwaysStoppedAnimation<
+                                            child: _controller
+                                                    .value.isInitialized
+                                                ? Stack(children: [
+                                                    Center(
+                                                        child: AspectRatio(
+                                                      aspectRatio: _controller
+                                                          .value.aspectRatio,
+                                                      child: VideoPlayer(
+                                                        _controller,
+                                                      ),
+                                                    )),
+                                                    (_controller.value
+                                                                .isBuffering ||
+                                                            !_controller.value
+                                                                .isInitialized)
+                                                        ? Center(
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                            valueColor:
+                                                                new AlwaysStoppedAnimation<
                                                                         Color>(
                                                                     Colors.white
                                                                         .withOpacity(
                                                                             0.7)),
-                                                                strokeWidth: 2,
-                                                              ))
-                                                            : Center()
-                                                        // isVideoPlaying
-                                                        //     ? TextButton(
-                                                        //         style: TextButton
-                                                        //             .styleFrom(
-                                                        //                 padding:
-                                                        //                     EdgeInsets
-                                                        //                         .zero),
-                                                        //         onPressed: () {
-                                                        //           _pauseVideo();
-                                                        //         },
-                                                        //         child: AspectRatio(
-                                                        //             aspectRatio:
-                                                        //                 0.8,
-                                                        //             child:
-                                                        //                 Container()))
-                                                        //     : TextButton(
-                                                        //         style: TextButton
-                                                        //             .styleFrom(
-                                                        //                 padding:
-                                                        //                     EdgeInsets
-                                                        //                         .zero),
-                                                        //         onPressed: () {
-                                                        //           _playVideo();
-                                                        //         },
-                                                        //         child: AspectRatio(
-                                                        //           aspectRatio: 0.8,
-                                                        //           child: Center(
-                                                        //             child: Icon(
-                                                        //               Icons
-                                                        //                   .play_circle_fill,
-                                                        //               color: Colors
-                                                        //                   .white
-                                                        //                   .withOpacity(
-                                                        //                       0.6),
-                                                        //               size: 96,
-                                                        //             ),
-                                                        //           ),
-                                                        //         )),
-                                                      ])
-                                                    : Center(
+                                                            strokeWidth: 2,
+                                                          ))
+                                                        : Center()
+                                                    // isVideoPlaying
+                                                    //     ? TextButton(
+                                                    //         style: TextButton
+                                                    //             .styleFrom(
+                                                    //                 padding:
+                                                    //                     EdgeInsets
+                                                    //                         .zero),
+                                                    //         onPressed: () {
+                                                    //           _pauseVideo();
+                                                    //         },
+                                                    //         child: AspectRatio(
+                                                    //             aspectRatio:
+                                                    //                 0.8,
+                                                    //             child:
+                                                    //                 Container()))
+                                                    //     : TextButton(
+                                                    //         style: TextButton
+                                                    //             .styleFrom(
+                                                    //                 padding:
+                                                    //                     EdgeInsets
+                                                    //                         .zero),
+                                                    //         onPressed: () {
+                                                    //           _playVideo();
+                                                    //         },
+                                                    //         child: AspectRatio(
+                                                    //           aspectRatio: 0.8,
+                                                    //           child: Center(
+                                                    //             child: Icon(
+                                                    //               Icons
+                                                    //                   .play_circle_fill,
+                                                    //               color: Colors
+                                                    //                   .white
+                                                    //                   .withOpacity(
+                                                    //                       0.6),
+                                                    //               size: 96,
+                                                    //             ),
+                                                    //           ),
+                                                    //         )),
+                                                  ])
+                                                : Stack(children: [
+                                                    Center(
+                                                        child: AspectRatio(
+                                                            aspectRatio: 0.9,
+                                                            child: CroppedCacheImage(
+                                                                url: socialPost
+                                                                    .mediaURL
+                                                                    .replaceAll(
+                                                                        ".mp4",
+                                                                        ".png")
+                                                                    .replaceAll(
+                                                                        "/posts/",
+                                                                        "/thumbnails/")))),
+                                                    Center(
                                                         child:
                                                             CircularProgressIndicator(
-                                                        valueColor:
-                                                            new AlwaysStoppedAnimation<
-                                                                    Color>(
-                                                                Colors.white
-                                                                    .withOpacity(
-                                                                        0.7)),
-                                                        strokeWidth: 2,
-                                                      )),
+                                                      valueColor:
+                                                          new AlwaysStoppedAnimation<
+                                                                  Color>(
+                                                              Colors.white
+                                                                  .withOpacity(
+                                                                      0.7)),
+                                                      strokeWidth: 2,
+                                                    )),
+                                                  ]),
                                           )),
                                   Container(
                                     child: Center(

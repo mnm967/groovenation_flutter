@@ -7,8 +7,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/cubit/social_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
-import 'package:groovenation_flutter/ui/search/club_search.dart';
-import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
 import 'package:video_player/video_player.dart';
 

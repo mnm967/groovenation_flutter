@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/constants/club_home_type.dart';
+import 'package:groovenation_flutter/constants/settings_strings.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/constants/user_location_status.dart';
 import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
@@ -35,6 +37,20 @@ class ClubsCubit extends HydratedCubit<ClubsState> {
     }
   }
 
+  void setFavouriteClubsIDsJSON(List<Club> clubs) async {
+    List<String> clubIds = [];
+    clubs.forEach((element) {
+      clubIds.add(element.clubID);
+    });
+
+    sharedPrefs.favouriteClubIds = clubIds;
+
+    if(sharedPrefs.notificationSetting == NOTIFICATION_FAVOURITE_ONLY) clubIds.forEach((element) {
+      FirebaseMessaging.instance
+          .subscribeToTopic("favourite_club_topic-$element");
+    });
+  }
+
   void getClubs(int page) async {
     List<Club> clubs = [];
 
@@ -42,7 +58,7 @@ class ClubsCubit extends HydratedCubit<ClubsState> {
       clubs = (state as ClubsLoadedState).clubs;
     }
 
-    emit(ClubsLoadingState());
+    emit(ClubsLoadingState(oldClubs: clubs));
 
     try {
       List<Club> newClubs;
@@ -72,6 +88,8 @@ class ClubsCubit extends HydratedCubit<ClubsState> {
 
       newClubs = result.result as List<Club>;
       bool hasReachedMax = result.hasReachedMax;
+
+      if (type == ClubHomeType.FAVOURITE) setFavouriteClubsIDsJSON(newClubs);
 
       if (page != 0)
         clubs.addAll(newClubs);
@@ -164,8 +182,29 @@ class FavouritesClubsCubit extends ClubsCubit {
   FavouritesClubsCubit(ClubsRepository clubsRepository)
       : super(clubsRepository, ClubHomeType.FAVOURITE);
 
+  void addFavouriteClubsIDsJSON(Club club) async {
+    List<String> clubIds = sharedPrefs.favouriteClubIds;
+    clubIds.add(club.clubID);
+
+    sharedPrefs.favouriteClubIds = clubIds;
+
+    if(sharedPrefs.notificationSetting == NOTIFICATION_FAVOURITE_ONLY) FirebaseMessaging.instance
+          .subscribeToTopic("favourite_club_topic-${club.clubID}");
+  }
+
+  void removeFavouriteClubsIDsJSON(Club club) async {
+    List<String> clubIds = sharedPrefs.favouriteClubIds;
+    clubIds.remove(club.clubID);
+
+    sharedPrefs.favouriteClubIds = clubIds;
+
+    if(sharedPrefs.notificationSetting == NOTIFICATION_FAVOURITE_ONLY) FirebaseMessaging.instance
+          .unsubscribeFromTopic("favourite_club_topic-${club.clubID}");
+  }
+
   void addClub(Club club) async {
     List<Club> clubs = (state as ClubsLoadedState).clubs;
+    addFavouriteClubsIDsJSON(club);
 
     emit(ClubFavouriteUpdatingState());
     clubs.add(club);
@@ -181,6 +220,8 @@ class FavouritesClubsCubit extends ClubsCubit {
 
         alertUtil.sendAlert(
             BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT, Colors.red, Icons.error);
+
+        removeFavouriteClubsIDsJSON(club);
       }
     } catch (e) {
       emit(ClubFavouriteUpdatingState());
@@ -189,11 +230,14 @@ class FavouritesClubsCubit extends ClubsCubit {
 
       alertUtil.sendAlert(
           BASIC_ERROR_TITLE, UNKNOWN_ERROR_PROMPT, Colors.red, Icons.error);
+
+      removeFavouriteClubsIDsJSON(club);
     }
   }
 
   void removeClub(Club club) async {
     List<Club> clubs = (state as ClubsLoadedState).clubs;
+    removeFavouriteClubsIDsJSON(club);
 
     emit(ClubFavouriteUpdatingState());
 

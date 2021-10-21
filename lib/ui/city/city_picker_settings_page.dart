@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class CityPickerSettingsPage extends StatefulWidget {
   @override
@@ -168,7 +168,7 @@ class _CityPickerSettingsPageState extends State<CityPickerSettingsPage> {
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
                                           backgroundImage:
-                                              OptimizedCacheImageProvider(
+                                              CachedNetworkImageProvider(
                                                   imageUrl),
                                         ))),
                                 Expanded(

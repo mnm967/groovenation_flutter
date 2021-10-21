@@ -7,8 +7,6 @@ import 'package:groovenation_flutter/cubit/auth_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/auth_state.dart';
 import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
-import 'package:groovenation_flutter/widgets/text_material_button_widget.dart';
-import 'package:intl/intl.dart';
 
 class CreateUsernamePage extends StatefulWidget {
   @override

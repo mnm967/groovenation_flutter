@@ -14,7 +14,7 @@ import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProfileSettingsPage extends StatefulWidget {
   @override
@@ -35,19 +35,19 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
     if (pickedFile == null) return;
 
     File croppedFile = await ImageCropper.cropImage(
-      sourcePath: pickedFile.path,
-      aspectRatioPresets: [
-        CropAspectRatioPreset.square,
-      ],
-      androidUiSettings: AndroidUiSettings(
-          toolbarTitle: 'Edit Image',
-          toolbarColor: Colors.deepPurple,
-          toolbarWidgetColor: Colors.white,
-          initAspectRatio: CropAspectRatioPreset.original,
-          lockAspectRatio: true),
-      iosUiSettings: IOSUiSettings(
-        minimumAspectRatio: 1.0,
-      ));
+        sourcePath: pickedFile.path,
+        aspectRatioPresets: [
+          CropAspectRatioPreset.square,
+        ],
+        androidUiSettings: AndroidUiSettings(
+            toolbarTitle: 'Edit Image',
+            toolbarColor: Colors.deepPurple,
+            toolbarWidgetColor: Colors.white,
+            initAspectRatio: CropAspectRatioPreset.original,
+            lockAspectRatio: true),
+        iosUiSettings: IOSUiSettings(
+          minimumAspectRatio: 1.0,
+        ));
 
     setState(() {
       newProfileImagePath = croppedFile.path;
@@ -203,7 +203,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                     child: CircleAvatar(
                                       backgroundImage: newProfileImagePath ==
                                               null
-                                          ? OptimizedCacheImageProvider(
+                                          ? CachedNetworkImageProvider(
                                               "${sharedPrefs.profilePicUrl}")
                                           : FileImage(
                                               new File(newProfileImagePath)),
@@ -303,7 +303,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
                                         decoration: BoxDecoration(
                                           image: DecorationImage(
                                               image: newCoverImagePath == null
-                                                  ? OptimizedCacheImageProvider(
+                                                  ? CachedNetworkImageProvider(
                                                       "${sharedPrefs.coverPicUrl}")
                                                   : FileImage(new File(
                                                       newCoverImagePath)),

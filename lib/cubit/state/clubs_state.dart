@@ -10,8 +10,14 @@ class ClubsInitialState extends ClubsState {
 }
 
 class ClubsLoadingState extends ClubsState {
+  final List<Club> oldClubs;
+
+  ClubsLoadingState({
+    this.oldClubs
+  });
+
   @override
-  List<Object> get props => [];
+  List<Object> get props => [oldClubs];
 }
 
 class ClubFavouriteUpdatingState extends ClubsState {

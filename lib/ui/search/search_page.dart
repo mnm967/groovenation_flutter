@@ -11,7 +11,6 @@ import 'package:groovenation_flutter/cubit/clubs_cubit.dart';
 import 'package:groovenation_flutter/cubit/events_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
 import 'package:groovenation_flutter/cubit/state/events_state.dart';
-import 'package:groovenation_flutter/cubit/state/social_state.dart';
 import 'package:groovenation_flutter/cubit/state/user_cubit_state.dart';
 import 'package:groovenation_flutter/cubit/user_cubit.dart';
 import 'package:groovenation_flutter/models/club.dart';
@@ -20,7 +19,7 @@ import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
 import 'package:intl/intl.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -41,7 +40,7 @@ class _SearchPageState extends State<SearchPage>
   ScrollController _clubScrollController = new ScrollController();
   RefreshController _clubsRefreshController =
       RefreshController(initialRefresh: false);
-  
+
   ScrollController _profileScrollController = new ScrollController();
   RefreshController _profileRefreshController =
       RefreshController(initialRefresh: false);
@@ -52,7 +51,7 @@ class _SearchPageState extends State<SearchPage>
     _tabController = TabController(vsync: this, length: 3);
     _tabController.addListener(() {
       if (searchTextController.text.isEmpty) return;
-      
+
       if (_tabController.index == 0) {
         final SearchEventsCubit searchEventsCubit =
             BlocProvider.of<SearchEventsCubit>(context);
@@ -64,7 +63,7 @@ class _SearchPageState extends State<SearchPage>
         _eventsRefreshController.loadComplete();
 
         searchEventsCubit.searchEvents(0, searchTextController.text);
-      } else {
+      } else if (_tabController.index == 1) {
         final SearchClubsCubit searchClubsCubit =
             BlocProvider.of<SearchClubsCubit>(context);
         setState(() {
@@ -75,6 +74,17 @@ class _SearchPageState extends State<SearchPage>
         _clubsRefreshController.loadComplete();
 
         searchClubsCubit.searchClubs(0, searchTextController.text);
+      } else {
+        final SearchUsersCubit searchUsersCubit =
+            BlocProvider.of<SearchUsersCubit>(context);
+        setState(() {
+          profilePage = 0;
+          searchUsers = [];
+        });
+
+        _clubsRefreshController.loadComplete();
+
+        searchUsersCubit.searchUsers(0, searchTextController.text);
       }
     });
 
@@ -109,7 +119,7 @@ class _SearchPageState extends State<SearchPage>
         }
       }
     });
-    
+
     _profileScrollController.addListener(() {
       if (_profileScrollController.position.pixels <= 30) {
         if (_scrollToTopVisible != false) {
@@ -154,7 +164,7 @@ class _SearchPageState extends State<SearchPage>
                 if (text.isNotEmpty) {
                   if (_tabController.index == 0)
                     _eventsRefreshController.requestRefresh();
-                  else if(_tabController.index == 1) {
+                  else if (_tabController.index == 1) {
                     final SearchClubsCubit searchClubsCubit =
                         BlocProvider.of<SearchClubsCubit>(context);
                     setState(() {
@@ -165,11 +175,11 @@ class _SearchPageState extends State<SearchPage>
                     _clubsRefreshController.loadComplete();
 
                     searchClubsCubit.searchClubs(0, searchTextController.text);
-                  }else {
+                  } else {
                     final SearchUsersCubit searchUsersCubit =
                         BlocProvider.of<SearchUsersCubit>(context);
                     setState(() {
-                      profilePage= 0;
+                      profilePage = 0;
                       searchUsers = [];
                     });
 
@@ -243,7 +253,7 @@ class _SearchPageState extends State<SearchPage>
         listener: (context, state) {
       if (state is EventsLoadedState) {
         if (_eventsRefreshController.isRefresh) {
-          _scrollController.jumpTo(0.0);
+          if(_scrollController.hasClients) _scrollController.jumpTo(0.0);
           _eventsRefreshController.refreshCompleted();
           _eventsRefreshController.loadComplete();
 
@@ -256,6 +266,20 @@ class _SearchPageState extends State<SearchPage>
         }
       }
     }, builder: (context, searchEventsState) {
+      if (searchEventsState is EventsLoadingState && eventsPage == 0) {
+        return Padding(
+            padding: EdgeInsets.only(top: 64),
+            child: Center(
+                child: SizedBox(
+              height: 56,
+              width: 56,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 2.0,
+              ),
+            )));
+      }
+
       if (searchEventsState is EventsLoadedState)
         searchEvents = searchEventsState.events;
 
@@ -356,7 +380,7 @@ class _SearchPageState extends State<SearchPage>
         listener: (context, state) {
       if (state is SocialUsersSearchLoadedState) {
         if (_profileRefreshController.isRefresh) {
-          _profileScrollController.jumpTo(0.0);
+          if(_profileScrollController.hasClients) _profileScrollController.jumpTo(0.0);
           _profileRefreshController.refreshCompleted();
           _profileRefreshController.loadComplete();
 
@@ -369,6 +393,20 @@ class _SearchPageState extends State<SearchPage>
         }
       }
     }, builder: (context, searchUsersState) {
+      if (searchUsersState is SocialUsersSearchLoadingState && profilePage == 0) {
+        return Padding(
+            padding: EdgeInsets.only(top: 64),
+            child: Center(
+                child: SizedBox(
+              height: 56,
+              width: 56,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 2.0,
+              ),
+            )));
+      }
+
       if (searchUsersState is SocialUsersSearchLoadedState)
         searchUsers = searchUsersState.socialPeople;
 
@@ -421,7 +459,8 @@ class _SearchPageState extends State<SearchPage>
               profilePage++;
             });
 
-            searchUsersCubit.searchUsers(profilePage, searchTextController.text);
+            searchUsersCubit.searchUsers(
+                profilePage, searchTextController.text);
           },
           enablePullUp: true,
           child: ListView.builder(
@@ -438,7 +477,6 @@ class _SearchPageState extends State<SearchPage>
     });
   }
 
-
   int clubsPage = 0;
   List<Club> searchClubs = [];
 
@@ -447,7 +485,7 @@ class _SearchPageState extends State<SearchPage>
         listener: (context, state) {
       if (state is ClubsLoadedState) {
         if (_clubsRefreshController.isRefresh) {
-          _clubScrollController.jumpTo(0.0);
+          if(_clubScrollController.hasClients) _clubScrollController.jumpTo(0.0);
           _clubsRefreshController.refreshCompleted();
           _clubsRefreshController.loadComplete();
 
@@ -460,6 +498,21 @@ class _SearchPageState extends State<SearchPage>
         }
       }
     }, builder: (context, searchClubsState) {
+
+      if (searchClubsState is ClubsLoadingState && clubsPage == 0) {
+        return Padding(
+            padding: EdgeInsets.only(top: 64),
+            child: Center(
+                child: SizedBox(
+              height: 56,
+              width: 56,
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 2.0,
+              ),
+            )));
+      }
+
       if (searchClubsState is ClubsLoadedState)
         searchClubs = searchClubsState.clubs;
 
@@ -561,7 +614,7 @@ class _SearchPageState extends State<SearchPage>
                       height: 236,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(club.images[0]),
+                            image: CachedNetworkImageProvider(club.images[0]),
                             fit: BoxFit.cover),
                       ),
                       child: Align(
@@ -690,7 +743,7 @@ class _SearchPageState extends State<SearchPage>
                       height: 256,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(event.imageUrl),
+                            image: CachedNetworkImageProvider(event.imageUrl),
                             fit: BoxFit.cover),
                       ),
                       child: Align(
@@ -822,11 +875,7 @@ class _SearchPageState extends State<SearchPage>
                   Expanded(
                     child: TabBarView(
                       controller: _tabController,
-                      children: [
-                        eventList(),
-                        clubList(),
-                        profileList()
-                      ],
+                      children: [eventList(), clubList(), profileList()],
                     ),
                   )
                 ],
@@ -858,6 +907,12 @@ class _SearchPageState extends State<SearchPage>
                                 curve: Curves.easeOut,
                                 duration: const Duration(milliseconds: 300),
                               );
+
+                              _profileScrollController.animateTo(
+                                0.0,
+                                curve: Curves.easeOut,
+                                duration: const Duration(milliseconds: 300),
+                              );
                             },
                             child: Icon(
                               Icons.keyboard_arrow_up,
@@ -883,7 +938,8 @@ class _SearchPageState extends State<SearchPage>
               borderRadius: BorderRadius.all(Radius.circular(12.0))),
           child: FlatButton(
               onPressed: () {
-                Navigator.pushNamed(context, '/profile_page', arguments: person);
+                Navigator.pushNamed(context, '/profile_page',
+                    arguments: person);
               },
               padding: EdgeInsets.zero,
               child: Wrap(children: [
@@ -907,7 +963,8 @@ class _SearchPageState extends State<SearchPage>
                                           backgroundColor:
                                               Colors.purple.withOpacity(0.5),
                                           backgroundImage:
-                                              OptimizedCacheImageProvider(person.personProfilePicURL),
+                                              CachedNetworkImageProvider(
+                                                  person.personProfilePicURL),
                                         ))),
                                 Expanded(
                                     child: Padding(

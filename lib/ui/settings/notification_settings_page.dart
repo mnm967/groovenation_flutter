@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:groovenation_flutter/constants/settings_strings.dart';
@@ -27,33 +28,43 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   _saveNotificationSetting() {
     switch (dropdownValue) {
-      case NOTIFICATION_ALL_NEARBY_OPTION:
+      case NOTIFICATION_ALL_NEARBY:
+        _unsubscribeFavouriteClubs();
+        FirebaseMessaging.instance.subscribeToTopic("new_event_topic");
         sharedPrefs.notificationSetting = NOTIFICATION_ALL_NEARBY;
         break;
-      case NOTIFICATION_FAVOURITE_ONLY_OPTION:
+      case NOTIFICATION_FAVOURITE_ONLY:
+        _subscribeFavouriteClubs();
+        FirebaseMessaging.instance.unsubscribeFromTopic("new_event_topic");
         sharedPrefs.notificationSetting = NOTIFICATION_FAVOURITE_ONLY;
         break;
-      case NOTIFICATION_OFF_OPTION:
+      case NOTIFICATION_OFF:
+        _unsubscribeFavouriteClubs();
+        FirebaseMessaging.instance.unsubscribeFromTopic("new_event_topic");
         sharedPrefs.notificationSetting = NOTIFICATION_OFF;
         break;
       default:
     }
+    setState(() {});
   }
 
-  _saveChatNotificationSetting() {
-    switch (dropdownValue) {
-      case CHAT_NOTIFICATION_ON_OPTION:
-        sharedPrefs.chatNotificationSetting = CHAT_NOTIFICATION_ON;
-        break;
-      case CHAT_NOTIFICATION_OFF_OPTION:
-        sharedPrefs.chatNotificationSetting = CHAT_NOTIFICATION_OFF;
-        break;
-        break;
-      default:
-    }
+  _unsubscribeFavouriteClubs() {
+    List<String> clubIds = sharedPrefs.favouriteClubIds;
+    clubIds.forEach((element) {
+      FirebaseMessaging.instance
+          .unsubscribeFromTopic("favourite_club_topic-$element");
+    });
   }
 
-  String getCurrentValue(){
+  _subscribeFavouriteClubs() {
+    List<String> clubIds = sharedPrefs.favouriteClubIds;
+    clubIds.forEach((element) {
+      FirebaseMessaging.instance
+          .subscribeToTopic("favourite_club_topic-$element");
+    });
+  }
+
+  String getCurrentValue() {
     switch (dropdownValue) {
       case NOTIFICATION_ALL_NEARBY:
         return NOTIFICATION_ALL_NEARBY_OPTION;
@@ -162,9 +173,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                       ),
                                       onChanged: (String newValue) {
                                         setState(() {
-                                          dropdownValue = newValue;
+                                          if(newValue == NOTIFICATION_ALL_NEARBY_OPTION) dropdownValue = NOTIFICATION_ALL_NEARBY;
+                                          else if(newValue == NOTIFICATION_FAVOURITE_ONLY_OPTION) dropdownValue = NOTIFICATION_FAVOURITE_ONLY;
+                                          else dropdownValue = NOTIFICATION_OFF;
                                         });
-                                        
+
                                         _saveNotificationSetting();
                                       },
                                       itemHeight: 56,
@@ -198,80 +211,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                                   ],
                                 ),
                               )),
-                          // Padding(
-                          //     padding: EdgeInsets.only(top: 24),
-                          //     child: Text(
-                          //       "Chat Notifications:",
-                          //       textAlign: TextAlign.start,
-                          //       maxLines: 2,
-                          //       overflow: TextOverflow.ellipsis,
-                          //       style: TextStyle(
-                          //           fontFamily: 'Lato',
-                          //           fontSize: 18,
-                          //           color: Colors.white),
-                          //     )),
-                          // Padding(
-                          //     padding: EdgeInsets.only(top: 8),
-                          //     child: Container(
-                          //       padding: EdgeInsets.only(left: 12, right: 12),
-                          //       decoration: BoxDecoration(
-                          //         border: Border.all(
-                          //             width: 1.0, color: Colors.white),
-                          //         borderRadius:
-                          //             BorderRadius.all(Radius.circular(10.0)),
-                          //       ),
-                          //       child: Stack(
-                          //         children: [
-                          //           DropdownButton<String>(
-                          //             icon: Icon(Icons.arrow_drop_down,
-                          //                 color: Colors.white),
-                          //             iconSize: 28,
-                          //             elevation: 16,
-                          //             style:
-                          //                 TextStyle(color: Colors.deepPurple),
-                          //             isExpanded: true,
-                          //             underline: Container(
-                          //               height: 0,
-                          //               color: Colors.transparent,
-                          //             ),
-                          //             onChanged: (String newValue) {
-                          //               setState(() {
-                          //                 chatDropdownValue = newValue;
-                          //               });
-                                        
-                          //                _saveChatNotificationSetting();
-                          //             },
-                          //             itemHeight: 56,
-                          //             value: null,
-                          //             items: chatItems
-                          //                 .map<DropdownMenuItem<String>>(
-                          //                     (String value) {
-                          //               return DropdownMenuItem<String>(
-                          //                 value: value,
-                          //                 child: Text(value,
-                          //                     style: TextStyle(
-                          //                         fontFamily: 'Lato',
-                          //                         color: Colors.deepPurple,
-                          //                         fontSize: 18)),
-                          //               );
-                          //             }).toList(),
-                          //           ),
-                          //           Container(
-                          //             height: 56,
-                          //             child: Align(
-                          //               alignment: Alignment.centerLeft,
-                          //               child: Text(
-                          //                 chatDropdownValue,
-                          //                 style: TextStyle(
-                          //                     fontFamily: 'Lato',
-                          //                     color: Colors.white,
-                          //                     fontSize: 18),
-                          //               ),
-                          //             ),
-                          //           )
-                          //         ],
-                          //       ),
-                          //     )),
                         ]),
                   ],
                 )))

@@ -5,14 +5,17 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:groovenation_flutter/cubit/chat_cubit.dart';
 import 'package:groovenation_flutter/cubit/social_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
+import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_grid_item.dart';
 import 'package:groovenation_flutter/ui/social/social_item.dart';
+import 'package:groovenation_flutter/util/chat_page_arguments.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -66,8 +69,21 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  _changeUserBlocked() {
-    //TODO Block/Unblock User
+  void _changeUserBlocked() async {
+    setState(() {
+      socialPerson.hasUserBlocked = !socialPerson.hasUserBlocked;
+    });
+
+    final UserSocialCubit userSocialCubit =
+        BlocProvider.of<UserSocialCubit>(context);
+
+    bool userBlockSuccess = await userSocialCubit.blockUser(
+        context, socialPerson, socialPerson.hasUserBlocked);
+
+    if (!userBlockSuccess)
+      setState(() {
+        socialPerson.hasUserBlocked = !socialPerson.hasUserBlocked;
+      });
   }
 
   _changeUserFollowingStatus() {
@@ -80,8 +96,20 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() {});
   }
 
-  _openMessages() {
-    //TODO Open Messages
+  _openMessages() async {
+    final ConversationsCubit conversationsCubit =
+        BlocProvider.of<ConversationsCubit>(context);
+
+    Conversation conversation =
+        await conversationsCubit.getPersonConversation(socialPerson.personID);
+
+    if (conversation == null)
+      Navigator.pushNamed(context, '/chat',
+          arguments: ChatPageArguments(
+              Conversation(null, socialPerson, 0, null), null));
+    else
+      Navigator.pushNamed(context, '/chat',
+          arguments: ChatPageArguments(conversation, null));
   }
 
   List<SocialPost> posts = [];
@@ -115,7 +143,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                               width: 116,
                                               child: CircleAvatar(
                                                 backgroundImage:
-                                                    OptimizedCacheImageProvider(
+                                                    CachedNetworkImageProvider(
                                                         socialPerson
                                                             .personProfilePicURL),
                                               ),
@@ -137,7 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                       fontFamily: 'Lato',
                                                       fontSize: 24),
                                                 )),
-                                            GridView.count(
+                                             GridView.count(
                                                 physics:
                                                     NeverScrollableScrollPhysics(),
                                                 shrinkWrap: true,
@@ -256,7 +284,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                                     size: 32),
                                                 itemBuilder:
                                                     (BuildContext context) {
-                                                  return {'Block User'}
+                                                  return {socialPerson.hasUserBlocked ? 'Unblock User' : 'Block User'}
                                                       .map((String choice) {
                                                     return PopupMenuItem<
                                                             String>(
@@ -354,14 +382,9 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ],
                               ))),
                       flexibleSpace: Stack(children: [
-                        // Positioned.fill(
-                        //     child: OptimizedCacheImage(
-                        //   imageUrl: socialPerson.personCoverPicURL,
-                        //   fit: BoxFit.cover,
-                        // )),
                         Positioned.fill(
-                            child: Image.network(
-                          socialPerson.personCoverPicURL,
+                            child: CachedNetworkImage(
+                          imageUrl: socialPerson.personCoverPicURL,
                           fit: BoxFit.cover,
                         )),
                         Positioned.fill(
@@ -391,6 +414,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     return false;
                   }, child: BlocBuilder<ProfileSocialCubit, SocialState>(
                           builder: (context, socialState) {
+                    if (socialState is SocialLoadingState && posts.isEmpty) {
+                      return Padding(
+                          padding: EdgeInsets.only(top: 64),
+                          child: Center(
+                              child: SizedBox(
+                            height: 56,
+                            width: 56,
+                            child: CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 2.0,
+                            ),
+                          )));
+                    }
+
                     if (socialState is SocialLoadedState) {
                       if (listPage == 0)
                         posts = socialState.socialPosts;
@@ -459,12 +497,22 @@ class _ProfilePageState extends State<ProfilePage> {
                     return false;
                   }, child: BlocBuilder<ProfileSocialCubit, SocialState>(
                           builder: (context, socialState) {
-                    if (socialState is SocialLoadedState) {
-                      // if (listPage == 0)
-                      //   posts = socialState.socialPosts;
-                      // else
-                      //   posts.addAll(socialState.socialPosts);
+                    if (socialState is SocialLoadingState && posts.isEmpty) {
+                      return Padding(
+                          padding: EdgeInsets.only(top: 64),
+                          child: Center(
+                              child: SizedBox(
+                            height: 56,
+                            width: 56,
+                            child: CircularProgressIndicator(
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              strokeWidth: 2.0,
+                            ),
+                          )));
+                    }
 
+                    if (socialState is SocialLoadedState) {
                       _listRefreshController.refreshCompleted();
                       if (socialState.hasReachedMax)
                         _listRefreshController.loadNoData();
@@ -507,16 +555,33 @@ class _ProfilePageState extends State<ProfilePage> {
                                 return Padding(
                                     padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
                                     child: SocialItem(
-                                        key: Key(posts[index].postID),
-                                        socialPost: posts[index],
+                                        key: Key(
+                                            (socialState is SocialLoadedState)
+                                                ? ((posts.isEmpty)
+                                                    ? socialState
+                                                        .socialPosts[index]
+                                                        .postID
+                                                    : posts[index].postID)
+                                                : posts[index].postID),
+                                        socialPost: (socialState
+                                                is SocialLoadedState)
+                                            ? ((posts.isEmpty)
+                                                ? socialState.socialPosts[index]
+                                                : posts[index])
+                                            : posts[index],
                                         showClose: false));
-                              }, childCount: posts.length)),
+                              },
+                                      childCount: (socialState
+                                              is SocialLoadedState)
+                                          ? ((posts.isEmpty)
+                                              ? socialState.socialPosts.length
+                                              : posts.length)
+                                          : posts.length)),
                             )
                           ],
                         ));
                   })),
-                ])
-                ),
+                ])),
           ),
           AnimatedOpacity(
               opacity: _scrollToTopVisible ? 1.0 : 0.0,
@@ -703,7 +768,7 @@ class _ProfilePageState extends State<ProfilePage> {
             SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2),
         itemBuilder: (context, index) {
           if (index.isOdd) {
-            return OptimizedCacheImage(
+            return CachedNetworkImage(
               imageUrl:
                   'https://images.pexels.com/photos/1190298/pexels-photo-1190298.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=250&w=420',
               imageBuilder: (context, imageProvider) => Ink.image(
@@ -725,7 +790,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             );
           }
-          return OptimizedCacheImage(
+          return CachedNetworkImage(
             imageUrl:
                 'https://images.pexels.com/photos/2034851/pexels-photo-2034851.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=250&w=420',
             imageBuilder: (context, imageProvider) => Ink.image(
@@ -770,7 +835,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           width: 64,
                           child: CircleAvatar(
                             backgroundColor: Colors.purple.withOpacity(0.5),
-                            backgroundImage: OptimizedCacheImageProvider(
+                            backgroundImage: CachedNetworkImageProvider(
                                 'https://www.kolpaper.com/wp-content/uploads/2020/05/Wallpaper-Tokyo-Ghoul-for-Desktop.jpg'),
                             child: FlatButton(
                                 onPressed: () {}, child: Container()),

@@ -10,8 +10,7 @@ import 'package:groovenation_flutter/cubit/state/clubs_state.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
-import 'package:groovenation_flutter/util/shared_prefs.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -427,7 +426,9 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
         });
   }
 
-  double _getDistanceToClub() {}
+  double _getDistanceToClub() {
+    //TODO Get User Distance from Club
+  }
 
   Widget clubItem(
       BuildContext context, Club club, bool isFavourite, int index) {
@@ -451,7 +452,7 @@ class _ClubsHomePageState extends State<ClubsHomePage> {
                       height: 236,
                       decoration: BoxDecoration(
                         image: DecorationImage(
-                            image: OptimizedCacheImageProvider(club.images[0]),
+                            image: CachedNetworkImageProvider(club.images[0]),
                             fit: BoxFit.cover),
                       ),
                       child: Align(

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:crypt/crypt.dart';
 import 'package:dio/dio.dart';
 import 'package:groovenation_flutter/constants/auth_error_types.dart';
@@ -64,7 +62,7 @@ class AuthRepository {
       try {
         _checkCancelToken.cancel();
         _checkCancelToken = null;
-      } catch (e) {}
+      } catch (_) {}
     }
 
     _checkCancelToken = CancelToken();

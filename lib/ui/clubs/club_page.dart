@@ -16,7 +16,7 @@ import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/social_item_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:optimized_cached_image/optimized_cached_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ClubPage extends StatefulWidget {
@@ -399,7 +399,7 @@ class _ClubPageState extends State<ClubPage> {
                               children:
                                   List.generate(club.moments.length, (index) {
                                 return Ink.image(
-                                  image: OptimizedCacheImageProvider(
+                                  image: CachedNetworkImageProvider(
                                       club.moments[index].mediaURL),
                                   fit: BoxFit.cover,
                                   child: InkWell(
@@ -546,7 +546,7 @@ class _ClubPageState extends State<ClubPage> {
                             return Container(
                                 decoration: BoxDecoration(
                               image: DecorationImage(
-                                  image: OptimizedCacheImageProvider(i),
+                                  image: CachedNetworkImageProvider(i),
                                   fit: BoxFit.cover),
                             ));
                           },
@@ -662,7 +662,7 @@ class _ClubPageState extends State<ClubPage> {
                         child: TextField(
                           controller: _reviewInputController,
                           maxLength: 1000,
-                          maxLengthEnforced: true,
+                          maxLengthEnforcement: MaxLengthEnforcement.enforced,
                           keyboardType: TextInputType.multiline,
                           maxLines: null,
                           cursorColor: Colors.white.withOpacity(0.7),
@@ -894,7 +894,7 @@ class _ReviewItemState extends State<ReviewItem> {
               width: 76,
               child: CircleAvatar(
                 backgroundColor: Colors.purple.withOpacity(0.5),
-                backgroundImage: OptimizedCacheImageProvider(
+                backgroundImage: CachedNetworkImageProvider(
                     review.person.personProfilePicURL),
                 child: FlatButton(onPressed: () {}, child: Container()),
               )),
@@ -982,10 +982,10 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                 overflow: Overflow.visible,
                 children: [
                   Positioned.fill(
-                      child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                )),
+                      child: CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                  )),
                   Positioned.fill(
                     child: Container(
                       color: Colors.black.withOpacity(0.2),
@@ -1017,7 +1017,8 @@ class MySliverAppBar extends SliverPersistentHeaderDelegate {
                                 child: FlatButton(
                                     padding: EdgeInsets.zero,
                                     onPressed: () {
-                                      MapsLauncher.launchCoordinates(latitude, longitude);
+                                      MapsLauncher.launchCoordinates(
+                                          latitude, longitude);
                                     },
                                     child: Center(
                                       child: Icon(
