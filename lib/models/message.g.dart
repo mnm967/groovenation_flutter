@@ -17,13 +17,13 @@ class MessageAdapter extends TypeAdapter<Message> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Message(
-      fields[0] as String,
-      fields[1] as String,
-      fields[3] as String,
-      fields[4] as DateTime,
-      fields[5] as SocialPerson,
-      fields[6] as String,
-      fields[7] as String,
+      fields[0] as String?,
+      fields[1] as String?,
+      fields[3] as String?,
+      fields[4] as DateTime?,
+      fields[5] as SocialPerson?,
+      fields[6] as String?,
+      fields[7] as String?,
     );
   }
 
@@ -69,13 +69,13 @@ class TextMessageAdapter extends TypeAdapter<TextMessage> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return TextMessage(
-      fields[0] as String,
-      fields[1] as String,
-      fields[4] as DateTime,
-      fields[5] as SocialPerson,
-      fields[8] as String,
-      fields[6] as String,
-    )..messageStatus = fields[7] as String;
+      fields[0] as String?,
+      fields[1] as String?,
+      fields[4] as DateTime?,
+      fields[5] as SocialPerson?,
+      fields[8] as String?,
+      fields[6] as String?,
+    )..messageStatus = fields[7] as String?;
   }
 
   @override
@@ -122,13 +122,13 @@ class MediaMessageAdapter extends TypeAdapter<MediaMessage> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return MediaMessage(
-      fields[0] as String,
-      fields[1] as String,
-      fields[4] as DateTime,
-      fields[5] as SocialPerson,
-      fields[8] as String,
-      fields[6] as String,
-      fields[7] as String,
+      fields[0] as String?,
+      fields[1] as String?,
+      fields[4] as DateTime?,
+      fields[5] as SocialPerson?,
+      fields[8] as String?,
+      fields[6] as String?,
+      fields[7] as String?,
     );
   }
 
@@ -176,13 +176,13 @@ class SocialPostMessageAdapter extends TypeAdapter<SocialPostMessage> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return SocialPostMessage(
-      fields[0] as String,
-      fields[1] as String,
-      fields[4] as DateTime,
-      fields[5] as SocialPerson,
-      fields[8] as SocialPost,
-      fields[6] as String,
-    )..messageStatus = fields[7] as String;
+      fields[0] as String?,
+      fields[1] as String?,
+      fields[4] as DateTime?,
+      fields[5] as SocialPerson?,
+      fields[8] as SocialPost?,
+      fields[6] as String?,
+    )..messageStatus = fields[7] as String?;
   }
 
   @override

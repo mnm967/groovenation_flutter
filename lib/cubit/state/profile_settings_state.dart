@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 
 abstract class ProfileSettingsState extends Equatable {}
 
@@ -21,7 +21,7 @@ class ProfileSettingsSuccessState extends ProfileSettingsState {
 class ProfileSettingsErrorState extends ProfileSettingsState {
   ProfileSettingsErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

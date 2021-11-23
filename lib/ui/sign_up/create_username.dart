@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:groovenation_flutter/constants/auth_error_types.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
-import 'package:groovenation_flutter/cubit/auth_cubit.dart';
+import 'package:groovenation_flutter/cubit/user/auth_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/auth_state.dart';
-import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
 
 class CreateUsernamePage extends StatefulWidget {
@@ -21,8 +20,12 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
     fontSize: 17,
     fontFamily: 'Lato',
   );
-  DateTime selectedDate;
-  TextEditingController myController = TextEditingController();
+  DateTime? selectedDate;
+  TextEditingController _textController = TextEditingController();
+
+  UsernameInputStatus? usernameInputStatus;
+  final usernameController = TextEditingController();
+  bool pendingExecution = false;
 
   @override
   void initState() {
@@ -31,7 +34,7 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
 
   @override
   void dispose() {
-    myController.dispose();
+    _textController.dispose();
     super.dispose();
   }
 
@@ -47,12 +50,12 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
           ),
           content: SingleChildScrollView(
             child: ListBody(
-              children: <Widget>[
+              children: [
                 Text(desc, style: TextStyle(fontFamily: 'Lato')),
               ],
             ),
           ),
-          actions: <Widget>[
+          actions: [
             FlatButton(
               child: Text("Okay"),
               onPressed: () {
@@ -81,76 +84,97 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
   _hideLoadingDialog() {
     if (_isLoadingVisible) {
       _isLoadingVisible = false;
-      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+      Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
     }
   }
 
-  UsernameInputStatus usernameInputStatus;
+  Widget _publicUsernameIcon() {
+    return Visibility(
+      visible: usernameInputStatus != UsernameInputStatus.NONE,
+      child: Stack(
+        children: [
+          Visibility(
+            visible: (usernameInputStatus ==
+                    UsernameInputStatus.USERNAME_AVAILABLE ||
+                usernameInputStatus ==
+                    UsernameInputStatus.USERNAME_UNAVAILABLE),
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: SizedBox(
+                height: 32,
+                width: 32,
+                child: CircleAvatar(
+                  backgroundColor: (usernameInputStatus ==
+                          UsernameInputStatus.USERNAME_AVAILABLE)
+                      ? Colors.green
+                      : Colors.red,
+                  child: IconButton(
+                    icon: Icon(
+                      (usernameInputStatus ==
+                              UsernameInputStatus.USERNAME_AVAILABLE)
+                          ? Icons.check
+                          : Icons.close,
+                      size: 24,
+                    ),
+                    color: Colors.white,
+                    padding: EdgeInsets.zero,
+                    onPressed: () {},
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Visibility(
+            visible:
+                (usernameInputStatus == UsernameInputStatus.CHECKING_USERNAME),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
+              child: SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  backgroundColor: Colors.white,
+                  strokeWidth: 2,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dateIcon() {
+    return IconButton(
+      icon: Icon(Icons.date_range),
+      color: Colors.white,
+      padding: EdgeInsets.only(right: 10),
+      onPressed: () {},
+    );
+  }
+
+  Widget _passwordIcon() {
+    return IconButton(
+      icon: Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
+      color: Colors.white,
+      padding: EdgeInsets.only(right: 10),
+      onPressed: () {
+        setState(() {
+          _isPasswordVisible = !_isPasswordVisible;
+        });
+      },
+    );
+  }
 
   InputDecoration textFieldDecor(
       String hintText, bool isPassword, bool isPublicUsername, bool isDate) {
-    IconButton dateIcon = IconButton(
-        icon: Icon(Icons.date_range),
-        color: Colors.white,
-        padding: EdgeInsets.only(right: 10),
-        onPressed: () {});
+    IconButton dateIcon = _dateIcon() as IconButton;
 
-    IconButton passwordIcon = IconButton(
-        icon:
-            Icon(_isPasswordVisible ? Icons.visibility_off : Icons.visibility),
-        color: Colors.white,
-        padding: EdgeInsets.only(right: 10),
-        onPressed: () {
-          setState(() {
-            _isPasswordVisible = !_isPasswordVisible;
-          });
-        });
+    IconButton passwordIcon = _passwordIcon() as IconButton;
 
-    Visibility publicUsernameIcon = Visibility(
-        visible: usernameInputStatus != UsernameInputStatus.NONE,
-        child: Stack(children: [
-          Visibility(
-              visible: (usernameInputStatus ==
-                      UsernameInputStatus.USERNAME_AVAILABLE ||
-                  usernameInputStatus ==
-                      UsernameInputStatus.USERNAME_UNAVAILABLE),
-              child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                      height: 32,
-                      width: 32,
-                      child: CircleAvatar(
-                          backgroundColor: (usernameInputStatus ==
-                                  UsernameInputStatus.USERNAME_AVAILABLE)
-                              ? Colors.green
-                              : Colors.red,
-                          child: IconButton(
-                              icon: Icon(
-                                (usernameInputStatus ==
-                                        UsernameInputStatus.USERNAME_AVAILABLE)
-                                    ? Icons.check
-                                    : Icons.close,
-                                size: 24,
-                              ),
-                              color: Colors.white,
-                              padding: EdgeInsets.zero,
-                              onPressed: () {}))))),
-          Visibility(
-              visible: (usernameInputStatus ==
-                  UsernameInputStatus.CHECKING_USERNAME),
-              child: Padding(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 16),
-                  child: SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      backgroundColor: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )))
-        ]));
+    Visibility publicUsernameIcon = _publicUsernameIcon() as Visibility;
 
-    Object suffixButton;
+    Object? suffixButton;
     if (isPassword) suffixButton = passwordIcon;
     if (isPublicUsername) suffixButton = publicUsernameIcon;
     if (isDate) suffixButton = dateIcon;
@@ -160,38 +184,40 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.grey),
         enabledBorder: OutlineInputBorder(
-            borderRadius: const BorderRadius.all(
-              const Radius.circular(10.0),
-            ),
-            borderSide: const BorderSide(color: Colors.white, width: 1.0)),
+          borderRadius: const BorderRadius.all(
+            const Radius.circular(10.0),
+          ),
+          borderSide: const BorderSide(color: Colors.white, width: 1.0),
+        ),
         disabledBorder: OutlineInputBorder(
-            borderRadius: const BorderRadius.all(
-              const Radius.circular(10.0),
-            ),
-            borderSide: const BorderSide(color: Colors.white, width: 1.0)),
+          borderRadius: const BorderRadius.all(
+            const Radius.circular(10.0),
+          ),
+          borderSide: const BorderSide(color: Colors.white, width: 1.0),
+        ),
         errorBorder: OutlineInputBorder(
-            borderRadius: const BorderRadius.all(
-              const Radius.circular(10.0),
-            ),
-            borderSide: const BorderSide(color: Colors.red, width: 1.0)),
+          borderRadius: const BorderRadius.all(
+            const Radius.circular(10.0),
+          ),
+          borderSide: const BorderSide(color: Colors.red, width: 1.0),
+        ),
         focusedErrorBorder: OutlineInputBorder(
-            borderRadius: const BorderRadius.all(
-              const Radius.circular(10.0),
-            ),
-            borderSide: const BorderSide(color: Color(0xffE65AB9), width: 1.0)),
+          borderRadius: const BorderRadius.all(
+            const Radius.circular(10.0),
+          ),
+          borderSide: const BorderSide(color: Color(0xffE65AB9), width: 1.0),
+        ),
         errorStyle: TextStyle(fontFamily: 'Lato'),
         focusedBorder: OutlineInputBorder(
-            borderRadius: const BorderRadius.all(
-              const Radius.circular(10.0),
-            ),
-            borderSide: const BorderSide(color: Color(0xffE65AB9), width: 1.0)),
-        suffixIcon: suffixButton);
+          borderRadius: const BorderRadius.all(
+            const Radius.circular(10.0),
+          ),
+          borderSide: const BorderSide(color: Color(0xffE65AB9), width: 1.0),
+        ),
+        suffixIcon: suffixButton as Widget?);
   }
 
-  final usernameController = TextEditingController();
-
-  bool pendingExecution = false;
-  _createUsername() {
+  void _createUsername() {
     if (usernameInputStatus == UsernameInputStatus.CHECKING_USERNAME) {
       pendingExecution = true;
       return;
@@ -202,6 +228,58 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
     authCubit.createUsername(usernameController.text);
   }
 
+  void _openNextPage() {
+    _hideLoadingDialog();
+    Navigator.pushReplacementNamed(context, '/main');
+  }
+
+  void _displayError(state) {
+    String desc;
+    switch (state.error) {
+      case AuthError.USERNAME_EXISTS_ERROR:
+        desc = USERNAME_EXISTS_PROMPT;
+        break;
+      default:
+        desc = UNKNOWN_ERROR_PROMPT;
+    }
+    _hideLoadingDialog();
+    _showAlertDialog(BASIC_ERROR_TITLE, desc);
+  }
+
+  void _usernameCheckCompleted(state) {
+    setState(() {
+      usernameInputStatus = state.usernameInputStatus;
+    });
+
+    if (pendingExecution) {
+      pendingExecution = false;
+      if (usernameInputStatus == UsernameInputStatus.USERNAME_AVAILABLE ||
+          usernameInputStatus == UsernameInputStatus.NONE) {
+        _showLoadingDialog(context);
+
+        final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
+        authCubit.createUsername(usernameController.text);
+      } else if (usernameInputStatus ==
+          UsernameInputStatus.USERNAME_UNAVAILABLE) {
+        _hideLoadingDialog();
+        _showAlertDialog("Username Already Exists", USERNAME_EXISTS_PROMPT);
+      }
+    }
+  }
+
+  void _blocListener(context, state) {
+    if (state is AuthCreateUsernameSuccessState)
+      _openNextPage();
+    else if (state is AuthCreateUsernameErrorState)
+      _displayError(state);
+    else if (state is AuthUsernameCheckCompleteState)
+      _usernameCheckCompleted(state);
+    else if (state is AuthUsernameCheckLoadingState)
+      setState(() {
+        usernameInputStatus = UsernameInputStatus.CHECKING_USERNAME;
+      });
+  }
+
   @override
   Widget build(BuildContext context) {
     var myTheme = SystemUiOverlayStyle.light
@@ -210,152 +288,125 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
     SystemChrome.setSystemUIOverlayStyle(myTheme);
 
     return BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthCreateUsernameSuccessState) {
-            _hideLoadingDialog();
-            Navigator.pushReplacementNamed(context, '/main');
-          } else if (state is AuthCreateUsernameErrorState) {
-            String desc;
-            switch (state.error) {
-              case AuthSignUpErrorType.USERNAME_EXISTS_ERROR:
-                desc = USERNAME_EXISTS_PROMPT;
-                break;
-              default:
-                desc = UNKNOWN_ERROR_PROMPT;
-            }
-            _hideLoadingDialog();
-            _showAlertDialog(BASIC_ERROR_TITLE, desc);
-          } else if (state is AuthUsernameCheckCompleteState) {
-            setState(() {
-              usernameInputStatus = state.usernameInputStatus;
-            });
+      listener: _blocListener,
+      child: SafeArea(
+        child: Container(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: new ListView(
+            padding: EdgeInsets.only(top: 48),
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(children: [
+                  _title(),
+                  _usernameTextField(),
+                  _createUsernameButton(),
+                ]),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            if (pendingExecution) {
-              pendingExecution = false;
-              if (usernameInputStatus ==
-                      UsernameInputStatus.USERNAME_AVAILABLE ||
-                  usernameInputStatus == UsernameInputStatus.NONE) {
-                _showLoadingDialog(context);
+  Widget _title() {
+    return Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: Center(
+        child: Text(
+          'Create Username',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Kirvy',
+            fontSize: 42,
+          ),
+        ),
+      ),
+    );
+  }
 
-                final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
-                authCubit.createUsername(usernameController.text);
-              } else if (usernameInputStatus ==
-                  UsernameInputStatus.USERNAME_UNAVAILABLE) {
-                _hideLoadingDialog();
-                _showAlertDialog(
-                    "Username Already Exists", USERNAME_EXISTS_PROMPT);
-              }
-            }
-          } else if (state is AuthUsernameCheckLoadingState) {
-            setState(() {
-              usernameInputStatus = UsernameInputStatus.CHECKING_USERNAME;
-            });
-          }
-        },
-        child: SafeArea(
-            child: Container(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: new ListView(
-                    padding: EdgeInsets.only(top: 48),
-                    physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics()),
-                    children: [
-                      Form(
-                        key: _formKey,
-                        child: Column(children: [
-                          Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Center(
-                              child: Text(
-                                'Create Username',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'Kirvy',
-                                  fontSize: 42,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8, top: 48),
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.only(top: 24),
-                                  child: TextFormField(
-                                      controller: usernameController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Enter Some Text';
-                                        }
+  Widget _usernameTextField() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8, top: 48),
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.only(top: 24),
+            child: TextFormField(
+                controller: usernameController,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Please Enter Some Text';
+                  }
 
-                                        if (value.length < 5 ||
-                                            value.length > 25) {
-                                          return 'Enter a value between 5 - 25 characters';
-                                        }
+                  if (value.length < 5 || value.length > 25) {
+                    return 'Enter a value between 5 - 25 characters';
+                  }
 
-                                        if (value.contains(" "))
-                                          return "Spaces are not allowed in your username";
+                  if (value.contains(" "))
+                    return "Spaces are not allowed in your username";
 
-                                        if (usernameInputStatus ==
-                                            UsernameInputStatus
-                                                .USERNAME_UNAVAILABLE) {
-                                          return 'This username has already been taken';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (value) {
-                                        final AuthCubit authCubit =
-                                            BlocProvider.of<AuthCubit>(context);
-                                        authCubit.checkUsernameExists(value);
-                                      },
-                                      style: formFieldTextStyle,
-                                      decoration: textFieldDecor(
-                                          "Public Username",
-                                          false,
-                                          true,
-                                          false)),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(top: 16),
-                            child: Container(
-                                child: Container(
-                              height: 61,
-                              child: Card(
-                                elevation: 0,
-                                color: Color(0xffE65AB9),
-                                clipBehavior: Clip.antiAliasWithSaveLayer,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
-                                semanticContainer: true,
-                                child: FlatButton(
-                                    onPressed: () {
-                                      if (_formKey.currentState.validate()) {
-                                        _createUsername();
-                                      }
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.all(0),
-                                      child: Center(
-                                          child: Text(
-                                        "Create Username",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: 'Lato',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 17,
-                                        ),
-                                      )),
-                                    )),
-                              ),
-                            )),
-                          ),
-                        ]),
-                      )
-                    ]))));
+                  if (usernameInputStatus ==
+                      UsernameInputStatus.USERNAME_UNAVAILABLE) {
+                    return 'This username has already been taken';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  final AuthCubit authCubit =
+                      BlocProvider.of<AuthCubit>(context);
+                  authCubit.checkUsernameExists(value);
+                },
+                style: formFieldTextStyle,
+                decoration:
+                    textFieldDecor("Public Username", false, true, false)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _createUsernameButton() {
+    return Padding(
+      padding: EdgeInsets.only(top: 16),
+      child: Container(
+        child: Container(
+          height: 61,
+          child: Card(
+            elevation: 0,
+            color: Color(0xffE65AB9),
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            semanticContainer: true,
+            child: FlatButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  _createUsername();
+                }
+              },
+              child: Padding(
+                padding: EdgeInsets.all(0),
+                child: Center(
+                  child: Text(
+                    "Create Username",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

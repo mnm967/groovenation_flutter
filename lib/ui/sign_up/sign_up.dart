@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:groovenation_flutter/constants/auth_error_types.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
-import 'package:groovenation_flutter/cubit/auth_cubit.dart';
+import 'package:groovenation_flutter/cubit/user/auth_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/auth_state.dart';
+import 'package:groovenation_flutter/util/alert_util.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
 import 'package:groovenation_flutter/widgets/text_material_button_widget.dart';
 import 'package:intl/intl.dart';
-
-enum UsernameInputStatus {
-  CHECKING_USERNAME,
-  USERNAME_AVAILABLE,
-  USERNAME_UNAVAILABLE,
-  NONE
-}
+import 'package:url_launcher/url_launcher.dart';
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -29,12 +24,25 @@ class _SignUpPageState extends State<SignUpPage> {
     fontSize: 17,
     fontFamily: 'Lato',
   );
-  DateTime selectedDate;
+  DateTime? selectedDate;
   TextEditingController myController = TextEditingController();
+
+  final _focusNode = FocusNode();
+
+  void _launchURL(String url) async => await canLaunch(url)
+      ? await launch(url, forceWebView: true)
+      : alertUtil.sendAlert(
+          BASIC_ERROR_TITLE, CANNOT_LAUNCH_URL_PROMPT, Colors.red, Icons.error);
 
   @override
   void initState() {
     super.initState();
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus) {
+        final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
+        authCubit.checkUsernameExists(usernameController.text);
+      }
+    });
   }
 
   @override
@@ -55,12 +63,12 @@ class _SignUpPageState extends State<SignUpPage> {
           ),
           content: SingleChildScrollView(
             child: ListBody(
-              children: <Widget>[
+              children: [
                 Text(desc, style: TextStyle(fontFamily: 'Lato')),
               ],
             ),
           ),
-          actions: <Widget>[
+          actions: [
             FlatButton(
               child: Text("Okay"),
               onPressed: () {
@@ -89,12 +97,12 @@ class _SignUpPageState extends State<SignUpPage> {
   _hideLoadingDialog() {
     if (_isLoadingVisible) {
       _isLoadingVisible = false;
-      Navigator.of(_keyLoader.currentContext, rootNavigator: true).pop();
+      Navigator.of(_keyLoader.currentContext!, rootNavigator: true).pop();
     }
   }
 
   Future<void> _selectDateOfBirth(BuildContext context) async {
-    final DateTime picked = await showDatePicker(
+    final DateTime? picked = await showDatePicker(
         context: context,
         initialDate: DateTime.now(),
         firstDate: DateTime(1000),
@@ -108,7 +116,7 @@ class _SignUpPageState extends State<SignUpPage> {
     }
   }
 
-  UsernameInputStatus usernameInputStatus;
+  UsernameInputStatus? usernameInputStatus;
 
   InputDecoration textFieldDecor(
       String hintText, bool isPassword, bool isPublicUsername, bool isDate) {
@@ -173,7 +181,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   )))
         ]));
 
-    Object suffixButton;
+    Object? suffixButton;
     if (isPassword) suffixButton = passwordIcon;
     if (isPublicUsername) suffixButton = publicUsernameIcon;
     if (isDate) suffixButton = dateIcon;
@@ -208,7 +216,7 @@ class _SignUpPageState extends State<SignUpPage> {
               const Radius.circular(10.0),
             ),
             borderSide: const BorderSide(color: Color(0xffE65AB9), width: 1.0)),
-        suffixIcon: suffixButton);
+        suffixIcon: suffixButton as Widget?);
   }
 
   final emailController = TextEditingController();
@@ -233,11 +241,71 @@ class _SignUpPageState extends State<SignUpPage> {
         lastNameController.text,
         usernameController.text,
         passwordController.text,
-        selectedDate);
+        selectedDate!);
   }
 
-  _openLogin() {
+  void _openNextPage() {
+    _hideLoadingDialog();
+    Navigator.pushReplacementNamed(context, '/city_picker');
+  }
+
+  void _openLoginPage() {
     Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  void _displayError(state) {
+    String desc;
+    switch (state.error) {
+      case AuthError.EMAIL_EXISTS_ERROR:
+        desc = EMAIL_EXISTS_PROMPT;
+        break;
+      case AuthError.USERNAME_EXISTS_ERROR:
+        desc = USERNAME_EXISTS_PROMPT;
+        break;
+      default:
+        desc = UNKNOWN_ERROR_PROMPT;
+    }
+    _hideLoadingDialog();
+    _showAlertDialog(BASIC_ERROR_TITLE, desc);
+  }
+
+  void _checkUsernameComplete(state) {
+    setState(() {
+      usernameInputStatus = state.usernameInputStatus;
+    });
+
+    if (pendingSignup) {
+      pendingSignup = false;
+      if (usernameInputStatus == UsernameInputStatus.USERNAME_AVAILABLE ||
+          usernameInputStatus == UsernameInputStatus.NONE) {
+        _showLoadingDialog(context);
+        final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
+        authCubit.signup(
+            emailController.text,
+            firstNameController.text,
+            lastNameController.text,
+            usernameController.text,
+            passwordController.text,
+            selectedDate!);
+      } else if (usernameInputStatus ==
+          UsernameInputStatus.USERNAME_UNAVAILABLE) {
+        _hideLoadingDialog();
+        _showAlertDialog("Username Already Exists", USERNAME_EXISTS_PROMPT);
+      }
+    }
+  }
+
+  void _blocListener(context, state) {
+    if (state is AuthSignupSuccessState)
+      _openNextPage();
+    else if (state is AuthSignupErrorState)
+      _displayError(state);
+    else if (state is AuthUsernameCheckCompleteState)
+      _checkUsernameComplete(state);
+    else if (state is AuthUsernameCheckLoadingState)
+      setState(() {
+        usernameInputStatus = UsernameInputStatus.CHECKING_USERNAME;
+      });
   }
 
   @override
@@ -248,362 +316,350 @@ class _SignUpPageState extends State<SignUpPage> {
     SystemChrome.setSystemUIOverlayStyle(myTheme);
 
     return BlocListener<AuthCubit, AuthState>(
-        listener: (context, state) {
-          if (state is AuthSignupSuccessState) {
-            _hideLoadingDialog();
-            Navigator.pushReplacementNamed(context, '/city_picker');
-          } else if (state is AuthSignupErrorState) {
-            String desc;
-            switch (state.error) {
-              case AuthSignUpErrorType.EMAIL_EXISTS_ERROR:
-                desc = EMAIL_EXISTS_PROMPT;
-                break;
-              case AuthSignUpErrorType.USERNAME_EXISTS_ERROR:
-                desc = USERNAME_EXISTS_PROMPT;
-                break;
-              default:
-                desc = UNKNOWN_ERROR_PROMPT;
-            }
-            _hideLoadingDialog();
-            _showAlertDialog(BASIC_ERROR_TITLE, desc);
-          } else if (state is AuthUsernameCheckCompleteState) {
-            setState(() {
-              usernameInputStatus = state.usernameInputStatus;
-            });
+      listener: _blocListener,
+      child: SafeArea(
+        child: Container(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+          child: new ListView(
+            padding: EdgeInsets.only(top: 48),
+            physics: const BouncingScrollPhysics(
+                parent: AlwaysScrollableScrollPhysics()),
+            children: [
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _title(),
+                    _signUpTitle(),
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 8, top: 48),
+                      child: Column(
+                        children: [
+                          _firstNameInput(),
+                          _lastNameInput(),
+                          _emailInput(),
+                          _usernameInput(),
+                          _passwordInput(),
+                          _confirmPasswordInput(),
+                          _dateOfBirth(),
+                        ],
+                      ),
+                    ),
+                    _termsButton(),
+                    _policyButton(),
+                    _createAccountButton(),
+                    _accountPrompt(),
+                    _loginButton(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-            if (pendingSignup) {
-              pendingSignup = false;
-              if (usernameInputStatus ==
-                      UsernameInputStatus.USERNAME_AVAILABLE ||
-                  usernameInputStatus == UsernameInputStatus.NONE) {
-                _showLoadingDialog(context);
-                final AuthCubit authCubit = BlocProvider.of<AuthCubit>(context);
-                authCubit.signup(
-                    emailController.text,
-                    firstNameController.text,
-                    lastNameController.text,
-                    usernameController.text,
-                    passwordController.text,
-                    selectedDate);
-              } else if (usernameInputStatus ==
-                  UsernameInputStatus.USERNAME_UNAVAILABLE) {
-                _hideLoadingDialog();
-                _showAlertDialog(
-                    "Username Already Exists", USERNAME_EXISTS_PROMPT);
-              }
+  void _validateForm() {
+    if (selectedDate == null) {
+      _showAlertDialog(
+          "Date of Birth Invalid", "Please enter your Date of Birth");
+      return;
+    }
+
+    if ((DateTime.now().year - selectedDate!.year) < 16) {
+      _showAlertDialog("You are too young!",
+          "You must be at least 16 years old to use GrooveNation. See more in our terms and conditions of use.");
+      return;
+    }
+
+    if (_formKey.currentState!.validate()) {
+      _executeSignup();
+    }
+  }
+
+  Widget _accountPrompt() {
+    return Padding(
+      padding: EdgeInsets.only(top: 48),
+      child: Text(
+        "Already Have an Account?",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 19,
+          fontFamily: 'LatoLight',
+        ),
+      ),
+    );
+  }
+
+  Widget _signUpTitle() {
+    return Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: Center(
+        child: Text(
+          'Sign Up',
+          style: TextStyle(
+            color: Colors.white,
+            fontFamily: 'Kirvy',
+            fontSize: 42,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _title() {
+    return Center(
+      child: Text(
+        'GrooveNation',
+        style: TextStyle(
+          color: Colors.white,
+          fontFamily: 'KirvyBold',
+          fontSize: 50,
+        ),
+      ),
+    );
+  }
+
+  Widget _createAccountButton() {
+    return Padding(
+      padding: EdgeInsets.only(top: 16),
+      child: Container(
+        child: Container(
+          height: 61,
+          child: Card(
+            elevation: 0,
+            color: Color(0xffE65AB9),
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10.0),
+            ),
+            semanticContainer: true,
+            child: FlatButton(
+              onPressed: _validateForm,
+              child: Padding(
+                padding: EdgeInsets.all(0),
+                child: Center(
+                  child: Text(
+                    "Create Account",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'Lato',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _loginButton() {
+    return Padding(
+      padding: EdgeInsets.only(top: 8, bottom: 24),
+      child: TextMaterialButton(
+        onTap: _openLoginPage,
+        child: Text(
+          "Log In",
+          style: TextStyle(
+            color: Color(0xffE65AB9),
+            fontSize: 20,
+            fontFamily: 'Lato',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _firstNameInput() {
+    return Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: TextFormField(
+          controller: firstNameController,
+          validator: (value) {
+            if (value!.isEmpty) {
+              return 'Please Enter Some Text';
             }
-          } else if (state is AuthUsernameCheckLoadingState) {
-            setState(() {
-              usernameInputStatus = UsernameInputStatus.CHECKING_USERNAME;
-            });
+
+            if (value.length < 5 || value.length > 25) {
+              return 'Enter a value between 5 - 25 characters';
+            }
+            return null;
+          },
+          style: formFieldTextStyle,
+          decoration: textFieldDecor('First Name', false, false, false)),
+    );
+  }
+
+  Widget _lastNameInput() {
+    return Padding(
+      padding: EdgeInsets.only(top: 24),
+      child: TextFormField(
+        controller: lastNameController,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return 'Please Enter Some Text';
           }
+
+          if (value.length < 5 || value.length > 25) {
+            return 'Enter a value between 5 - 25 characters';
+          }
+          return null;
         },
-        child: SafeArea(
-            child: Container(
-                padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: new ListView(
-                    padding: EdgeInsets.only(top: 48),
-                    physics: const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics()),
-                    children: [
-                      Form(
-                        key: _formKey,
-                        child: Column(children: [
-                          Center(
-                            child: Text(
-                              'GrooveNation',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontFamily: 'KirvyBold',
-                                fontSize: 50,
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(top: 8),
-                            child: Center(
-                              child: Text(
-                                'Sign Up',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontFamily: 'Kirvy',
-                                  fontSize: 42,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(bottom: 8, top: 48),
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.only(top: 8),
-                                  child: TextFormField(
-                                      controller: firstNameController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Enter Some Text';
-                                        }
+        style: formFieldTextStyle,
+        decoration: textFieldDecor("Last Name", false, false, false),
+      ),
+    );
+  }
 
-                                        if (value.length < 5 ||
-                                            value.length > 25) {
-                                          return 'Enter a value between 5 - 25 characters';
-                                        }
-                                        return null;
-                                      },
-                                      style: formFieldTextStyle,
-                                      decoration: textFieldDecor(
-                                          'First Name', false, false, false)),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(top: 24),
-                                  child: TextFormField(
-                                      controller: lastNameController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Enter Some Text';
-                                        }
+  Widget _emailInput() {
+    return Padding(
+      padding: EdgeInsets.only(top: 24),
+      child: TextFormField(
+          controller: emailController,
+          validator: (value) {
+            if (value!.isEmpty) {
+              return 'Please Enter Some Text';
+            }
 
-                                        if (value.length < 5 ||
-                                            value.length > 25) {
-                                          return 'Enter a value between 5 - 25 characters';
-                                        }
-                                        return null;
-                                      },
-                                      style: formFieldTextStyle,
-                                      decoration: textFieldDecor(
-                                          "Last Name", false, false, false)),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(top: 24),
-                                  child: TextFormField(
-                                      controller: emailController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Enter Some Text';
-                                        }
+            if (value.length < 5 || value.length > 25) {
+              return 'Enter a value between 5 - 25 characters';
+            }
 
-                                        if (value.length < 5 ||
-                                            value.length > 25) {
-                                          return 'Enter a value between 5 - 25 characters';
-                                        }
+            return null;
+          },
+          style: formFieldTextStyle,
+          decoration: textFieldDecor("Email", false, false, false)),
+    );
+  }
 
-                                        return null;
-                                      },
-                                      style: formFieldTextStyle,
-                                      decoration: textFieldDecor(
-                                          "Email", false, false, false)),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(top: 24),
-                                  child: TextFormField(
-                                      controller: usernameController,
-                                      validator: (value) {
-                                        if (value.isEmpty) {
-                                          return 'Please Enter Some Text';
-                                        }
+  Widget _usernameInput() {
+    return Padding(
+      padding: EdgeInsets.only(top: 24),
+      child: TextFormField(
+          controller: usernameController,
+          validator: (value) {
+            if (value!.isEmpty) {
+              return 'Please Enter Some Text';
+            }
 
-                                        if (value.length < 5 ||
-                                            value.length > 25) {
-                                          return 'Enter a value between 5 - 25 characters';
-                                        }
+            if (value.length < 5 || value.length > 25) {
+              return 'Enter a value between 5 - 25 characters';
+            }
 
-                                        if (value.contains(" "))
-                                          return "Spaces are not allowed in your username";
+            if (value.contains(" "))
+              return "Spaces are not allowed in your username";
 
-                                        if (usernameInputStatus ==
-                                            UsernameInputStatus
-                                                .USERNAME_UNAVAILABLE) {
-                                          return 'This username has already been taken';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (value) {
-                                        final AuthCubit authCubit =
-                                            BlocProvider.of<AuthCubit>(context);
-                                        authCubit.checkUsernameExists(value);
-                                      },
-                                      style: formFieldTextStyle,
-                                      decoration: textFieldDecor(
-                                          "Public Username",
-                                          false,
-                                          true,
-                                          false)),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(top: 24),
-                                  child: TextFormField(
-                                    controller: passwordController,
-                                    validator: (value) {
-                                      if (value.isEmpty) {
-                                        return 'Please Enter Some Text';
-                                      }
+            if (usernameInputStatus ==
+                UsernameInputStatus.USERNAME_UNAVAILABLE) {
+              return 'This username has already been taken';
+            }
+            return null;
+          },
+          focusNode: _focusNode,
+          style: formFieldTextStyle,
+          decoration: textFieldDecor("Public Username", false, true, false)),
+    );
+  }
 
-                                      if (value.length < 5 ||
-                                          value.length > 30) {
-                                        return 'Enter a value between 5 - 30 characters';
-                                      }
-                                      return null;
-                                    },
-                                    style: formFieldTextStyle,
-                                    decoration: textFieldDecor(
-                                        'Password', true, false, false),
-                                    obscureText: !_isPasswordVisible,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.only(top: 24),
-                                  child: TextFormField(
-                                    controller: passwordMatchController,
-                                    validator: (value) {
-                                      if (value.isEmpty) {
-                                        return 'Please Enter Some Text';
-                                      }
-                                      if (passwordController.text !=
-                                          passwordMatchController.text) {
-                                        return 'Passwords Do Not Match';
-                                      }
-                                      return null;
-                                    },
-                                    style: formFieldTextStyle,
-                                    decoration: textFieldDecor(
-                                        'Confirm Password',
-                                        false,
-                                        false,
-                                        false),
-                                    obscureText: true,
-                                  ),
-                                ),
-                                Padding(
-                                    padding: EdgeInsets.only(top: 24),
-                                    child: FlatButton(
-                                      onPressed: () {
-                                        _selectDateOfBirth(context);
-                                      },
-                                      padding: EdgeInsets.all(0),
-                                      splashColor:
-                                          Colors.white.withOpacity(0.3),
-                                      child: TextFormField(
-                                        enabled: false,
-                                        style: formFieldTextStyle,
-                                        decoration: textFieldDecor(
-                                            'Date of Birth',
-                                            false,
-                                            false,
-                                            true),
-                                        controller: myController,
-                                        readOnly: true,
-                                      ),
-                                    )),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                              padding: EdgeInsets.only(bottom: 16, top: 16),
-                              child: TextMaterialButton(
-                                onTap: () {
-                                  //TODO Terms & Conditions Page
-                                },
-                                child: Text(
-                                  "View Terms and Conditions",
-                                  style: TextStyle(
-                                    color: Color(0xffE65AB9),
-                                    fontSize: 21,
-                                    fontFamily: 'LatoLight',
-                                  ),
-                                ),
-                              )),
-                          Padding(
-                              padding: EdgeInsets.only(bottom: 8),
-                              child: TextMaterialButton(
-                                onTap: () {
-                                  //TODO Privacy Policy Page
-                                },
-                                child: Text(
-                                  "View Privacy Policy",
-                                  style: TextStyle(
-                                    color: Color(0xffE65AB9),
-                                    fontSize: 20,
-                                    fontFamily: 'LatoLight',
-                                  ),
-                                ),
-                              )),
-                          Padding(
-                            padding: EdgeInsets.only(top: 16),
-                            child: Container(
-                                child: Container(
-                              height: 61,
-                              child: Card(
-                                elevation: 0,
-                                color: Color(0xffE65AB9),
-                                clipBehavior: Clip.antiAliasWithSaveLayer,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                ),
-                                semanticContainer: true,
-                                child: FlatButton(
-                                    onPressed: () {
-                                      if (selectedDate == null) {
-                                        _showAlertDialog(
-                                            "Date of Birth Invalid",
-                                            "Please enter your Date of Birth");
-                                        return;
-                                      }
+  Widget _passwordInput() {
+    return Padding(
+      padding: EdgeInsets.only(top: 24),
+      child: TextFormField(
+        controller: passwordController,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return 'Please Enter Some Text';
+          }
 
-                                      if ((DateTime.now().year -
-                                              selectedDate.year) <
-                                          16) {
-                                        _showAlertDialog("You are too young!",
-                                            "You must be at least 16 years old to use GrooveNation. See more in our terms and conditions of use.");
-                                        return;
-                                      }
+          if (value.length < 5 || value.length > 30) {
+            return 'Enter a value between 5 - 30 characters';
+          }
+          return null;
+        },
+        style: formFieldTextStyle,
+        decoration: textFieldDecor('Password', true, false, false),
+        obscureText: !_isPasswordVisible,
+      ),
+    );
+  }
 
-                                      if (_formKey.currentState.validate()) {
-                                        _executeSignup();
-                                      }
-                                    },
-                                    child: Padding(
-                                      padding: EdgeInsets.all(0),
-                                      child: Center(
-                                          child: Text(
-                                        "Create Account",
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontFamily: 'Lato',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 17,
-                                        ),
-                                      )),
-                                    )),
-                              ),
-                            )),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.only(top: 48),
-                            child: Text(
-                              "Already Have an Account?",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 19,
-                                fontFamily: 'LatoLight',
-                              ),
-                            ),
-                          ),
-                          Padding(
-                              padding: EdgeInsets.only(top: 8, bottom: 24),
-                              child: TextMaterialButton(
-                                onTap: _openLogin,
-                                child: Text(
-                                  "Log In",
-                                  style: TextStyle(
-                                    color: Color(0xffE65AB9),
-                                    fontSize: 20,
-                                    fontFamily: 'Lato',
-                                  ),
-                                ),
-                              )),
-                        ]),
-                      )
-                    ]))));
+  Widget _confirmPasswordInput() {
+    return Padding(
+      padding: EdgeInsets.only(top: 24),
+      child: TextFormField(
+        controller: passwordMatchController,
+        validator: (value) {
+          if (value!.isEmpty) {
+            return 'Please Enter Some Text';
+          }
+          if (passwordController.text != passwordMatchController.text) {
+            return 'Passwords Do Not Match';
+          }
+          return null;
+        },
+        style: formFieldTextStyle,
+        decoration: textFieldDecor('Confirm Password', false, false, false),
+        obscureText: true,
+      ),
+    );
+  }
+
+  Widget _dateOfBirth() {
+    return Padding(
+      padding: EdgeInsets.only(top: 24),
+      child: FlatButton(
+        onPressed: () {
+          _selectDateOfBirth(context);
+        },
+        padding: EdgeInsets.all(0),
+        splashColor: Colors.white.withOpacity(0.3),
+        child: TextFormField(
+          enabled: false,
+          style: formFieldTextStyle,
+          decoration: textFieldDecor('Date of Birth', false, false, true),
+          controller: myController,
+          readOnly: true,
+        ),
+      ),
+    );
+  }
+
+  Widget _termsButton() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 16, top: 16),
+      child: TextMaterialButton(
+        onTap: () => _launchURL(TERMS_AND_CONDITIONS_LINK),
+        child: Text(
+          "View Terms and Conditions",
+          style: TextStyle(
+            color: Color(0xffE65AB9),
+            fontSize: 21,
+            fontFamily: 'LatoLight',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _policyButton() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8),
+      child: TextMaterialButton(
+        onTap: () => _launchURL(PRIVACY_POLICY_LINK),
+        child: Text(
+          "View Privacy Policy",
+          style: TextStyle(
+            color: Color(0xffE65AB9),
+            fontSize: 20,
+            fontFamily: 'LatoLight',
+          ),
+        ),
+      ),
+    );
   }
 }

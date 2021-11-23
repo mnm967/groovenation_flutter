@@ -1,4 +1,0 @@
-enum SocialPostType {
-  IMAGE,
-  VIDEO
-}

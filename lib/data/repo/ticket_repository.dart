@@ -1,119 +1,89 @@
 import 'package:dio/dio.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/ticket.dart';
 import 'package:groovenation_flutter/models/ticket_price.dart';
+import 'package:groovenation_flutter/util/network_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 
 class TicketsRepository {
-  Future<List<Ticket>> getUserTickets() async {
+  Future<List<Ticket>?> getUserTickets() async {
     List<Ticket> tickets = [];
 
-    try {
-      Response response =
-          await Dio().get("$API_HOST/tickets/" + sharedPrefs.userId);
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var jsonResponse = await NetworkUtil.executeGetRequest(
+        "$API_HOST/tickets/${sharedPrefs.userId}", _onRequestError);
 
-        print(response.data.toString());
+    if (jsonResponse != null) {
+      for (Map i in jsonResponse['tickets']) {
+        Ticket ticket = Ticket.fromJson(i);
+        tickets.add(ticket);
+      }
 
-        if (jsonResponse['status'] == 1) {
-          for (Map i in jsonResponse['tickets']) {
-            Ticket ticket = Ticket.fromJson(i);
-            tickets.add(ticket);
-          }
-
-          return tickets;
-        } else
-          throw TicketException(Error.UNKNOWN_ERROR);
-      } else
-        throw TicketException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      if (e is TicketException)
-        throw TicketException(e.error);
-      else
-        throw TicketException(Error.NETWORK_ERROR);
+      return tickets;
     }
+
+    return null;
   }
 
-  Future<List<TicketPrice>> getTicketPrices(String eventId) async {
+  Future<List<TicketPrice>?> getTicketPrices(String? eventId) async {
     List<TicketPrice> ticketPrices = [];
 
-    try {
-      Response response =
-          await Dio().get("$API_HOST/tickets/prices/" + eventId);
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var jsonResponse = await NetworkUtil.executeGetRequest(
+        "$API_HOST/tickets/prices/$eventId", _onRequestError);
 
-        print(response.data.toString());
+    if (jsonResponse != null) {
+      for (Map i in jsonResponse['ticket_prices']) {
+        TicketPrice ticketPrice = TicketPrice.fromJson(i);
+        ticketPrices.add(ticketPrice);
+      }
 
-        if (jsonResponse['status'] == 1) {
-          for (Map i in jsonResponse['ticket_prices']) {
-            TicketPrice ticketPrice = TicketPrice.fromJson(i);
-            ticketPrices.add(ticketPrice);
-          }
-
-          return ticketPrices;
-        } else
-          throw TicketException(Error.UNKNOWN_ERROR);
-      } else
-        throw TicketException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      if (e is TicketException)
-        throw TicketException(e.error);
-      else
-        throw TicketException(Error.NETWORK_ERROR);
+      return ticketPrices;
     }
+
+    return null;
   }
 
-  Future<Ticket> verifyTicketPurchase(String eventId, String clubId,
-      TicketPrice ticketType, int noOfPeople, String reference) async {
-    String uid = sharedPrefs.userId;
-    try {
-      Response response = await Dio().post("$API_HOST/tickets/purchase/verify",
-          data: {
-            "userId": uid,
-            "eventId": eventId,
-            "clubId": clubId,
-            "paymentReference": reference,
-            "ticketPrice": ticketType.price,
-            "ticketType": ticketType.ticketType,
-            "ticketNumAvailable": ticketType.numAvailable,
-            "noOfPeople": noOfPeople,
-          },
-          options: Options(contentType: Headers.formUrlEncodedContentType));
+  Future<Ticket?> verifyTicketPurchase(String? eventId, String? clubId,
+      TicketPrice ticketType, int noOfPeople, String? reference) async {
+    String? uid = sharedPrefs.userId;
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var body = {
+      "userId": uid,
+      "eventId": eventId,
+      "clubId": clubId,
+      "paymentReference": reference,
+      "ticketPrice": ticketType.price,
+      "ticketType": ticketType.ticketType,
+      "ticketNumAvailable": ticketType.numAvailable,
+      "noOfPeople": noOfPeople,
+    };
 
-        print(response.data.toString());
+    var jsonResponse = await NetworkUtil.executePostRequest(
+        "$API_HOST/tickets/purchase/verify", body, _onRequestError);
 
-        if (jsonResponse['status'] == 1) {
-          if (jsonResponse['result'] == INVALID_PURCHASE_REFERENCE)
-            throw TicketPurchaseException(Error.INVALID_PURCHASE_REFERENCE);
-          else if (jsonResponse['result'] == TRANSACTION_NOT_SUCCESSFUL)
-            throw TicketPurchaseException(Error.TRANSACTION_NOT_SUCCESSFUL);
-          else
-            return Ticket.fromJson(jsonResponse['result']);
-        } else
-          throw TicketPurchaseException(Error.UNKNOWN_ERROR);
-      } else
-        throw TicketPurchaseException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      if (e is TicketPurchaseException)
-        throw TicketPurchaseException(e.error);
+    if (jsonResponse != null) {
+      if (jsonResponse['result'] == INVALID_PURCHASE_REFERENCE)
+        throw TicketException(AppError.INVALID_PURCHASE_REFERENCE);
+      else if (jsonResponse['result'] == TRANSACTION_NOT_SUCCESSFUL)
+        throw TicketException(AppError.TRANSACTION_NOT_SUCCESSFUL);
       else
-        throw TicketPurchaseException(Error.NETWORK_ERROR);
+        return Ticket.fromJson(jsonResponse['result']);
     }
+
+    return null;
+  }
+
+  _onRequestError(e) {
+    if (e is TicketException)
+      throw TicketException(e.error);
+    else if (e is DioError) if (e.type != DioErrorType.cancel)
+      throw TicketException(AppError.NETWORK_ERROR);
+    else
+      throw TicketException(AppError.UNKNOWN_ERROR);
   }
 }
 
 class TicketException implements Exception {
-  final Error error;
+  final AppError error;
   TicketException(this.error);
-}
-
-class TicketPurchaseException implements Exception {
-  final Error error;
-  TicketPurchaseException(this.error);
 }

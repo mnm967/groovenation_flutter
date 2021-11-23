@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/auth_error_types.dart';
-import 'package:groovenation_flutter/ui/sign_up/sign_up.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
+import 'package:groovenation_flutter/models/city.dart';
 
 abstract class AuthState extends Equatable {}
 
@@ -22,7 +22,7 @@ class AuthLoginSuccessState extends AuthState {
 class AuthLoginErrorState extends AuthState {
   AuthLoginErrorState(this.error);
 
-  final AuthLoginErrorType error;
+  final AuthError error;
 
   @override
   List<Object> get props => [error];
@@ -41,7 +41,7 @@ class AuthCreateUsernameSuccessState extends AuthState {
 class AuthCreateUsernameErrorState extends AuthState {
   AuthCreateUsernameErrorState(this.error);
 
-  final AuthSignUpErrorType error;
+  final AuthError error;
 
   @override
   List<Object> get props => [error];
@@ -60,7 +60,7 @@ class AuthSignupSuccessState extends AuthState {
 class AuthSignupErrorState extends AuthState {
   AuthSignupErrorState(this.error);
 
-  final AuthSignUpErrorType error;
+  final AuthError error;
 
   @override
   List<Object> get props => [error];
@@ -78,5 +78,29 @@ class AuthUsernameCheckCompleteState extends AuthState {
   final UsernameInputStatus usernameInputStatus;
 
   @override
+  List<Object> get props => [usernameInputStatus];
+}
+
+class AuthAvailableCitiesLoadingState extends AuthState {
+  AuthAvailableCitiesLoadingState();
+
+  @override
   List<Object> get props => [];
+}
+
+class AuthAvailableCitiesLoadedState extends AuthState {
+  AuthAvailableCitiesLoadedState(this.cities);
+  final List<City> cities;
+
+  @override
+  List<Object> get props => [cities];
+}
+
+class AuthAvailableCitiesErrorState extends AuthState {
+  AuthAvailableCitiesErrorState(this.error);
+
+  final AuthError error;
+
+  @override
+  List<Object> get props => [error];
 }

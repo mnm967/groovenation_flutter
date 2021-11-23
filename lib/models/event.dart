@@ -1,18 +1,19 @@
 class Event {
-  final String eventID;
-  final String title;
-  final String description;
-  final String imageUrl;
-  final String clubID;
-  final String clubName;
+  final String? eventID;
+  final String? title;
+  final String? description;
+  final String? imageUrl;
+  final String? clubID;
+  final String? clubName;
   final DateTime eventStartDate;
   final DateTime eventEndDate;
-  final bool isAdultOnly;
+  final bool? isAdultOnly;
 
-  final String webLink; //Nullable
-  final String facebookLink; //Nullable
-  final String twitterLink; //Nullable
-  final String instagramLink; //Nullable
+  final String? webLink;
+  final String? facebookLink;
+  final String? twitterLink;
+  final String? instagramLink;
+  final bool? hasTickets;
 
   Event(
     this.eventID,
@@ -28,6 +29,7 @@ class Event {
     this.facebookLink,
     this.twitterLink,
     this.instagramLink,
+    this.hasTickets,
   );
 
   factory Event.fromJson(dynamic json) {
@@ -45,6 +47,7 @@ class Event {
       json['facebookLink'],
       json['twitterLink'],
       json['instagramLink'],
+      json['hasTickets'],
     );
   }
 
@@ -62,5 +65,6 @@ class Event {
         "facebookLink": facebookLink,
         "twitterLink": twitterLink,
         "instagramLink": instagramLink,
+        "hasTickets": hasTickets,
       };
 }

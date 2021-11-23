@@ -17,8 +17,8 @@ class SavedMessageAdapter extends TypeAdapter<SavedMessage> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return SavedMessage(
-      fields[0] as String,
-      (fields[1] as Map)?.cast<dynamic, dynamic>(),
+      fields[0] as String?,
+      (fields[1] as Map?)?.cast<dynamic, dynamic>(),
     );
   }
 

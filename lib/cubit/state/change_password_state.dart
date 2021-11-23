@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 
 abstract class ChangePasswordState extends Equatable {}
 
@@ -21,7 +21,7 @@ class ChangePasswordSuccessState extends ChangePasswordState {
 class ChangePasswordErrorState extends ChangePasswordState {
   ChangePasswordErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

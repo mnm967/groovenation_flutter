@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/ticket.dart';
 
 abstract class TicketsState extends Equatable {}
@@ -15,20 +15,20 @@ class TicketsLoadingState extends TicketsState {
 }
 
 class TicketsLoadedState extends TicketsState {
-  final List<Ticket> tickets;
+  final List<Ticket?>? tickets;
 
   TicketsLoadedState({
     this.tickets,
   });
 
   @override
-  List<Object> get props => [tickets];
+  List<Object?> get props => [tickets];
 }
 
 class TicketsErrorState extends TicketsState {
   TicketsErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

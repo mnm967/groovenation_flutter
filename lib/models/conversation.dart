@@ -9,23 +9,23 @@ part 'conversation.g.dart';
 @HiveType(typeId: 0)
 class Conversation {
   @HiveField(0)
-  String conversationID;
+  String? conversationID;
 
   @HiveField(1)
-  SocialPerson conversationPerson;
+  SocialPerson? conversationPerson;
 
   @HiveField(2)
-  int newMessagesCount;
+  int? newMessagesCount;
 
   @HiveField(3)
-  Map latestMessageJSON;
+  Map? latestMessageJSON;
 
-  Message latestMessage;
+  Message? latestMessage;
 
   Conversation(this.conversationID, this.conversationPerson,
       this.newMessagesCount, [this.latestMessage]) {
     if (latestMessage != null)
-      latestMessageJSON = Message.toJson(latestMessage);
+      latestMessageJSON = Message.toJson(latestMessage!);
   }
 
   factory Conversation.fromJson(dynamic json, [isListString = false]) {
@@ -39,7 +39,7 @@ class Conversation {
           ? Message.fromJson(jsonDecode(json['latestMessage']))
           : Message.fromJson(json['latestMessage']),
     );
-    c.latestMessageJSON = Message.toJson(c.latestMessage);
+    c.latestMessageJSON = Message.toJson(c.latestMessage!);
 
     return c;
   }
@@ -49,7 +49,7 @@ class Conversation {
       "conversationID": conversationID,
       "conversationPerson": jsonEncode(conversationPerson),
       "newMessagesCount": newMessagesCount,
-      "latestMessage": Message.toJson(latestMessage),
+      "latestMessage": Message.toJson(latestMessage!),
     };
   }
 }

@@ -1,20 +1,19 @@
 import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 @immutable
 class ExpandableFab extends StatefulWidget {
   const ExpandableFab({
-    Key key,
+    Key? key,
     this.initialOpen,
     this.distance,
     this.children,
   }) : super(key: key);
 
-  final bool initialOpen;
-  final double distance;
-  final List<Widget> children;
+  final bool? initialOpen;
+  final double? distance;
+  final List? children;
 
   @override
   _ExpandableFabState createState() => _ExpandableFabState();
@@ -22,8 +21,8 @@ class ExpandableFab extends StatefulWidget {
 
 class _ExpandableFabState extends State<ExpandableFab>
     with SingleTickerProviderStateMixin {
-  AnimationController _controller;
-  Animation<double> _expandAnimation;
+  late AnimationController _controller;
+  Animation<double>? _expandAnimation;
   bool _open = false;
 
   @override
@@ -99,18 +98,18 @@ class _ExpandableFabState extends State<ExpandableFab>
   }
 
   List<Widget> _buildExpandingActionButtons() {
-    final children = <Widget>[];
-    final count = widget.children.length;
+    final List<Widget> children = [];
+    final count = widget.children!.length;
     final step = 90.0 / (count - 1);
-    for (var i = 0, angleInDegrees = 0.0;
+    for (var i = 0, angleInDegrees = 0.0.ceil();
         i < count;
-        i++, angleInDegrees += step) {
+        i++, angleInDegrees += step.ceil()) {
       children.add(
         _ExpandingActionButton(
-          directionInDegrees: angleInDegrees,
+          directionInDegrees: angleInDegrees.toDouble(),
           maxDistance: widget.distance,
           progress: _expandAnimation,
-          child: widget.children[i],
+          child: widget.children![i],
         ),
       );
     }
@@ -130,19 +129,21 @@ class _ExpandableFabState extends State<ExpandableFab>
         duration: const Duration(milliseconds: 250),
         curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
         child: AnimatedOpacity(
-            opacity: _open ? 0.0 : 1.0,
-            curve: const Interval(0.25, 1.0, curve: Curves.easeInOut),
-            duration: const Duration(milliseconds: 250),
-            child: Container(
-                padding: EdgeInsets.zero,
-                height: 72.0,
-                width: 72.0,
-                child: FittedBox(
-                  child: FloatingActionButton(
-                    onPressed: _toggle,
-                    child: const Icon(FontAwesomeIcons.cameraRetro),
-                  ),
-                ))),
+          opacity: _open ? 0.0 : 1.0,
+          curve: const Interval(0.25, 1.0, curve: Curves.easeInOut),
+          duration: const Duration(milliseconds: 250),
+          child: Container(
+            padding: EdgeInsets.zero,
+            height: 58.0,
+            width: 58.0,
+            child: FittedBox(
+              child: FloatingActionButton(
+                onPressed: _toggle,
+                child: const Icon(FontAwesomeIcons.plus),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -151,38 +152,38 @@ class _ExpandableFabState extends State<ExpandableFab>
 @immutable
 class _ExpandingActionButton extends StatelessWidget {
   _ExpandingActionButton({
-    Key key,
+    Key? key,
     this.directionInDegrees,
     this.maxDistance,
     this.progress,
     this.child,
   }) : super(key: key);
 
-  final double directionInDegrees;
-  final double maxDistance;
-  final Animation<double> progress;
-  final Widget child;
+  final double? directionInDegrees;
+  final double? maxDistance;
+  final Animation<double>? progress;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: progress,
+      animation: progress!,
       builder: (context, child) {
         final offset = Offset.fromDirection(
-          directionInDegrees * (math.pi / 180.0),
-          progress.value * maxDistance,
+          directionInDegrees! * (math.pi / 180.0),
+          progress!.value * maxDistance!,
         );
         return Positioned(
           right: 4.0 + offset.dx,
           bottom: 4.0 + offset.dy,
           child: Transform.rotate(
-            angle: (1.0 - progress.value) * math.pi / 2,
+            angle: (1.0 - progress!.value) * math.pi / 2,
             child: child,
           ),
         );
       },
       child: FadeTransition(
-        opacity: progress,
+        opacity: progress!,
         child: child,
       ),
     );
@@ -192,34 +193,36 @@ class _ExpandingActionButton extends StatelessWidget {
 @immutable
 class ActionButton extends StatelessWidget {
   const ActionButton({
-    Key key,
+    Key? key,
     this.onPressed,
     this.icon,
   }) : super(key: key);
 
-  final VoidCallback onPressed;
-  final Widget icon;
+  final VoidCallback? onPressed;
+  final Widget? icon;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-        padding: EdgeInsets.zero,
-        height: 56.0,
-        width: 56.0,
-        child: FittedBox(
-            child: Material(
+      padding: EdgeInsets.zero,
+      height: 56.0,
+      width: 56.0,
+      child: FittedBox(
+        child: Material(
           shape: const CircleBorder(),
           clipBehavior: Clip.antiAlias,
-          color: theme.accentColor,
+          color: theme.colorScheme.secondary,
           elevation: 4.0,
           child: IconTheme.merge(
             data: theme.accentIconTheme,
             child: IconButton(
               onPressed: onPressed,
-              icon: icon,
+              icon: icon!,
             ),
           ),
-        )));
+        ),
+      ),
+    );
   }
 }

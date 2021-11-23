@@ -3,13 +3,13 @@ import 'package:flutter/widgets.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 class CroppedCacheImage extends StatelessWidget {
-  final String url;
+  final String? url;
   CroppedCacheImage({this.url});
 
   @override
   Widget build(BuildContext context) {
     return CachedNetworkImage(
-      imageUrl: url,
+      imageUrl: url!,
       imageBuilder: (context, imageProvider) => Container(
         decoration: BoxDecoration(
           image: DecorationImage(image: imageProvider, fit: BoxFit.cover),
@@ -21,12 +21,16 @@ class CroppedCacheImage extends StatelessWidget {
             new AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.7)),
         strokeWidth: 2,
       )),
-      errorWidget: (context, url, error) => Center(
+      errorWidget: (context, url, error) {
+        print(error);
+        return Center(
           child: Icon(
-        Icons.error,
-        color: Colors.white,
-        size: 56,
-      )),
+            Icons.error,
+            color: Colors.white,
+            size: 56,
+          ),
+        );
+      },
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/ticket.dart';
 import 'package:groovenation_flutter/models/ticket_price.dart';
 
@@ -16,19 +16,19 @@ class TicketPurchasePricesLoadingState extends TicketPurchaseState {
 }
 
 class TicketPurchasePricesLoadedState extends TicketPurchaseState {
-  final List<TicketPrice> ticketPrices;
+  final List<TicketPrice>? ticketPrices;
   TicketPurchasePricesLoadedState({
     this.ticketPrices
   });
 
   @override
-  List<Object> get props => [ticketPrices];
+  List<Object?> get props => [ticketPrices];
 }
 
 class TicketPurchasePricesErrorState extends TicketPurchaseState {
   TicketPurchasePricesErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];
@@ -40,19 +40,19 @@ class TicketPurchaseLoadingState extends TicketPurchaseState {
 }
 
 class TicketPurchaseSuccessState extends TicketPurchaseState {
-  final Ticket ticket;
+  final Ticket? ticket;
   TicketPurchaseSuccessState({
     this.ticket
   });
 
   @override
-  List<Object> get props => [ticket];
+  List<Object?> get props => [ticket];
 }
 
 class TicketPurchaseErrorState extends TicketPurchaseState {
   TicketPurchaseErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

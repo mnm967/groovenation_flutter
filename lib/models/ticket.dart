@@ -6,46 +6,46 @@ part 'ticket.g.dart';
 
 class Ticket {
   @HiveField(0)
-  final String ticketID;
+  final String? ticketID;
 
   @HiveField(1)
-  final String eventID;
+  final String? eventID;
 
   @HiveField(2)
-  final String eventName;
+  final String? eventName;
 
   @HiveField(3)
-  final String imageUrl;
+  final String? imageUrl;
 
   @HiveField(4)
-  final String clubName;
+  final String? clubName;
 
   @HiveField(5)
-  final double clubLatitude;
+  final double? clubLatitude;
 
   @HiveField(6)
-  final double clubLongitude;
+  final double? clubLongitude;
 
   @HiveField(7)
-  final DateTime startDate;
+  final DateTime? startDate;
 
   @HiveField(8)
-  final DateTime endDate;
+  final DateTime? endDate;
 
   @HiveField(9)
-  final String ticketType;
+  final String? ticketType;
 
   @HiveField(10)
-  final int noOfPeople;
+  final int? noOfPeople;
 
   @HiveField(11)
-  final int totalCost;
+  final int? totalCost;
 
   @HiveField(12)
-  final String encryptedQRTag;
+  final String? encryptedQRTag;
 
   @HiveField(13)
-  final bool isScanned;
+  final bool? isScanned;
 
   Ticket(
       this.ticketID,
@@ -91,8 +91,8 @@ class Ticket {
       "clubName": clubName,
       "clubLatitude": clubLatitude,
       "clubLongitude": clubLongitude,
-      "startDate": startDate.toIso8601String(),
-      "endDate": endDate.toIso8601String(),
+      "startDate": startDate!.toIso8601String(),
+      "endDate": endDate!.toIso8601String(),
       "ticketType": ticketType,
       "noOfPeople": noOfPeople,
       "totalCost": totalCost,

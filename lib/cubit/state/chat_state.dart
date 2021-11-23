@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/message.dart';
-import 'package:groovenation_flutter/constants/error.dart';
 
 abstract class ChatState extends Equatable {}
 
@@ -21,12 +21,12 @@ class ConversationsUpdatingState extends ChatState {
 }
 
 class ConversationsLoadedState extends ChatState {
-  final List<Conversation> conversations;
+  final List<Conversation>? conversations;
 
   ConversationsLoadedState({this.conversations});
 
   @override
-  List<Object> get props => [conversations];
+  List<Object?> get props => [conversations];
 }
 
 class ChatInitialState extends ChatState {
@@ -45,19 +45,19 @@ class ChatUpdatingState extends ChatState {
 }
 
 class ChatLoadedState extends ChatState {
-  final List<Message> messages;
-  final bool hasReachedMax;
+  final List<Message>? messages;
+  final bool? hasReachedMax;
 
   ChatLoadedState({this.messages, this.hasReachedMax});
 
   @override
-  List<Object> get props => [messages, hasReachedMax];
+  List<Object?> get props => [messages, hasReachedMax];
 }
 
 class ChatErrorState extends ChatState {
   ChatErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

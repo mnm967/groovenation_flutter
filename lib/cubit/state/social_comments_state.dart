@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/social_comment.dart';
 
 abstract class SocialCommentsState extends Equatable {}
@@ -20,8 +20,8 @@ class SocialCommentsMoreLoadingState extends SocialCommentsState {
 }
 
 class SocialCommentsLoadedState extends SocialCommentsState {
-  final List<SocialComment> socialComments;
-  final bool hasReachedMax;
+  final List<SocialComment>? socialComments;
+  final bool? hasReachedMax;
 
   SocialCommentsLoadedState({
     this.socialComments,
@@ -29,13 +29,13 @@ class SocialCommentsLoadedState extends SocialCommentsState {
   });
 
   @override
-  List<Object> get props => [socialComments];
+  List<Object?> get props => [socialComments];
 }
 
 class SocialCommentsErrorState extends SocialCommentsState {
   SocialCommentsErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];
@@ -49,7 +49,7 @@ class SocialCommentLikeLoadingState extends SocialCommentsState {
 class SocialCommentLikeErrorState extends SocialCommentsState {
   SocialCommentLikeErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

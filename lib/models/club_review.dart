@@ -1,9 +1,9 @@
 import 'package:groovenation_flutter/models/social_person.dart';
 
 class ClubReview {
-  final SocialPerson person;
-  num rating;
-  String review;
+  final SocialPerson? person;
+  num? rating;
+  String? review;
 
   ClubReview(this.person, this.rating, this.review);
 
@@ -16,7 +16,7 @@ class ClubReview {
   }
 
   Map toJson() => {
-    "person" : person == null ? null : person.toJson(),
+    "person" : person == null ? null : person!.toJson(),
     "rating" : rating,
     "review" : review,
   };

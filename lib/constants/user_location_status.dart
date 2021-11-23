@@ -1,7 +1,0 @@
-enum UserLocationStatus {
-  FOUND,
-  SERVICE_DISABLED,
-  NOT_FOUND,
-  UNKNOWN_ERROR,
-  PERMISSION_NOT_GRANTED
-}

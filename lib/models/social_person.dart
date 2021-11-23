@@ -5,22 +5,22 @@ part 'social_person.g.dart';
 @HiveType(typeId: 2)
 class SocialPerson {
   @HiveField(0)
-  final String personID;
+  final String? personID;
 
   @HiveField(1)
-  final String personUsername;
+  final String? personUsername;
 
   @HiveField(2)
-  final String personProfilePicURL;
+  final String? personProfilePicURL;
 
   @HiveField(3)
-  final String personCoverPicURL;
+  final String? personCoverPicURL;
 
   @HiveField(4)
-  bool isUserFollowing;
+  bool? isUserFollowing;
 
   @HiveField(5)
-  bool hasUserBlocked;
+  bool? hasUserBlocked;
 
   SocialPerson(
       this.personID,

@@ -1,12 +1,12 @@
 import 'package:groovenation_flutter/models/social_person.dart';
 
 class SocialComment {
-  final String commentId;
+  final String? commentId;
   final SocialPerson person;
   final DateTime postTime;
-  int likesAmount;
-  bool hasUserLiked;
-  final String comment;
+  int? likesAmount;
+  bool? hasUserLiked;
+  final String? comment;
 
   SocialComment(this.commentId, this.person, this.postTime, this.likesAmount, this.hasUserLiked,
       this.comment);

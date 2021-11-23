@@ -1,7 +1,7 @@
 class TicketPrice {
-  final String ticketType;
-  final int price;
-  final int numAvailable;
+  final String? ticketType;
+  final int? price;
+  final int? numAvailable;
 
   TicketPrice(this.ticketType, this.price, this.numAvailable);
 

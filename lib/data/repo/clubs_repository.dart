@@ -1,133 +1,81 @@
 import 'package:dio/dio.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/api_result.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/club_review.dart';
+import 'package:groovenation_flutter/util/network_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 
 class ClubsRepository {
-  CancelToken _addReviewCancelToken;
-  Future<bool> addUserReview(String clubId, num rating, String review) async {
+  CancelToken? _addReviewCancelToken;
+  Future<bool?> addUserReview(String? clubId, num rating, String review) async {
+    NetworkUtil.cancel(_addReviewCancelToken);
+
+    _addReviewCancelToken = null;
+    _addReviewCancelToken = CancelToken();
+
     String uid = sharedPrefs.userId.toString();
 
-    Map<String, dynamic> json = {
+    String url = "$API_HOST/clubs/reviews/add";
+    var body = {
       "userId": uid,
       "clubId": clubId,
       "rating": rating,
       "review": review,
     };
 
-    if (_addReviewCancelToken != null) _addReviewCancelToken.cancel();
+    var jsonResponse = await NetworkUtil.executePostRequest(
+        url, body, _onRequestError, _addReviewCancelToken);
 
-    _addReviewCancelToken = CancelToken();
+    if (jsonResponse != null) return jsonResponse['result'];
 
-    try {
-      Response response = await Dio().post("$API_HOST/clubs/reviews/add",
-          data: json,
-          cancelToken: _addReviewCancelToken,
-          options: Options(contentType: Headers.formUrlEncodedContentType));
-
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
-
-        print("add response: " + response.data.toString());
-
-        if (jsonResponse['status'] == 1) {
-          return jsonResponse['result'];
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      print("err: " + e.toString());
-
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    }
+    return null;
   }
 
-  Future<bool> addFavouriteClub(String eventId) async {
+  Future<bool?> addFavouriteClub(String? eventId) async {
     String uid = sharedPrefs.userId.toString();
 
-    try {
-      Response response = await Dio()
-          .get("$API_HOST/clubs/add/favourites/" + uid + "/" + eventId);
+    String url = "$API_HOST/clubs/add/favourites/$uid/$eventId";
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var jsonResponse =
+        await NetworkUtil.executeGetRequest(url, _onRequestError);
 
-        if (jsonResponse['status'] == 1) {
-          bool isAdded = jsonResponse['result'];
+    if (jsonResponse != null) return jsonResponse['result'];
 
-          return isAdded;
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else
-        throw ClubException(Error.NETWORK_ERROR);
-    }
+    return null;
   }
 
-  Future<bool> removeFavouriteClub(String eventId) async {
+  Future<bool?> removeFavouriteClub(String? eventId) async {
     String uid = sharedPrefs.userId.toString();
 
-    try {
-      Response response = await Dio()
-          .get("$API_HOST/clubs/remove/favourites/" + uid + "/" + eventId);
+    String url = "$API_HOST/clubs/remove/favourites/$uid/$eventId";
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var jsonResponse =
+        await NetworkUtil.executeGetRequest(url, _onRequestError);
 
-        if (jsonResponse['status'] == 1) {
-          bool isAdded = jsonResponse['result'];
+    if (jsonResponse != null) return jsonResponse['result'];
 
-          return isAdded;
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else
-        throw ClubException(Error.NETWORK_ERROR);
-    }
+    return null;
   }
 
-  Future<APIResult> getFavouriteClubs() async {
+  Future<APIResult?> getFavouriteClubs() async {
     return getClubs("$API_HOST/clubs/favourites/" +
         sharedPrefs.userId.toString() +
         "/" +
         sharedPrefs.userCity.toString());
   }
 
-  Future<APIResult> getTopRatedClubs(int page) async {
-    print("tpage: " + page.toString());
-    return getClubs(
-        "$API_HOST/clubs/top/" + sharedPrefs.userId + "/" + page.toString());
-  }
-
-  Future<APIResult> getNearbyClubs(int page, double lat, double lon) async {
-    print("page: " + page.toString());
-    print("url: " +
-        "$API_HOST/clubs/nearby/" +
-        sharedPrefs.userId.toString() +
+  Future<APIResult?> getTopRatedClubs(int page) async {
+    return getClubs("$API_HOST/clubs/top/" +
+        sharedPrefs.userId! +
         "/" +
-        lat.toString() +
-        "/" +
-        lon.toString() +
-        "/" +
-        sharedPrefs.userCity.toString() +
+        sharedPrefs.userCity! +
         "/" +
         page.toString());
+  }
 
+  Future<APIResult?> getNearbyClubs(int page, double? lat, double? lon) async {
     return getClubs("$API_HOST/clubs/nearby/" +
         sharedPrefs.userId.toString() +
         "/" +
@@ -140,159 +88,113 @@ class ClubsRepository {
         page.toString());
   }
 
-  Future<APIResult> getClubReviews(int page, String clubId) async {
+  Future<APIResult?> getClubReviews(int page, String? clubId) async {
     String uid = sharedPrefs.userId.toString();
 
     List<ClubReview> clubReviews = [];
 
-    try {
-      Response response = await Dio().get("$API_HOST/clubs/reviews/" +
-          clubId +
-          "/" +
-          uid +
-          "/" +
-          page.toString());
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    String url = "$API_HOST/clubs/reviews/$clubId/$uid/${page.toString()}";
 
-        if (jsonResponse['status'] == 1) {
-          bool hasReachedMax = jsonResponse['has_reached_max'];
+    var jsonResponse =
+        await NetworkUtil.executeGetRequest(url, _onRequestError);
 
-          for (Map i in jsonResponse['club_reviews']) {
-            ClubReview club = ClubReview.fromJson(i);
-            clubReviews.add(club);
-          }
+    if (jsonResponse != null) {
+      bool? hasReachedMax = jsonResponse['has_reached_max'];
 
-          return APIResult(clubReviews, hasReachedMax);
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else
-        throw ClubException(Error.NETWORK_ERROR);
+      for (Map i in jsonResponse['club_reviews']) {
+        ClubReview club = ClubReview.fromJson(i);
+        clubReviews.add(club);
+      }
+
+      return APIResult(clubReviews, hasReachedMax);
     }
+
+    return null;
   }
 
-  Future<APIResult> getClubs(String url) async {
+  Future<APIResult?> getClubs(String url) async {
     List<Club> clubs = [];
 
-    try {
-      Response response = await Dio().get(url);
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var jsonResponse =
+        await NetworkUtil.executeGetRequest(url, _onRequestError);
 
-        print(response.data);
+    if (jsonResponse != null) {
+      bool? hasReachedMax = jsonResponse['has_reached_max'];
 
-        if (jsonResponse['status'] == 1) {
-          bool hasReachedMax = jsonResponse['has_reached_max'];
+      for (Map i in jsonResponse['clubs']) {
+        Club club = Club.fromJson(i, false);
+        clubs.add(club);
+      }
 
-          for (Map i in jsonResponse['clubs']) {
-            Club club = Club.fromJson(i, false);
-            clubs.add(club);
-          }
-
-          return APIResult(clubs, hasReachedMax);
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      print(e);
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else
-        throw ClubException(Error.NETWORK_ERROR);
+      return APIResult(clubs, hasReachedMax);
     }
+
+    return null;
   }
 
-  CancelToken _searchCancelToken;
-  Future<APIResult> searchClubs(String searchTerm, int page) async {
-    List<Club> clubs = [];
+  CancelToken? _searchCancelToken;
+  Future<APIResult?> searchClubs(String searchTerm, int page) async {
+    NetworkUtil.cancel(_searchCancelToken);
 
-    if (_searchCancelToken != null) {
-      try {
-        _searchCancelToken.cancel();
-        _searchCancelToken = null;
-      } catch (e) {}
-    }
-
+    _searchCancelToken = null;
     _searchCancelToken = CancelToken();
 
-    try {
-      Response response = await Dio().post("$API_HOST/clubs/search",
-          data: {
-            'search_term': searchTerm,
-            'page': page,
-            'user_id': sharedPrefs.userId,
-            'user_city': sharedPrefs.userCity
-          },
-          cancelToken: _searchCancelToken);
+    List<Club> clubs = [];
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    String url = "$API_HOST/clubs/search";
+    var body = {
+      'search_term': searchTerm,
+      'page': page,
+      'user_id': sharedPrefs.userId,
+      'user_city': sharedPrefs.userCity
+    };
 
-        print(response.data);
+    var jsonResponse = await NetworkUtil.executePostRequest(
+        url, body, _onRequestError, _searchCancelToken);
 
-        if (jsonResponse['status'] == 1) {
-          bool hasReachedMax = jsonResponse['has_reached_max'];
+    if (jsonResponse != "") {
+      bool? hasReachedMax = jsonResponse['has_reached_max'];
 
-          for (Map i in jsonResponse['clubs']) {
-            Club club = Club.fromJson(i, false);
-            clubs.add(club);
-          }
-
-          return APIResult(clubs, hasReachedMax);
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      print(e);
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else {
-        if (e is DioError) if (e.type == DioErrorType.cancel) {
-          throw e;
-        } else
-          throw ClubException(Error.NETWORK_ERROR);
-        else
-          throw ClubException(Error.NETWORK_ERROR);
+      for (Map i in jsonResponse['clubs']) {
+        Club club = Club.fromJson(i, false);
+        clubs.add(club);
       }
+
+      return APIResult(clubs, hasReachedMax);
     }
+
+    return null;
   }
 
-  Future<Club> getClub(String clubId) async {
+  Future<Club?> getClub(String? clubId) async {
     String uid = sharedPrefs.userId.toString();
+    String url = "$API_HOST/clubs/club/$clubId/$uid";
 
-    try {
-      Response response =
-          await Dio().get("$API_HOST/clubs/club/" + clubId + "/" + uid);
-      if (response.statusCode == 200) {
-        Map<String, dynamic> jsonResponse = response.data;
+    var jsonResponse =
+        await NetworkUtil.executeGetRequest(url, _onRequestError);
 
-        print(response.data);
-
-        if (jsonResponse['status'] == 1) {
-          Club club = Club.fromJson(jsonResponse['club'], false);
-          return club;
-        } else
-          throw ClubException(Error.UNKNOWN_ERROR);
-      } else
-        throw ClubException(Error.UNKNOWN_ERROR);
-    } catch (e) {
-      print(e);
-      if (e is ClubException)
-        throw ClubException(e.error);
-      else
-        throw ClubException(Error.NETWORK_ERROR);
+    if (jsonResponse != null) {
+      Club club = Club.fromJson(jsonResponse['club'], false);
+      return club;
     }
+
+    return null;
+  }
+
+  _onRequestError(e) {
+    if (e is ClubException)
+      throw ClubException(e.error);
+    else if (e is DioError) {
+      if (e.type != DioErrorType.cancel)
+        throw ClubException(AppError.NETWORK_ERROR);
+      else
+        throw ClubException(AppError.REQUEST_CANCELLED);
+    } else
+      throw ClubException(AppError.UNKNOWN_ERROR);
   }
 }
 
 class ClubException implements Exception {
-  final Error error;
+  final AppError error;
   ClubException(this.error);
 }

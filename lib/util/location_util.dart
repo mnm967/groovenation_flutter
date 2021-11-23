@@ -1,9 +1,9 @@
-import 'package:groovenation_flutter/constants/strings.dart';
-import 'package:groovenation_flutter/constants/user_location_status.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:location/location.dart';
 
 class LocationUtil {
-  LocationData userLocation;
+  late LocationData userLocation;
   UserLocationStatus userLocationStatus = UserLocationStatus.NOT_FOUND;
 
   init() async {
@@ -34,20 +34,18 @@ class LocationUtil {
     }
   }
 
-  double getDefaultCityLat(String userCity) {
-    //TODO City Lat
-    if (userCity == CITY_JOHANNESBURG)
-      return -26.07598127940465;
+  double getDefaultCityLat() {
+    if (sharedPrefs.defaultLat != null)
+      return sharedPrefs.defaultLat!;
     else
-      return -26.07598127940465;
+      return -26.07598127940465; //Default: Johannesburg
   }
 
-  double getDefaultCityLon(String userCity) {
-    //TODO City Lon
-    if (userCity == CITY_JOHANNESBURG)
-      return 27.91605082698467;
+  double getDefaultCityLon() {
+    if (sharedPrefs.defaultLon != null)
+      return sharedPrefs.defaultLon!;
     else
-      return 27.91605082698467;
+      return 27.91605082698467; //Default: Johannesburg
   }
 }
 

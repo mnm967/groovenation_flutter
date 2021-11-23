@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/club_review.dart';
 
 abstract class ClubReviewsState extends Equatable {}
@@ -15,8 +15,8 @@ class ClubReviewsLoadingState extends ClubReviewsState {
 }
 
 class ClubReviewsLoadedState extends ClubReviewsState {
-  final List<ClubReview> reviews;
-  final bool hasReachedMax;
+  final List<ClubReview>? reviews;
+  final bool? hasReachedMax;
 
   ClubReviewsLoadedState({
     this.reviews,
@@ -24,13 +24,13 @@ class ClubReviewsLoadedState extends ClubReviewsState {
   });
 
   @override
-  List<Object> get props => [reviews, hasReachedMax];
+  List<Object?> get props => [reviews, hasReachedMax];
 }
 
 class ClubReviewsErrorState extends ClubReviewsState {
   ClubReviewsErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];
@@ -51,7 +51,7 @@ class AddClubReviewSuccessState extends ClubReviewsState {
 class AddClubReviewErrorState extends ClubReviewsState {
   AddClubReviewErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

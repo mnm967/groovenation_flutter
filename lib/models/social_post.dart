@@ -1,16 +1,16 @@
 import 'package:groovenation_flutter/models/social_person.dart';
 
 class SocialPost {
-  final String postID; 
+  final String? postID; 
   SocialPerson person;
-  final String clubID; //Nullable
-  final String clubName; //Nullable
-  int likesAmount;
-  final String caption;
-  bool hasUserLiked;
+  final String? clubID; //Nullable
+  final String? clubName; //Nullable
+  int? likesAmount;
+  final String? caption;
+  bool? hasUserLiked;
 
-  final int postType;
-  final String mediaURL;
+  final int? postType;
+  final String? mediaURL;
 
   SocialPost(this.postID, this.person, this.clubID, this.clubName, this.likesAmount,
       this.caption, this.hasUserLiked, this.postType, this.mediaURL);

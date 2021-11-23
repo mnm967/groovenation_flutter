@@ -17,10 +17,10 @@ class ConversationAdapter extends TypeAdapter<Conversation> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Conversation(
-      fields[0] as String,
-      fields[1] as SocialPerson,
-      fields[2] as int,
-    )..latestMessageJSON = (fields[3] as Map)?.cast<dynamic, dynamic>();
+      fields[0] as String?,
+      fields[1] as SocialPerson?,
+      fields[2] as int?,
+    )..latestMessageJSON = (fields[3] as Map?)?.cast<dynamic, dynamic>();
   }
 
   @override

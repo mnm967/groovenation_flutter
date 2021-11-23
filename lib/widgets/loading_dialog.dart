@@ -8,31 +8,35 @@ class LoadingDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new WillPopScope(
-        onWillPop: () async => false,
-        child: SimpleDialog(
-            key: _keyLoader,
-            backgroundColor: Colors.purple,
-            contentPadding: EdgeInsets.symmetric(vertical: 32),
-            children: <Widget>[
-              Center(
-                child: Column(children: [
-                  CircularProgressIndicator(
-                    valueColor: new AlwaysStoppedAnimation<Color>(Colors.white),
-                    strokeWidth: 2,
+      onWillPop: () async => false,
+      child: SimpleDialog(
+        key: _keyLoader,
+        backgroundColor: Colors.purple,
+        contentPadding: EdgeInsets.symmetric(vertical: 32),
+        children: [
+          Center(
+            child: Column(
+              children: [
+                CircularProgressIndicator(
+                  valueColor: new AlwaysStoppedAnimation<Color>(Colors.white),
+                  strokeWidth: 2,
+                ),
+                SizedBox(
+                  height: 32,
+                ),
+                Text(
+                  _promptText,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontFamily: 'LatoLight',
                   ),
-                  SizedBox(
-                    height: 32,
-                  ),
-                  Text(
-                    _promptText,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                                fontFamily: 'LatoLight',
-                                ),
-                  )
-                ]),
-              )
-            ]));
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

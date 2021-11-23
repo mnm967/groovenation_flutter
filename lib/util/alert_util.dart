@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 
 class AlertUtil {
-  static MainAppPageState mainAppPageState;
+  static late MainAppPageState mainAppPageState;
 
   init(MainAppPageState state) {
     mainAppPageState = state;

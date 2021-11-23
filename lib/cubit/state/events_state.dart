@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/event.dart';
 
 abstract class EventsState extends Equatable {}
@@ -20,8 +20,8 @@ class EventsFavouriteUpdatingState extends EventsState {
 }
 
 class EventsLoadedState extends EventsState {
-  final List<Event> events;
-  final bool hasReachedMax;
+  final List<Event>? events;
+  final bool? hasReachedMax;
 
   EventsLoadedState({
     this.events,
@@ -29,13 +29,13 @@ class EventsLoadedState extends EventsState {
   });
 
   @override
-  List<Object> get props => [events, hasReachedMax];
+  List<Object?> get props => [events, hasReachedMax];
 }
 
 class EventsErrorState extends EventsState {
   EventsErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];

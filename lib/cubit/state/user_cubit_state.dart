@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:groovenation_flutter/constants/error.dart';
+import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 
 abstract class UserState extends Equatable {}
@@ -15,8 +15,8 @@ class UserFollowingLoadingState extends UserState {
 }
 
 class UserFollowingLoadedState extends UserState {
-  final List<SocialPerson> socialPeople;
-  final bool hasReachedMax;
+  final List<SocialPerson>? socialPeople;
+  final bool? hasReachedMax;
 
   UserFollowingLoadedState({
     this.socialPeople,
@@ -24,13 +24,13 @@ class UserFollowingLoadedState extends UserState {
   });
 
   @override
-  List<Object> get props => [socialPeople, hasReachedMax];
+  List<Object?> get props => [socialPeople, hasReachedMax];
 }
 
 class UserFollowingErrorState extends UserState {
   UserFollowingErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];
@@ -42,8 +42,8 @@ class SocialUsersSearchLoadingState extends UserState {
 }
 
 class SocialUsersSearchLoadedState extends UserState {
-  final List<SocialPerson> socialPeople;
-  final bool hasReachedMax;
+  final List<SocialPerson>? socialPeople;
+  final bool? hasReachedMax;
 
   SocialUsersSearchLoadedState({
     this.socialPeople,
@@ -51,13 +51,13 @@ class SocialUsersSearchLoadedState extends UserState {
   });
 
   @override
-  List<Object> get props => [socialPeople, hasReachedMax];
+  List<Object?> get props => [socialPeople, hasReachedMax];
 }
 
 class SocialUsersSearchErrorState extends UserState {
   SocialUsersSearchErrorState(this.error);
 
-  final Error error;
+  final AppError error;
 
   @override
   List<Object> get props => [error];
