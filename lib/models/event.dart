@@ -5,6 +5,8 @@ class Event {
   final String? imageUrl;
   final String? clubID;
   final String? clubName;
+  final double? clubLat;
+  final double? clubLon;
   final DateTime eventStartDate;
   final DateTime eventEndDate;
   final bool? isAdultOnly;
@@ -22,6 +24,8 @@ class Event {
     this.imageUrl,
     this.clubID,
     this.clubName,
+    this.clubLat,
+    this.clubLon,
     this.eventStartDate,
     this.eventEndDate,
     this.isAdultOnly,
@@ -40,6 +44,8 @@ class Event {
       json['imageUrl'],
       json['clubID'],
       json['clubName'],
+      json['clubLat'],
+      json['clubLon'],
       DateTime.parse(json['eventStartDate']),
       DateTime.parse(json['eventEndDate']),
       json['isAdultOnly'],
@@ -58,6 +64,8 @@ class Event {
         "imageUrl": imageUrl,
         "clubID": clubID,
         "clubName": clubName,
+        "clubLat": clubLat,
+        "clubLon": clubLon,
         "eventStartDate": eventStartDate.toIso8601String(),
         "eventEndDate": eventEndDate.toIso8601String(),
         "isAdultOnly": isAdultOnly,

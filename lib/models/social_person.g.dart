@@ -23,13 +23,14 @@ class SocialPersonAdapter extends TypeAdapter<SocialPerson> {
       fields[3] as String?,
       fields[4] as bool?,
       fields[5] as bool?,
+      fields[6] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SocialPerson obj) {
     writer
-      ..writeByte(6)
+      ..writeByte(7)
       ..writeByte(0)
       ..write(obj.personID)
       ..writeByte(1)
@@ -41,7 +42,9 @@ class SocialPersonAdapter extends TypeAdapter<SocialPerson> {
       ..writeByte(4)
       ..write(obj.isUserFollowing)
       ..writeByte(5)
-      ..write(obj.hasUserBlocked);
+      ..write(obj.hasUserBlocked)
+      ..writeByte(6)
+      ..write(obj.followersCount);
   }
 
   @override

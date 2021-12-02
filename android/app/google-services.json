@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "318973813922-7q9casa2cel0cpadghihf6odl61oojbn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mnm.groovenation",
+            "certificate_hash": "85a4a766ba55bfd21198a0f64bf912583bb6a849"
+          }
+        },
+        {
+          "client_id": "318973813922-9urn1tg4mfmk9ecoaclbqf8nrihhfmpn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mnm.groovenation",
+            "certificate_hash": "61676bc3f6be279c1c4f1224e435b563db39f355"
+          }
+        },
+        {
           "client_id": "318973813922-s5fjbrqg0h3d0lt7epihv3jr7b0nnkla.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

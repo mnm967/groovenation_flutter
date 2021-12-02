@@ -25,6 +25,7 @@ class AuthCubit extends Cubit<AuthState> {
     sharedPrefs.profilePicUrl = authUser.profilePicUrl;
     sharedPrefs.coverPicUrl = authUser.coverPicUrl;
     sharedPrefs.authToken = authUser.authToken;
+    sharedPrefs.userFollowersCount = authUser.followersCount!;
 
     if (authUser.username != null) sharedPrefs.username = authUser.username;
     if (authUser.userCity != null) sharedPrefs.userCity = authUser.userCity;

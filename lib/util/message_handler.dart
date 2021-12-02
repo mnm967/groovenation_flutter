@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
+import 'package:groovenation_flutter/cubit/chat/conversations_cubit.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/message.dart';
 import 'package:groovenation_flutter/models/saved_message.dart';
@@ -10,18 +12,17 @@ import 'package:groovenation_flutter/util/hive_box_provider.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'navigation_service.dart';
+
 class MessageHandler {
   static Message _getMessageFromJSON(data) {
     switch (data["messageType"]) {
       case MESSAGE_TYPE_MEDIA:
         return MediaMessage.fromJson(jsonDecode(data["message"]));
-        break;
       case MESSAGE_TYPE_POST:
         return SocialPostMessage.fromJson(jsonDecode(data["message"]));
-        break;
       default:
         return TextMessage.fromJson(jsonDecode(data["message"]));
-        break;
     }
   }
 
@@ -97,6 +98,33 @@ class MessageHandler {
   }
 
   static void handleMessage(var data) async {
+    if (data["command"] == "add_follower") {
+      await sharedPrefs.init();
+      print("Old Count: " + sharedPrefs.userFollowersCount.toString());
+      sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount + 1;
+      print("New Count: " + sharedPrefs.userFollowersCount.toString());
+      return;
+    }else if (data["command"] == "remove_follower") {
+      await sharedPrefs.init();
+      print("Old Count: " + sharedPrefs.userFollowersCount.toString());
+      sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount - 1;
+      print("New Count: " + sharedPrefs.userFollowersCount.toString());
+      return;
+    }
+
+    try {
+      final ConversationsCubit conversationsCubit =
+          BlocProvider.of<ConversationsCubit>(
+              NavigationService.navigatorKey.currentContext!);
+
+      conversationsCubit.updateConversation(data, false);
+
+      return;
+    } catch (e) {
+      print("Error Occurred");
+      print(e);
+    }
+
     Message newMessage = _getMessageFromJSON(data);
 
     await HiveBoxProvider.init();
@@ -105,6 +133,12 @@ class MessageHandler {
       await _addMessageConversation(data, newMessage);
     else
       await _updateMessageConversation(data, newMessage);
+
+    await sharedPrefs.init();
+    print("Muted?: " +
+        sharedPrefs.mutedConversations
+            .contains(newMessage.conversationId)
+            .toString());
 
     if (!sharedPrefs.mutedConversations.contains(newMessage.conversationId))
       _sendNotification(newMessage);

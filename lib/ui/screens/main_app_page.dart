@@ -3,6 +3,7 @@ import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/ui/screens/page_screens.dart';
 import 'package:groovenation_flutter/util/alert_util.dart';
+import 'package:groovenation_flutter/util/navigation_service.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:page_transition/page_transition.dart';
 
@@ -112,6 +113,7 @@ class MainAppPageState extends State<MainAppPage>
       children: [
         MaterialApp(
           title: 'GrooveNation',
+          navigatorKey: NavigationService.navigatorKey,
           initialRoute: sharedPrefs.userId == null
               ? '/log'
               : ((sharedPrefs.userCity == null

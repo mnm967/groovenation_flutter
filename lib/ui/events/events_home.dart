@@ -37,7 +37,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
       RefreshController(initialRefresh: true);
   final _favouritesRefreshController = RefreshController(initialRefresh: false);
 
-
   runBuild() {
     if (_isFirstView) {
       int pg = widget.page;
@@ -45,8 +44,6 @@ class _EventsHomePageState extends State<EventsHomePage> {
       _isFirstView = false;
     }
   }
-
-
 
   void _setListScrollListener(ScrollController controller) {
     controller.addListener(() {
@@ -66,7 +63,8 @@ class _EventsHomePageState extends State<EventsHomePage> {
     _favouriteEventsCubit = BlocProvider.of<FavouritesEventsCubit>(context);
     _favouriteEventsCubit.getEvents(0);
 
-    _setListScrollListener(_upcomingScrollController);
+    WidgetsBinding.instance!.addPostFrameCallback(
+        (_) => _setListScrollListener(_upcomingScrollController));
   }
 
   @override

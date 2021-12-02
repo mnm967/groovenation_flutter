@@ -69,7 +69,7 @@ class _ClubPageState extends State<ClubPage> {
   Widget _collapsingAppBar() {
     final FavouritesClubsCubit favouritesClubsCubit =
         BlocProvider.of<FavouritesClubsCubit>(context);
-
+        
     return SliverPersistentHeader(
       delegate: ClubCollapsingAppBar(
           expandedHeight: 392.0,
@@ -116,7 +116,8 @@ class _ClubPageState extends State<ClubPage> {
                       _ratingBar(),
                       _socialButtons(),
                       _cardView(FontAwesomeIcons.mapMarkerAlt, club!.address!),
-                      (club!.phoneNumber != null && club!.phoneNumber!.isNotEmpty)
+                      (club!.phoneNumber != null &&
+                              club!.phoneNumber!.isNotEmpty)
                           ? _cardView(
                               FontAwesomeIcons.mobile, club!.phoneNumber!)
                           : Padding(padding: EdgeInsets.zero),

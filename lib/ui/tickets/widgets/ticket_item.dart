@@ -9,7 +9,9 @@ class TicketItem extends StatelessWidget {
   final bool? isCompleted;
   final Function? onTicketPressed;
 
-  const TicketItem({Key? key, this.ticket, this.isCompleted, this.onTicketPressed}) : super(key: key);
+  const TicketItem(
+      {Key? key, this.ticket, this.isCompleted, this.onTicketPressed})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +23,6 @@ class TicketItem extends StatelessWidget {
           borderRadius: BorderRadius.all(Radius.circular(12.0))),
       child: FlatButton(
         onPressed: () => onTicketPressed!(context, ticket),
-        //TODO  Test and Delete
-        // onPressed: () {
-        //   _showTicketPage(context, ticket);
-        // },
         padding: EdgeInsets.zero,
         child: Wrap(
           children: [
@@ -36,7 +34,7 @@ class TicketItem extends StatelessWidget {
                     children: [
                       Row(
                         mainAxisSize: MainAxisSize.max,
-                        children: [_imageContainer(), _contentContainer()],
+                        children: [_imageContainer(), Expanded(child: _contentContainer())],
                       ),
                     ],
                   ),
@@ -83,27 +81,31 @@ class TicketItem extends StatelessWidget {
       padding: EdgeInsets.only(left: 20, top: 0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            ticket!.eventName!,
-            textAlign: TextAlign.start,
-            style: TextStyle(
-                fontFamily: 'LatoBold',
-                fontSize: 22,
-                decoration: isCompleted!
-                    ? TextDecoration.lineThrough
-                    : TextDecoration.none,
-                color: Colors.white),
-          ),
+              ticket!.eventName!,
+              textAlign: TextAlign.start,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              style: TextStyle(
+                  fontFamily: 'LatoBold',
+                  fontSize: 18,
+                  decoration: isCompleted!
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                  color: Colors.white),
+            ),
           Padding(
             padding: EdgeInsets.zero,
             child: Text(
               ticket!.clubName!,
               textAlign: TextAlign.start,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
               style: TextStyle(
                 fontFamily: 'Lato',
-                fontSize: 18,
+                fontSize: 16,
                 color: Colors.white.withOpacity(0.4),
               ),
             ),

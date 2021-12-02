@@ -1,11 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 
 class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
   final double expandedHeight;
   final double statusBarHeight;
   final String? imageUrl;
+  final double? latitude;
+  final double? longitude;
   final Function onTicketButtonClick;
   final Function onClubButtonClick;
   final Function onFavButtonClick;
@@ -17,6 +20,8 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
     required this.expandedHeight,
     required this.statusBarHeight,
     required this.imageUrl,
+    required this.latitude,
+    required this.longitude,
     required this.onTicketButtonClick,
     required this.onClubButtonClick,
     required this.onFavButtonClick,
@@ -170,9 +175,42 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             _zoomButton(context),
+            (latitude != null && longitude != null)
+                ? _mapButton()
+                : Container(),
             showTicketButton ? _ticketButton() : Container(),
             showClubButton ? _clubButton() : Container(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _mapButton() {
+    return Padding(
+      padding: EdgeInsets.only(right: 12),
+      child: SizedBox(
+        height: 72,
+        width: 72,
+        child: Card(
+          elevation: 6.0,
+          clipBehavior: Clip.antiAlias,
+          shape: CircleBorder(),
+          color: Colors.deepPurple,
+          child: Container(
+            child: FlatButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                MapsLauncher.launchCoordinates(latitude!, longitude!);
+              },
+              child: Center(
+                child: Icon(
+                  FontAwesomeIcons.mapMarkedAlt,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

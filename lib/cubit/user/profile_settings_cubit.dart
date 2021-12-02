@@ -22,7 +22,7 @@ class ProfileSettingsCubit extends Cubit<ProfileSettingsState> {
       BlocUtil.updateSocialPerson(
         context,
         SocialPerson(sharedPrefs.userId, sharedPrefs.username,
-            sharedPrefs.profilePicUrl, sharedPrefs.coverPicUrl, false, false),
+            sharedPrefs.profilePicUrl, sharedPrefs.coverPicUrl, false, false, sharedPrefs.userFollowersCount),
       );
 
       emit(ProfileSettingsSuccessState());

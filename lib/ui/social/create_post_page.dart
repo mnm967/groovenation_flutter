@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/cubit/social/social_post_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
+import 'package:groovenation_flutter/ui/screens/app_background_page.dart';
 import 'package:groovenation_flutter/widgets/loading_dialog.dart';
 import 'package:video_player/video_player.dart';
 
@@ -127,40 +128,44 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
     SystemChrome.setSystemUIOverlayStyle(myTheme);
 
-    return SafeArea(
-      child: Stack(
-        children: [
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(
-                parent: AlwaysScrollableScrollPhysics()),
-            slivers: [
-              SliverToBoxAdapter(
-                child: BlocListener<SocialPostCubit, SocialState>(
-                  listener: _uploadBlocListener,
-                  child: Padding(
-                    padding: EdgeInsets.only(top: 16),
-                    child: Column(
-                      children: [
-                        _header(),
-                        isVideo!
-                            ? Padding(padding: EdgeInsets.zero)
-                            : _postImageView(),
-                        isVideo!
-                            ? _postVideoView()
-                            : Padding(padding: EdgeInsets.zero),
-                        _captionSection(),
-                        _tagClubSection(),
-                        _uploadButton(),
-                      ],
+    return Material(
+        color: Colors.transparent,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              CustomScrollView(
+                physics: const BouncingScrollPhysics(
+                    parent: AlwaysScrollableScrollPhysics()),
+                slivers: [
+                  SliverToBoxAdapter(
+                    child: BlocListener<SocialPostCubit, SocialState>(
+                      listener: _uploadBlocListener,
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 16),
+                        child: Column(
+                          children: [
+                            _header(),
+                            isVideo!
+                                ? Padding(padding: EdgeInsets.zero)
+                                : _postImageView(),
+                            isVideo!
+                                ? _postVideoView()
+                                : Padding(padding: EdgeInsets.zero),
+                            _captionSection(),
+                            _tagClubSection(),
+                            _uploadButton(),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
+        ),
+      )
+    ;
   }
 
   Widget _header() {

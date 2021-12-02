@@ -18,7 +18,12 @@ class TicketPurchaseCubit extends Cubit<TicketPurchaseState> {
       emit(TicketPurchasePricesLoadingState());
       List<TicketPrice>? prices =
           await ticketRepository.getTicketPrices(eventId);
-      emit(TicketPurchasePricesLoadedState(ticketPrices: prices));
+
+      List<TicketPrice>? availablePrices = [];
+
+      prices!.forEach((t) => {if (t.numAvailable! > 0) availablePrices.add(t)});
+
+      emit(TicketPurchasePricesLoadedState(ticketPrices: availablePrices));
     } on TicketException catch (e) {
       emit(TicketPurchasePricesErrorState(e.error));
     }

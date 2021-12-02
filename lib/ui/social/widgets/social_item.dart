@@ -131,7 +131,8 @@ class _SocialItemState extends State<SocialItem> {
                 sharedPrefs.profilePicUrl,
                 sharedPrefs.coverPicUrl,
                 false,
-                false),
+                false,
+                sharedPrefs.userFollowersCount),
             socialPost,
             sperson.personID);
 
@@ -336,9 +337,13 @@ class _SocialItemState extends State<SocialItem> {
       child: Padding(
         padding: EdgeInsets.only(left: 16, right: 16),
         child: Text(
-          socialPost!.likesAmount == 1
-              ? "${socialPost!.likesAmount} like"
-              : "${socialPost!.likesAmount} likes",
+          (socialPost!.likesAmount == 1
+                  ? "${socialPost!.likesAmount} like"
+                  : "${socialPost!.likesAmount} likes") +
+              " · " +
+              (socialPost!.commentsAmount == 1
+                  ? "${socialPost!.commentsAmount} comment"
+                  : "${socialPost!.commentsAmount} comments"),
           style: TextStyle(
               color: Colors.white.withOpacity(0.5),
               fontSize: 18,

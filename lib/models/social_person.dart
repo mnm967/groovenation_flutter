@@ -22,13 +22,17 @@ class SocialPerson {
   @HiveField(5)
   bool? hasUserBlocked;
 
+  @HiveField(6)
+  int? followersCount;
+
   SocialPerson(
       this.personID,
       this.personUsername,
       this.personProfilePicURL,
       this.personCoverPicURL,
       this.isUserFollowing,
-      this.hasUserBlocked);
+      this.hasUserBlocked,
+      this.followersCount);
 
   factory SocialPerson.fromJson(dynamic json) {
     return SocialPerson(
@@ -38,6 +42,7 @@ class SocialPerson {
       json['personCoverPicURL'],
       json['isUserFollowing'],
       json['hasUserBlocked'],
+      json['followersCount'],
     );
   }
 
@@ -47,6 +52,7 @@ class SocialPerson {
         "personProfilePicURL": personProfilePicURL,
         "personCoverPicURL": personCoverPicURL,
         "isUserFollowing": isUserFollowing,
-        "hasUserBlocked": hasUserBlocked
+        "hasUserBlocked": hasUserBlocked,
+        "followersCount": followersCount
       };
 }

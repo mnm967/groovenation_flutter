@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' hide MessageHandler;
 import 'package:flutter_uploader/flutter_uploader.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/groovenation_app.dart';
 import 'package:groovenation_flutter/util/hive_box_provider.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
@@ -16,6 +17,9 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
+  print("Message Received - Back");
+  print("Notification: " + message.notification.toString());
+  print(message.data);
 
   if (message.data.toString() != "{}")
     MessageHandler.handleMessage(message.data);

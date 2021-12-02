@@ -13,6 +13,7 @@ import 'package:groovenation_flutter/ui/events/events_home.dart';
 import 'package:groovenation_flutter/ui/profile/profile_home.dart';
 import 'package:groovenation_flutter/ui/social/social_home.dart';
 import 'package:groovenation_flutter/ui/tickets/tickets_home.dart';
+import 'package:groovenation_flutter/util/network_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 
 class MainNavigationPage extends StatefulWidget {
@@ -51,12 +52,29 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
     messaging.getToken().then((value) async {
-      Dio().post("$API_HOST/users/fcm/token",
-          data: {"userId": sharedPrefs.userId, "token": value});
+      NetworkUtil.executePostRequest("$API_HOST/users/fcm/token",
+          {"userId": sharedPrefs.userId, "token": value}, () {});
     });
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      print("Message Received - Front");
+      print(message.data);
+
       if (message.data.toString() == "{}") return;
+
+      if (message.data["command"] == "add_follower") {
+        await sharedPrefs.init();
+        print("Old Count: " + sharedPrefs.userFollowersCount.toString());
+        sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount + 1;
+        print("New Count: " + sharedPrefs.userFollowersCount.toString());
+        return;
+      } else if (message.data["command"] == "remove_follower") {
+        await sharedPrefs.init();
+        print("Old Count: " + sharedPrefs.userFollowersCount.toString());
+        sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount - 1;
+        print("New Count: " + sharedPrefs.userFollowersCount.toString());
+        return;
+      }
 
       var data = message.data;
 

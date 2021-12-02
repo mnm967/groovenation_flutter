@@ -86,7 +86,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
     analytics.logEvent(name: "ticket_purchase", parameters: <String, dynamic>{
       "event_id": event!.eventID,
       "event_name": event!.title,
-      "club_id": event!.clubID,
+      "club_id": event!.clubID == null ? event!.eventID : event!.clubID,
       "club_name": event!.clubName,
       "ticket_type": selectedTicketType.ticketType,
       "no_of_people": selectedNoOfPeople,
@@ -113,6 +113,10 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
                   _checkTicketNum();
                 }
               }, builder: (context, state) {
+                if (state is TicketPurchasePricesLoadedState) {
+                  if ((state).ticketPrices!.isEmpty) return _soldOutPage();
+                }
+
                 if (state is TicketPurchasePricesLoadingState ||
                     state is TicketsInitialState ||
                     state is TicketPurchaseLoadingState) {
@@ -144,7 +148,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
     switch (selectedTicketType.numAvailable) {
       case 0:
         items = [];
-        numPeopleSelectedValue = null;
+        numPeopleSelectedValue = items[0];
         selectedNoOfPeople = 0;
         break;
       case 1:
@@ -188,6 +192,33 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
         Container(
           child: Center(
             child: _statusContainer(icon, title, text),
+          ),
+        ),
+        Align(
+          alignment: Alignment.topRight,
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              icon: Icon(Icons.close),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              iconSize: 28,
+              color: Colors.white,
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _soldOutPage() {
+    return Stack(
+      children: [
+        Container(
+          child: Center(
+            child: _soldOutContainer(),
           ),
         ),
         Align(
@@ -256,6 +287,49 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
               return _tryAgainButton();
           },
         )
+      ],
+    );
+  }
+
+  Widget _soldOutContainer() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          constraints: BoxConstraints.expand(width: 108, height: 108),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(width: 1.0, color: Colors.white),
+          ),
+          child: Center(
+            child: Icon(
+              Icons.error,
+              color: Colors.white,
+              size: 46.0,
+            ),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: 36, right: 16, left: 16),
+          child: Text(
+            "Tickets Sold Out",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white, fontFamily: 'Lato', fontSize: 28),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.only(top: 16, right: 16, left: 16),
+          child: Text(
+            "Sorry, this event has sold out!!",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontFamily: 'Lato',
+                fontSize: 20),
+          ),
+        ),
       ],
     );
   }

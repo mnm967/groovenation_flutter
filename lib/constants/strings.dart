@@ -117,13 +117,15 @@ const String PREF_NOTIFICATION_SETTING_KEY = "PREF_NOTIFICATION_SETTING_KEY";
 const String PREF_CHAT_NOTIFICATION_SETTING_KEY =
     "PREF_CHAT_NOTIFICATION_SETTING_KEY";
 const String PREF_SOUND_ENABLED_KEY = "PREF_SOUND_ENABLED_KEY";
+const String PREF_USER_FOLLOWERS_COUNT_KEY = "PREF_USER_FOLLOWERS_COUNT_KEY";
 
 //Other
 // const String API_HOST = "http://10.0.2.2:8080/api/v1"; //Emulator Tests
-// const String API_HOST = "http://10.76.176.20:8080/api/v1"; //Personal Device Tests (IP of Laptop)
+// const String API_HOST = "http://10.76.73.111:8080/api/v1"; //Personal Device Tests (IP of Laptop)
 const String API_HOST = "https://groovenation-test.herokuapp.com/api/v1"; //Heroku Tests
 
 const String BASIC_ERROR_TITLE = "Something Went Wrong";
+const String NEW_FOLLOWER_NOTIFICATION_TITLE = "You've gained a new follower";
 
 //Links
 

@@ -45,7 +45,8 @@ class ChatCubit extends Cubit<ChatState> {
       allMessages.add(Message.fromJson(item.messageJSON));
     }
 
-    allMessages.sort((a, b) => b.messageDateTime!.compareTo(a.messageDateTime!));
+    allMessages
+        .sort((a, b) => b.messageDateTime!.compareTo(a.messageDateTime!));
 
     emit(ChatLoadedState(messages: allMessages, hasReachedMax: true));
   }
@@ -61,18 +62,18 @@ class ChatCubit extends Cubit<ChatState> {
 
       conversationsCubit.sendChat(message);
 
-      emit(ChatLoadedState(
-          messages: messages,
-          hasReachedMax: (state as ChatLoadedState).hasReachedMax));
+      bool? hasReachedMax = (state as ChatLoadedState).hasReachedMax;
+
+      emit(ChatLoadedState(messages: messages, hasReachedMax: hasReachedMax));
     } else if (message.conversationId == null) {
       List<Message> messages = [];
       messages.add(message);
 
       conversationsCubit.sendChat(message);
 
-      emit(ChatLoadedState(
-          messages: messages,
-          hasReachedMax: (state as ChatLoadedState).hasReachedMax));
+      bool? hasReachedMax = (state as ChatLoadedState).hasReachedMax;
+
+      emit(ChatLoadedState(messages: messages, hasReachedMax: hasReachedMax));
     } else {
       alertUtil.sendAlert(
           BASIC_ERROR_TITLE, ERROR_SENDING_MESSAGE, Colors.red, Icons.error);
@@ -106,10 +107,10 @@ class ChatCubit extends Cubit<ChatState> {
           (element) => message.messageDateTime == message.messageDateTime);
       messages[index] = message;
 
+      bool? hasReachedMax = (state as ChatLoadedState).hasReachedMax;
+
       emit(ChatUpdatingState());
-      emit(ChatLoadedState(
-          messages: messages,
-          hasReachedMax: (state as ChatLoadedState).hasReachedMax));
+      emit(ChatLoadedState(messages: messages, hasReachedMax: hasReachedMax));
     }
   }
 }

@@ -166,6 +166,16 @@ class SharedPrefs {
     else
       mSharedPrefs!.setBool(PREF_SOUND_ENABLED_KEY, value);
   }
+  
+  int get userFollowersCount =>
+      mSharedPrefs!.getInt(PREF_USER_FOLLOWERS_COUNT_KEY) ?? 0;
+
+  set userFollowersCount(int value) {
+    if (value == null)
+      mSharedPrefs!.remove(PREF_USER_FOLLOWERS_COUNT_KEY);
+    else
+      mSharedPrefs!.setInt(PREF_USER_FOLLOWERS_COUNT_KEY, value);
+  }
 
   Function? onUserMessagesValueChanged;
 }

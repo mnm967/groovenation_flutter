@@ -32,6 +32,7 @@ class TicketsRepository {
         "$API_HOST/tickets/prices/$eventId", _onRequestError);
 
     if (jsonResponse != null) {
+      print(jsonResponse.toString());
       for (Map i in jsonResponse['ticket_prices']) {
         TicketPrice ticketPrice = TicketPrice.fromJson(i);
         ticketPrices.add(ticketPrice);

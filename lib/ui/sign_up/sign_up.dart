@@ -250,7 +250,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   void _openLoginPage() {
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushReplacementNamed(context, '/log');
   }
 
   void _displayError(state) {

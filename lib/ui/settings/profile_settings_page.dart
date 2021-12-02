@@ -105,20 +105,26 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
   void _saveProfileChanges() async {
     _showLoadingDialog(context);
-    
-    File profileFile = File(newProfileImagePath!);
-    File coverFile = File(newCoverImagePath!);
 
-    if (profileFile.lengthSync() > 500000) {
-      newProfileImagePath = (await _compressAndGetFile(profileFile,
-              "${profileFile.parent.path}/compressed-${profileFile.path.split('/').last}"))!
-          .path;
+    File? profileFile =
+        newProfileImagePath != null ? File(newProfileImagePath!) : null;
+    File? coverFile =
+        newCoverImagePath != null ? File(newCoverImagePath!) : null;
+
+    if (profileFile != null) {
+      if (profileFile.lengthSync() > 500000) {
+        newProfileImagePath = (await _compressAndGetFile(profileFile,
+                "${profileFile.parent.path}/compressed-${profileFile.path.split('/').last}"))!
+            .path;
+      }
     }
-    
-    if (profileFile.lengthSync() > 500000) {
-      newCoverImagePath = (await _compressAndGetFile(coverFile,
-              "${coverFile.parent.path}/compressed-${coverFile.path.split('/').last}"))!
-          .path;
+
+    if (coverFile != null) {
+      if (coverFile.lengthSync() > 500000) {
+        newCoverImagePath = (await _compressAndGetFile(coverFile,
+                "${coverFile.parent.path}/compressed-${coverFile.path.split('/').last}"))!
+            .path;
+      }
     }
 
     final ProfileSettingsCubit profileSettingsCubit =

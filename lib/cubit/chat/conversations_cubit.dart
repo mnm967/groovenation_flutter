@@ -195,6 +195,9 @@ class ConversationsCubit extends Cubit<ChatState> {
   }
 
   void sendChat(Message newMessage) async {
+    print("Me: " + sharedPrefs.userId!);
+    print("User to: " + newMessage.receiverId!);
+
     if (chatCubit.newConvoId != null) {
       newMessage.conversationId = chatCubit.newConvoId;
     }
@@ -321,6 +324,10 @@ class ConversationsCubit extends Cubit<ChatState> {
       Conversation conversation =
           Conversation.fromJson(jsonDecode(data['conversation']));
 
+      print("Convo");
+      print(conversation.toJson());
+
+      conversation.conversationPerson = newMessage.sender;
       newMessage.conversationId = conversation.conversationID;
 
       var box = await Hive.openBox<Conversation>('conversation');
@@ -345,7 +352,7 @@ class ConversationsCubit extends Cubit<ChatState> {
     } else {
       String conversationId = newMessage.conversationId!;
 
-      print("Cid = " + conversationId);
+      print("Cid = " + newMessage.sender!.personUsername!);
 
       var box = await Hive.openBox<Conversation>('conversation');
       var m = await Hive.openBox<SavedMessage>('savedmessage');
@@ -359,6 +366,7 @@ class ConversationsCubit extends Cubit<ChatState> {
 
       if (index != -1) {
         Conversation c = conversations[index];
+        print(c.toJson());
 
         if (newMessage.sender!.personID != sharedPrefs.userId)
           c.newMessagesCount = c.newMessagesCount! + 1;

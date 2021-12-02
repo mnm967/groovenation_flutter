@@ -6,6 +6,7 @@ class SocialPost {
   final String? clubID; //Nullable
   final String? clubName; //Nullable
   int? likesAmount;
+  int? commentsAmount;
   final String? caption;
   bool? hasUserLiked;
 
@@ -13,7 +14,7 @@ class SocialPost {
   final String? mediaURL;
 
   SocialPost(this.postID, this.person, this.clubID, this.clubName, this.likesAmount,
-      this.caption, this.hasUserLiked, this.postType, this.mediaURL);
+      this.commentsAmount, this.caption, this.hasUserLiked, this.postType, this.mediaURL);
 
   factory SocialPost.fromJson(dynamic json) {
     return SocialPost(
@@ -22,6 +23,7 @@ class SocialPost {
       json['clubID'],
       json['clubName'],
       json['likesAmount'],
+      json['commentsAmount'],
       json['caption'],
       json['hasUserLiked'],
       json['postType'],
@@ -35,6 +37,7 @@ class SocialPost {
         "clubID": clubID,
         "clubName": clubName,
         "likesAmount": likesAmount,
+        "commentsAmount": commentsAmount,
         "caption": caption,
         "hasUserLiked": hasUserLiked,
         "postType": postType,

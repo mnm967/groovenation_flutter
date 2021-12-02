@@ -347,6 +347,8 @@ class _EventPageState extends State<EventPage> {
         delegate: EventCollapsingAppBar(
           expandedHeight: 496,
           statusBarHeight: MediaQuery.of(context).padding.top,
+          latitude: event!.clubLat,
+          longitude: event!.clubLon,
           imageUrl: event!.imageUrl,
           showClubButton: event!.clubID != null,
           showTicketButton: event!.hasTickets!,

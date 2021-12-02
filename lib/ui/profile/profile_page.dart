@@ -94,7 +94,9 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() {
       socialPerson!.isUserFollowing = !socialPerson!.isUserFollowing!;
+      socialPerson!.followersCount = socialPerson!.isUserFollowing! ? (socialPerson!.followersCount! + 1) : (socialPerson!.followersCount! - 1);
     });
+
     profileSocialCubit.updateUserFollowing(context, socialPerson!);
   }
 
@@ -161,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _sliverAppBar() {
     return SliverAppBar(
-      expandedHeight: 372.0,
+      expandedHeight: 384.0,
       floating: false,
       pinned: false,
       automaticallyImplyLeading: false,
@@ -592,7 +594,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 Padding(
                   padding:
-                      EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 0),
+                      EdgeInsets.only(top: 20, left: 16, right: 16, bottom: 0),
                   child: Text(
                     socialPerson!.personUsername!,
                     maxLines: 1,
@@ -600,6 +602,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: Colors.white, fontFamily: 'Lato', fontSize: 24),
+                  ),
+                ),
+                Padding(
+                  padding:
+                      EdgeInsets.only(top: 8, left: 16, right: 16, bottom: 0),
+                  child: Text(
+                    "${socialPerson!.followersCount!} ${socialPerson!.followersCount! == 1 ? "Follower" : "Followers"}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'LatoLight',
+                        fontSize: 16),
                   ),
                 ),
                 _topAppBarButtons(),

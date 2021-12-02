@@ -10,6 +10,7 @@ import 'package:groovenation_flutter/cubit/state/social_state.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/profile/widgets/social_post_list.dart';
+import 'package:groovenation_flutter/ui/social/create_post_page.dart';
 import 'package:groovenation_flutter/ui/social/widgets/native_ad_widget.dart';
 import 'package:groovenation_flutter/ui/social/widgets/social_item.dart';
 import 'package:groovenation_flutter/ui/social/widgets/trimmer_view.dart';
@@ -165,7 +166,7 @@ class _SocialHomePageState extends State<SocialHomePage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (BuildContext context) => FilterWidget(
+        builder: (BuildContext con) => FilterWidget(
           imagePath: imgPath,
           onImagePicked: (path) async {
             File newFile = File(path);

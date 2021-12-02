@@ -16,11 +16,38 @@ import 'package:groovenation_flutter/models/saved_message.dart';
 import 'package:groovenation_flutter/models/send_media_task.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/ui/chat/message_item.dart';
+import 'package:groovenation_flutter/util/chat_page_arguments.dart';
+import 'package:groovenation_flutter/util/navigation_service.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_uploader/flutter_uploader.dart';
+import 'package:flutter/foundation.dart';
+
+class LifecycleEventHandler extends WidgetsBindingObserver {
+  final AsyncCallback resumeCallBack;
+  final AsyncCallback suspendingCallBack;
+
+  LifecycleEventHandler({
+    required this.resumeCallBack,
+    required this.suspendingCallBack,
+  });
+
+  @override
+  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        await resumeCallBack();
+        break;
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        await suspendingCallBack();
+        break;
+    }
+  }
+}
 
 class ChatPage extends StatefulWidget {
   final Conversation conversation;
@@ -53,6 +80,15 @@ class _ChatPageState extends State<ChatPage> {
 
     _initScrollListener();
     _initChat();
+
+    WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
+      _sendInitialMessage();
+    });
+
+    // WidgetsBinding.instance!.addObserver(LifecycleEventHandler(
+    //     resumeCallBack: () async => Navigator.popAndPushNamed(context, '/chat',
+    //         arguments: ChatPageArguments(conversation!, null)),
+    //     suspendingCallBack: () async {}));
   }
 
   void _initScrollListener() {
@@ -76,7 +112,7 @@ class _ChatPageState extends State<ChatPage> {
   void _initChat() {
     if (conversation!.conversationID != null)
       isConversationMuted =
-          sharedPrefs.mutedConversations.contains(conversation);
+          sharedPrefs.mutedConversations.contains(conversation!.conversationID);
 
     final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
     safeChatCubit = chatCubit;
@@ -89,9 +125,8 @@ class _ChatPageState extends State<ChatPage> {
   void checkMediaSending() async {
     var box = await Hive.openBox<SendMediaTask>('sendmediatask');
 
-    SendMediaTask? task = box.values.firstWhereOrNull(
-        (element) =>
-            element.receiverId == conversation!.conversationPerson!.personID);
+    SendMediaTask? task = box.values.firstWhereOrNull((element) =>
+        element.receiverId == conversation!.conversationPerson!.personID);
 
     if (task != null) {
       setState(() {
@@ -109,6 +144,10 @@ class _ChatPageState extends State<ChatPage> {
           break;
         case MESSAGE_TYPE_POST:
           _sendSocialPostMessage(messageToSendArg as SocialPostMessage);
+          Future.delayed(
+              Duration(milliseconds: 1000),
+              () => Navigator.popAndPushNamed(context, '/chat',
+                  arguments: ChatPageArguments(conversation!, null)));
           break;
         default:
           setState(() {
@@ -118,8 +157,6 @@ class _ChatPageState extends State<ChatPage> {
           _sendTextMessage();
           break;
       }
-
-      messageToSendArg = null;
     }
   }
 
@@ -138,7 +175,7 @@ class _ChatPageState extends State<ChatPage> {
             : null,
         DateTime.now(),
         SocialPerson(sharedPrefs.userId, sharedPrefs.username,
-            sharedPrefs.profilePicUrl, sharedPrefs.coverPicUrl, false, false),
+            sharedPrefs.profilePicUrl, sharedPrefs.coverPicUrl, false, false, sharedPrefs.userFollowersCount),
         _textEditingController.text,
         conversation!.conversationPerson!.personID));
 
@@ -164,7 +201,7 @@ class _ChatPageState extends State<ChatPage> {
   bool isSendingMedia = false;
 
   Future _getMediaImageFile() async {
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       _image = File(pickedFile.path);
@@ -172,8 +209,9 @@ class _ChatPageState extends State<ChatPage> {
       final taskId = await uploader.enqueue(
         MultipartFormDataUpload(
             url: "$API_HOST/chat/send/media",
-            files: [FileItem(path: _image.parent.path, field: 'image_file')],
+            files: [FileItem(path: pickedFile.path, field: 'image_file')],
             method: UploadMethod.POST,
+            headers: {"authorization": "Bearer ${sharedPrefs.authToken}"},
             data: {
               "conversationId": conversation!.conversationID!,
               "userId": sharedPrefs.userId!,
@@ -199,6 +237,10 @@ class _ChatPageState extends State<ChatPage> {
   void executeUpload(String taskId) {
     uploader.result.listen((result) async {
       if (result.taskId == taskId) {
+        if (result.response == null) return;
+
+        print(result.response!);
+
         Map<String, dynamic> jsonResponse = jsonDecode(result.response!);
 
         if (jsonResponse['status'] == 1) {
@@ -210,17 +252,23 @@ class _ChatPageState extends State<ChatPage> {
           sbox.delete(nMessage.receiverId);
 
           try {
+            print("Mounted: " + mounted.toString());
+
             if (mounted)
               setState(() {
                 isSendingMedia = false;
               });
 
             final ConversationsCubit conversationsCubit =
-                BlocProvider.of<ConversationsCubit>(context);
+                BlocProvider.of<ConversationsCubit>(
+                    NavigationService.navigatorKey.currentContext!);
 
             conversationsCubit.updateConversation(jsonResponse, false);
+
             return;
-          } catch (e) {}
+          } catch (e) {
+            print(e);
+          }
 
           _updateConversationCubit(jsonResponse, nMessage);
         } else {
@@ -350,6 +398,30 @@ class _ChatPageState extends State<ChatPage> {
         body: _mainBody());
   }
 
+  void _changeConversationMuted() {
+    if (isConversationMuted) {
+      if (conversation!.conversationID == null) return;
+
+      List<String> mutedConversations = sharedPrefs.mutedConversations;
+      mutedConversations.remove(conversation!.conversationID);
+      sharedPrefs.mutedConversations = mutedConversations;
+
+      setState(() {
+        isConversationMuted = false;
+      });
+    } else {
+      if (conversation!.conversationID == null) return;
+
+      List<String> mutedConversations = sharedPrefs.mutedConversations;
+      mutedConversations.add(conversation!.conversationID!);
+      sharedPrefs.mutedConversations = mutedConversations;
+
+      setState(() {
+        isConversationMuted = true;
+      });
+    }
+  }
+
   Widget _appBar() {
     return PreferredSize(
       child: AppBar(
@@ -404,15 +476,21 @@ class _ChatPageState extends State<ChatPage> {
         ),
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(icon: Icon(Icons.notifications_off), onPressed: () {}),
+          //TODO: Mute conversations:
+          // IconButton(
+          //     icon: isConversationMuted
+          //         ? Icon(Icons.notifications_on)
+          //         : Icon(Icons.notifications_off),
+          //     onPressed: _changeConversationMuted),
           PopupMenuButton<String>(
               onSelected: _onPopupMenuItemSelected,
               itemBuilder: (BuildContext context) {
                 return [
                   'View User',
-                  isConversationMuted
-                      ? 'Unmute notifications'
-                      : 'Mute notifications',
+                  //TODO: Mute conversations:
+                  // isConversationMuted
+                  //     ? 'Unmute notifications'
+                  //     : 'Mute notifications',
                   conversation!.conversationPerson!.hasUserBlocked!
                       ? 'Unblock User'
                       : 'Block User',
@@ -509,7 +587,7 @@ class _ChatPageState extends State<ChatPage> {
               BlocProvider.of<ConversationsCubit>(context);
           conversationsCubit.setMessagesRead(conversation!.conversationID);
 
-          _sendInitialMessage();
+          // _sendInitialMessage();
         }
 
         if (chatState is ChatLoadingState && messages!.isEmpty) {
@@ -527,6 +605,9 @@ class _ChatPageState extends State<ChatPage> {
             ),
           );
         }
+
+        messages!.forEach((m) => print(
+            m.messageType! + " - " + m.messageDateTime!.toIso8601String()));
 
         return Column(
           children: [
@@ -552,8 +633,8 @@ class _ChatPageState extends State<ChatPage> {
                   itemCount: messages!.length,
                   itemBuilder: (context, index) {
                     return MessageItem(
-                      isRight:
-                          messages![index].sender!.personID == sharedPrefs.userId,
+                      isRight: messages![index].sender!.personID ==
+                          sharedPrefs.userId,
                       message: messages![index],
                     );
                   }),

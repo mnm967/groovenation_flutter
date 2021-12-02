@@ -151,6 +151,8 @@ class SocialRepository {
     FormData formData = new FormData.fromMap({
       "userId": userId,
       "email": email,
+      "previousProfileUrl": sharedPrefs.profilePicUrl,
+      "previousCoverUrl": sharedPrefs.coverPicUrl,
       "profile_image": newProfileImagePath != null
           ? await MultipartFile.fromFile(newProfileImagePath,
               filename: randomAlphaNumeric(15) +

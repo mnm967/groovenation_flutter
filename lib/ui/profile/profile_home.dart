@@ -38,7 +38,8 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
       final UserSocialCubit userSocialCubit =
           BlocProvider.of<UserSocialCubit>(context);
       userSocialCubit.getSocialPosts(socialPostsPage);
-    }
+    } else
+      setState(() {});
   }
 
   final _listRefreshController = RefreshController(initialRefresh: false);
@@ -94,7 +95,6 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
         child: Container(
           height: 72,
           child: TabBar(
-            onTap: (index) {}, //TODO: Delete
             indicatorColor: Colors.purple,
             tabs: [
               Tab(
@@ -182,22 +182,6 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
       },
       child: BlocBuilder<UserSocialCubit, SocialState>(
           builder: (context, socialState) {
-        // if (socialState is SocialLoadingState && socialPosts!.isEmpty) {
-        //   return Padding(
-        //     padding: EdgeInsets.only(top: 64),
-        //     child: Center(
-        //       child: SizedBox(
-        //         height: 56,
-        //         width: 56,
-        //         child: CircularProgressIndicator(
-        //           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        //           strokeWidth: 2.0,
-        //         ),
-        //       ),
-        //     ),
-        //   );
-        // }
-
         if (socialState is SocialLoadedState) {
           _listRefreshController.refreshCompleted();
           if (socialState.hasReachedMax!) _listRefreshController.loadNoData();
@@ -304,22 +288,6 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
     );
   }
 
-  Widget _circularProgress() {
-    return Padding(
-      padding: EdgeInsets.only(top: 64),
-      child: Center(
-        child: SizedBox(
-          height: 56,
-          width: 56,
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            strokeWidth: 2.0,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _socialGridTab() {
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification scrollInfo) {
@@ -333,10 +301,6 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
       },
       child: BlocBuilder<UserSocialCubit, SocialState>(
           builder: (context, socialState) {
-        // if (socialState is SocialLoadingState && socialPosts!.isEmpty) {
-        //   _circularProgress();
-        // }
-
         if (socialState is SocialLoadedState) {
           if (socialPostsPage == 0)
             socialPosts = socialState.socialPosts;
@@ -455,14 +419,16 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                     SizedBox(
                       height: 116,
                       width: 116,
-                      child: CircleAvatar(
-                        backgroundImage: CachedNetworkImageProvider(
-                            "${sharedPrefs.profilePicUrl}"),
-                      ),
+                      child: BlocBuilder<ProfileSettingsCubit,
+                          ProfileSettingsState>(builder: (context, chatState) {
+                        return CircleAvatar(
+                          backgroundImage: CachedNetworkImageProvider(
+                              "${sharedPrefs.profilePicUrl}"),
+                        );
+                      }),
                     ),
                     Padding(
-                      padding: EdgeInsets.only(
-                          top: 24, left: 16, right: 16, bottom: 48),
+                      padding: EdgeInsets.only(top: 24, left: 16, right: 16),
                       child: Text(
                         "${sharedPrefs.username}",
                         maxLines: 1,
@@ -472,6 +438,20 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
                             color: Colors.white,
                             fontFamily: 'Lato',
                             fontSize: 24),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(
+                          top: 8, left: 16, right: 16, bottom: 48),
+                      child: Text(
+                        "${sharedPrefs.userFollowersCount} ${sharedPrefs.userFollowersCount == 1 ? "Follower" : "Followers"}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontFamily: 'LatoLight',
+                            fontSize: 16),
                       ),
                     ),
                   ],

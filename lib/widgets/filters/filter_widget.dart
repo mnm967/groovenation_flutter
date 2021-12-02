@@ -60,7 +60,7 @@ class _FilterWidgetState extends State<FilterWidget> {
     imageFile.delete();
 
     widget.onImagePicked(newFile.path);
-    Navigator.pop(_globalKey.currentContext!);
+    // Navigator.pop(_globalKey.currentContext!);
 
     // Navigator.of(_globalKey.currentContext!).push(
     //   MaterialPageRoute(

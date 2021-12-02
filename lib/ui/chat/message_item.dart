@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/message.dart';
+import 'package:groovenation_flutter/ui/events/widgets/event_page_collapsing_app_bar.dart';
 import 'package:groovenation_flutter/ui/social/widgets/social_item.dart';
 import 'package:intl/intl.dart';
 
@@ -37,6 +38,16 @@ class MessageItem extends StatelessWidget {
                   child: Material(
                     type: MaterialType.transparency,
                     child: InkWell(
+                      onTap: () async {
+                        if (message!.messageType == MESSAGE_TYPE_MEDIA) {
+                          await showDialog(
+                            context: context,
+                            builder: (_) => ImageDialog(
+                              imageUrl: (message as MediaMessage).mediaURL!,
+                            ),
+                          );
+                        }
+                      },
                       onLongPress: () {
                         _showMessageOptions();
                       },
