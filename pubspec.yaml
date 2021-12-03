@@ -23,7 +23,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.2
   intl: ^0.17.0
   flutter_image_compress: ^1.0.0
@@ -76,6 +77,7 @@ dependencies:
   collection: ^1.15.0-nullsafety.4
   firebase_analytics: ^9.0.0-dev.3
   google_mobile_ads: ^0.13.6
+  huawei_push: ^5.3.0+304
   # light_compressor: ^1.2.1
 
 dev_dependencies:

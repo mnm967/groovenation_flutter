@@ -194,10 +194,7 @@ class ConversationsCubit extends Cubit<ChatState> {
     }
   }
 
-  void sendChat(Message newMessage) async {
-    print("Me: " + sharedPrefs.userId!);
-    print("User to: " + newMessage.receiverId!);
-
+  void updateConversatinOnSend(Message newMessage) async {
     if (chatCubit.newConvoId != null) {
       newMessage.conversationId = chatCubit.newConvoId;
     }
@@ -300,8 +297,8 @@ class ConversationsCubit extends Cubit<ChatState> {
 
     box.putAt(
         index, SavedMessage(message.conversationId, Message.toJson(message)));
-    final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
 
+    final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
     chatCubit.updateMessage(message);
   }
 
@@ -335,7 +332,6 @@ class ConversationsCubit extends Cubit<ChatState> {
 
       sbox.add(
           SavedMessage(newMessage.conversationId, Message.toJson(newMessage)));
-
       box.add(conversation);
 
       if (state is ConversationsLoadedState) {
@@ -343,7 +339,6 @@ class ConversationsCubit extends Cubit<ChatState> {
             (state as ConversationsLoadedState).conversations!;
 
         conversations.insert(0, conversation);
-
         conversations.sort((a, b) => b.latestMessage!.messageDateTime!
             .compareTo(a.latestMessage!.messageDateTime!));
 
@@ -351,8 +346,6 @@ class ConversationsCubit extends Cubit<ChatState> {
       }
     } else {
       String conversationId = newMessage.conversationId!;
-
-      print("Cid = " + newMessage.sender!.personUsername!);
 
       var box = await Hive.openBox<Conversation>('conversation');
       var m = await Hive.openBox<SavedMessage>('savedmessage');
@@ -366,7 +359,6 @@ class ConversationsCubit extends Cubit<ChatState> {
 
       if (index != -1) {
         Conversation c = conversations[index];
-        print(c.toJson());
 
         if (newMessage.sender!.personID != sharedPrefs.userId)
           c.newMessagesCount = c.newMessagesCount! + 1;
@@ -385,13 +377,18 @@ class ConversationsCubit extends Cubit<ChatState> {
         conversations.sort((a, b) => b.latestMessage!.messageDateTime!
             .compareTo(a.latestMessage!.messageDateTime!));
 
-        chatCubit.addNewChat(newMessage);
+        if (newMessage.sender!.personID! != sharedPrefs.userId)
+          chatCubit.addNewChat(newMessage);
 
         emit(ConversationsUpdatingState());
         emit(ConversationsLoadedState(conversations: conversations));
       }
     }
 
+    if (showNotification) _showMessageNotification(newMessage);
+  }
+
+  void _showMessageNotification(Message newMessage) {
     String? text;
 
     switch (newMessage.messageType) {
@@ -406,21 +403,19 @@ class ConversationsCubit extends Cubit<ChatState> {
         break;
     }
 
-    if (showNotification) {
-      if (chatCubit.currentConversationId == newMessage.conversationId) return;
-      if (!sharedPrefs.mutedConversations.contains(newMessage.conversationId))
-        AwesomeNotifications().createNotification(
-          content: NotificationContent(
-              id: newMessage.messageID.hashCode,
-              channelKey: 'groovenation_channel',
-              title: "Message from ${newMessage.sender!.personUsername}",
-              body: text,
-              largeIcon: newMessage.sender!.personProfilePicURL,
-              backgroundColor: Colors.deepPurple,
-              color: Colors.white,
-              notificationLayout: NotificationLayout.Messaging,
-              summary: "New Message"),
-        );
-    }
+    if (chatCubit.currentConversationId == newMessage.conversationId) return;
+    if (!sharedPrefs.mutedConversations.contains(newMessage.conversationId))
+      AwesomeNotifications().createNotification(
+        content: NotificationContent(
+            id: newMessage.messageID.hashCode,
+            channelKey: 'groovenation_channel',
+            title: "Message from ${newMessage.sender!.personUsername}",
+            body: text,
+            largeIcon: newMessage.sender!.personProfilePicURL,
+            backgroundColor: Colors.deepPurple,
+            color: Colors.white,
+            notificationLayout: NotificationLayout.Messaging,
+            summary: "New Message"),
+      );
   }
 }

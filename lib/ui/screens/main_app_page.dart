@@ -123,6 +123,11 @@ class MainAppPageState extends State<MainAppPage>
                       : '/main'))),
           theme: ThemeData(
             primarySwatch: Colors.purple,
+            pageTransitionsTheme: PageTransitionsTheme(
+              builders: {
+                TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+              },
+            ),
           ),
           onGenerateRoute: (settings) {
             switch (settings.name) {

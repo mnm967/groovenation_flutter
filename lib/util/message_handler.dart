@@ -32,13 +32,11 @@ class MessageHandler {
 
     newMessage.conversationId = conversation.conversationID;
 
-    var box = await Hive.openBox<Conversation>('conversation');
+    var cbox = await Hive.openBox<Conversation>('conversation');
     var sbox = await Hive.openBox<SavedMessage>('savedmessage');
 
-    sbox.add(
-        SavedMessage(newMessage.conversationId, Message.toJson(newMessage)));
-
-    box.add(conversation);
+    sbox.add(SavedMessage(newMessage.conversationId, Message.toJson(newMessage)));
+    cbox.add(conversation);
   }
 
   static Future _updateMessageConversation(var data, Message newMessage) async {

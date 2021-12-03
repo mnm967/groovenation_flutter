@@ -60,19 +60,21 @@ class ChatCubit extends Cubit<ChatState> {
       List<Message> messages = (state as ChatLoadedState).messages!;
       messages.insert(0, message);
 
-      conversationsCubit.sendChat(message);
+      conversationsCubit.updateConversatinOnSend(message);
 
       bool? hasReachedMax = (state as ChatLoadedState).hasReachedMax;
 
+      emit(ChatUpdatingState());
       emit(ChatLoadedState(messages: messages, hasReachedMax: hasReachedMax));
     } else if (message.conversationId == null) {
-      List<Message> messages = [];
-      messages.add(message);
+      List<Message> messages = state is ChatLoadedState ? (state as ChatLoadedState).messages! : [];
+      messages.insert(0, message);
 
-      conversationsCubit.sendChat(message);
+      conversationsCubit.updateConversatinOnSend(message);
 
-      bool? hasReachedMax = (state as ChatLoadedState).hasReachedMax;
+      bool? hasReachedMax = state is ChatLoadedState ? (state as ChatLoadedState).hasReachedMax : true;
 
+      emit(ChatUpdatingState());
       emit(ChatLoadedState(messages: messages, hasReachedMax: hasReachedMax));
     } else {
       alertUtil.sendAlert(

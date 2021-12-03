@@ -30,6 +30,7 @@ import 'package:groovenation_flutter/data/repo/social_repository.dart';
 import 'package:groovenation_flutter/data/repo/ticket_repository.dart';
 import 'package:groovenation_flutter/ui/screens/main_app_page.dart';
 import 'package:groovenation_flutter/util/hive_lifecycle_manager.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'cubit/event/events_cubit.dart';
 import 'data/repo/events_repository.dart';
@@ -130,7 +131,15 @@ class GroovenationApp extends StatelessWidget {
         ],
         child: Directionality(
           textDirection: TextDirection.ltr,
-          child: MainAppPage(),
+          child: Localizations(
+            locale: Locale('en'),
+            delegates: [
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            child: MainAppPage(),
+          ),
         ),
       ),
     );
