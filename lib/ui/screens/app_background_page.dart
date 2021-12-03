@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -11,6 +12,7 @@ class AppBackgroundPage extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         top: false,
+        bottom: Platform.isIOS ? false : true,
         child: Stack(
           children: [
             Container(

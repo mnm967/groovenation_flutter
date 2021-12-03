@@ -1,4 +1,3 @@
-import 'package:cached_video_player/cached_video_player.dart';
 import 'package:flare_flutter/flare_actor.dart';
 import 'package:flare_flutter/flare_controls.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +18,7 @@ import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:groovenation_flutter/widgets/report_dialog.dart';
+import 'package:video_player/video_player.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 class SocialItem extends StatefulWidget {
