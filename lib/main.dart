@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' hide MessageHandler;
 import 'package:flutter_uploader/flutter_uploader.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/groovenation_app.dart';
 import 'package:groovenation_flutter/util/hive_box_provider.dart';
 import 'package:groovenation_flutter/util/location_util.dart';
@@ -70,7 +69,6 @@ Future _initialize() async {
   ]);
 
   await Firebase.initializeApp();
-
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(

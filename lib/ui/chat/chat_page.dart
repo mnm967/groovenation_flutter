@@ -23,31 +23,6 @@ import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_uploader/flutter_uploader.dart';
-import 'package:flutter/foundation.dart';
-
-class LifecycleEventHandler extends WidgetsBindingObserver {
-  final AsyncCallback resumeCallBack;
-  final AsyncCallback suspendingCallBack;
-
-  LifecycleEventHandler({
-    required this.resumeCallBack,
-    required this.suspendingCallBack,
-  });
-
-  @override
-  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    switch (state) {
-      case AppLifecycleState.resumed:
-        await resumeCallBack();
-        break;
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.paused:
-      case AppLifecycleState.detached:
-        await suspendingCallBack();
-        break;
-    }
-  }
-}
 
 class ChatPage extends StatefulWidget {
   final Conversation conversation;
@@ -85,9 +60,15 @@ class _ChatPageState extends State<ChatPage> {
       _sendInitialMessage();
     });
 
+    NavigationService.onChatResumeCallback = () {
+      print("onChatResume");
+      Navigator.popAndPushNamed(context, '/chat',
+          arguments: ChatPageArguments(conversation!, null));
+    };
+
     // WidgetsBinding.instance!.addObserver(LifecycleEventHandler(
-    //     resumeCallBack: () async => Navigator.popAndPushNamed(context, '/chat',
-    //         arguments: ChatPageArguments(conversation!, null)),
+    // resumeCallBack: () async => Navigator.popAndPushNamed(context, '/chat',
+    //     arguments: ChatPageArguments(conversation!, null)),
     //     suspendingCallBack: () async {}));
   }
 
@@ -174,8 +155,14 @@ class _ChatPageState extends State<ChatPage> {
             ? conversation!.conversationID
             : null,
         DateTime.now(),
-        SocialPerson(sharedPrefs.userId, sharedPrefs.username,
-            sharedPrefs.profilePicUrl, sharedPrefs.coverPicUrl, false, false, sharedPrefs.userFollowersCount),
+        SocialPerson(
+            sharedPrefs.userId,
+            sharedPrefs.username,
+            sharedPrefs.profilePicUrl,
+            sharedPrefs.coverPicUrl,
+            false,
+            false,
+            sharedPrefs.userFollowersCount),
         _textEditingController.text,
         conversation!.conversationPerson!.personID));
 
@@ -186,6 +173,7 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
+    NavigationService.onChatResumeCallback = null;
     try {
       safeChatCubit.currentConversationId = null;
     } catch (e) {}

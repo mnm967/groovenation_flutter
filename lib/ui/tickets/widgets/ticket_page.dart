@@ -18,7 +18,6 @@ class TicketPage extends StatelessWidget {
   final GlobalKey globalKey = new GlobalKey();
   final Ticket? ticket;
 
-  //TODO Test and Modify
   TicketPage({Key? key, this.ticket}) : super(key: key);
 
   Future<void> _captureAndSharePng(Ticket ticket) async {
@@ -26,8 +25,8 @@ class TicketPage extends StatelessWidget {
       RenderRepaintBoundary boundary =
           globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
       var image = await boundary.toImage();
-      ByteData byteData = await (image.toByteData(format: ImageByteFormat.png) as FutureOr<ByteData>);
-      Uint8List pngBytes = byteData.buffer.asUint8List();
+      ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
 
       final tempDir = await getTemporaryDirectory();
       final file = await new File('${tempDir.path}/image.png').create();

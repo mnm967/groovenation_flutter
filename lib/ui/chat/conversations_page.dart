@@ -66,11 +66,12 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
 
   @override
   void onResume() {
+    super.onResume();
     final ConversationsCubit conversationsCubit =
         BlocProvider.of<ConversationsCubit>(context);
 
     conversationsCubit.getConversations();
-    super.onResume();
+    setState(() {});
   }
 
   @override
@@ -215,7 +216,8 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
                 conversation: conversations![index],
                 onClick: () {
                   Navigator.pushNamed(context, '/chat',
-                      arguments: ChatPageArguments(conversations![index], null));
+                      arguments:
+                          ChatPageArguments(conversations![index], null));
                   setState(() {});
                 });
           });

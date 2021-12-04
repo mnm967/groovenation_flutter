@@ -302,8 +302,11 @@ class ConversationsCubit extends Cubit<ChatState> {
     chatCubit.updateMessage(message);
   }
 
+  String _lastProcessedMessageId = "";
+
   void updateConversation(var data, [bool showNotification = true]) async {
     Message newMessage;
+    var sbox = await Hive.openBox<SavedMessage>('savedmessage');
 
     switch (data["messageType"]) {
       case MESSAGE_TYPE_MEDIA:
@@ -317,6 +320,12 @@ class ConversationsCubit extends Cubit<ChatState> {
         break;
     }
 
+    bool exists = newMessage.messageID == _lastProcessedMessageId;
+    print("Message Exists: " + exists.toString());
+    if (exists) return;
+
+    _lastProcessedMessageId = newMessage.messageID!;
+
     if (data["command"] == "add_message_conversation") {
       Conversation conversation =
           Conversation.fromJson(jsonDecode(data['conversation']));
@@ -328,7 +337,6 @@ class ConversationsCubit extends Cubit<ChatState> {
       newMessage.conversationId = conversation.conversationID;
 
       var box = await Hive.openBox<Conversation>('conversation');
-      var sbox = await Hive.openBox<SavedMessage>('savedmessage');
 
       sbox.add(
           SavedMessage(newMessage.conversationId, Message.toJson(newMessage)));

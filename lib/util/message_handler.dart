@@ -35,7 +35,8 @@ class MessageHandler {
     var cbox = await Hive.openBox<Conversation>('conversation');
     var sbox = await Hive.openBox<SavedMessage>('savedmessage');
 
-    sbox.add(SavedMessage(newMessage.conversationId, Message.toJson(newMessage)));
+    sbox.add(
+        SavedMessage(newMessage.conversationId, Message.toJson(newMessage)));
     cbox.add(conversation);
   }
 
@@ -102,25 +103,12 @@ class MessageHandler {
       sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount + 1;
       print("New Count: " + sharedPrefs.userFollowersCount.toString());
       return;
-    }else if (data["command"] == "remove_follower") {
+    } else if (data["command"] == "remove_follower") {
       await sharedPrefs.init();
       print("Old Count: " + sharedPrefs.userFollowersCount.toString());
       sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount - 1;
       print("New Count: " + sharedPrefs.userFollowersCount.toString());
       return;
-    }
-
-    try {
-      final ConversationsCubit conversationsCubit =
-          BlocProvider.of<ConversationsCubit>(
-              NavigationService.navigatorKey.currentContext!);
-
-      conversationsCubit.updateConversation(data, false);
-
-      return;
-    } catch (e) {
-      print("Error Occurred");
-      print(e);
     }
 
     Message newMessage = _getMessageFromJSON(data);

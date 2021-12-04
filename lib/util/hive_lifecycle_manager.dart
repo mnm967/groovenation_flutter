@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/util/hive_box_provider.dart';
+import 'package:groovenation_flutter/util/navigation_service.dart';
 
 class HiveLifecycleManager extends StatefulWidget {
   final Widget child;
@@ -29,6 +30,10 @@ class _HiveLifecycleManagerState extends State<HiveLifecycleManager>
     switch (state) {
       case AppLifecycleState.resumed:
         HiveBoxProvider.close().then((value) => HiveBoxProvider.init());
+        if (NavigationService.onChatResumeCallback != null)
+          NavigationService.onChatResumeCallback!();
+        if (NavigationService.onConvResumeCallback != null)
+          NavigationService.onConvResumeCallback!();
         break;
       case AppLifecycleState.inactive:
       case AppLifecycleState.paused:
