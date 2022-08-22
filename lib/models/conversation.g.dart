@@ -18,22 +18,19 @@ class ConversationAdapter extends TypeAdapter<Conversation> {
     };
     return Conversation(
       fields[0] as String?,
-      fields[1] as SocialPerson?,
-      fields[2] as int?,
-    )..latestMessageJSON = (fields[3] as Map?)?.cast<dynamic, dynamic>();
+      fields[1] as String?,
+    )..latestMessageJSON = (fields[2] as Map?)?.cast<dynamic, dynamic>();
   }
 
   @override
   void write(BinaryWriter writer, Conversation obj) {
     writer
-      ..writeByte(4)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.conversationID)
       ..writeByte(1)
-      ..write(obj.conversationPerson)
+      ..write(obj.conversationPersonId)
       ..writeByte(2)
-      ..write(obj.newMessagesCount)
-      ..writeByte(3)
       ..write(obj.latestMessageJSON);
   }
 

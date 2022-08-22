@@ -56,8 +56,6 @@ class MessageHandler {
     if (index != -1) {
       Conversation c = conversations[index];
 
-      c.newMessagesCount = c.newMessagesCount! + 1;
-
       c.latestMessage = newMessage;
       c.latestMessageJSON = Message.toJson(newMessage);
 
@@ -99,15 +97,11 @@ class MessageHandler {
   static void handleMessage(var data) async {
     if (data["command"] == "add_follower") {
       await sharedPrefs.init();
-      print("Old Count: " + sharedPrefs.userFollowersCount.toString());
       sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount + 1;
-      print("New Count: " + sharedPrefs.userFollowersCount.toString());
       return;
     } else if (data["command"] == "remove_follower") {
       await sharedPrefs.init();
-      print("Old Count: " + sharedPrefs.userFollowersCount.toString());
       sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount - 1;
-      print("New Count: " + sharedPrefs.userFollowersCount.toString());
       return;
     }
 
@@ -121,10 +115,6 @@ class MessageHandler {
       await _updateMessageConversation(data, newMessage);
 
     await sharedPrefs.init();
-    print("Muted?: " +
-        sharedPrefs.mutedConversations
-            .contains(newMessage.conversationId)
-            .toString());
 
     if (!sharedPrefs.mutedConversations.contains(newMessage.conversationId))
       _sendNotification(newMessage);

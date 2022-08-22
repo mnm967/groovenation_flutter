@@ -121,8 +121,9 @@ const String PREF_USER_FOLLOWERS_COUNT_KEY = "PREF_USER_FOLLOWERS_COUNT_KEY";
 
 //Other
 // const String API_HOST = "http://10.0.2.2:8080/api/v1"; //Emulator Tests
-// const String API_HOST = "http://10.76.73.111:8080/api/v1"; //Personal Device Tests (IP of Laptop)
-const String API_HOST = "https://groovenation-test.herokuapp.com/api/v1"; //Heroku Tests
+// const String API_HOST = "http://10.0.0.184:8080/api/v1"; //Personal Device Tests (IP of Laptop)
+const String API_HOST = "https://13d0-2601-482-0-37f0-101-921f-ddbc-2f0c.ngrok.io/api/v1"; //ngrok
+// const String API_HOST = "https://groovenation-test.herokuapp.com/api/v1"; //Heroku Tests
 
 const String BASIC_ERROR_TITLE = "Something Went Wrong";
 const String NEW_FOLLOWER_NOTIFICATION_TITLE = "You've gained a new follower";

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:crypt/crypt.dart';
 import 'package:dio/dio.dart';
 import 'package:groovenation_flutter/constants/enums.dart';
@@ -61,6 +63,32 @@ class SocialRepository {
     return null;
   }
 
+  Future<List<SocialPerson>?> getConversationPeople(
+      List<String>? userIds) async {
+    var uid = sharedPrefs.userId;
+    List<SocialPerson> socialPeople = [];
+
+    String url = "$API_HOST/social/conversations/users";
+    var body = {
+      'userId': uid,
+      'users': jsonEncode(userIds),
+    };
+
+    var jsonResponse =
+        await NetworkUtil.executePostRequest(url, body, _onRequestError);
+
+    if (jsonResponse != null) {
+      for (Map i in jsonResponse['social_people']) {
+        SocialPerson person = SocialPerson.fromJson(i);
+        socialPeople.add(person);
+      }
+
+      return socialPeople;
+    }
+
+    return null;
+  }
+
   Future<APIResult?> getSocialComments(int page, String? postID) async {
     var uid = sharedPrefs.userId;
     List<SocialComment> socialComments = [];
@@ -100,8 +128,12 @@ class SocialRepository {
               p.extension(mediaFilePath)),
     });
 
-    var jsonResponse = await NetworkUtil.executePostRequest(url, formData,
-        _onRequestError, null, Options(contentType: 'multipart/form-data', headers: {}));
+    var jsonResponse = await NetworkUtil.executePostRequest(
+        url,
+        formData,
+        _onRequestError,
+        null,
+        Options(contentType: 'multipart/form-data', headers: {}));
 
     if (jsonResponse != null) {
       if (jsonResponse['social_post'] != null) {
@@ -382,12 +414,12 @@ class SocialRepository {
   _onRequestError(e) {
     if (e is SocialException)
       throw SocialException(e.error);
-    else if (e is DioError){
+    else if (e is DioError) {
       if (e.type != DioErrorType.cancel)
         throw SocialException(AppError.NETWORK_ERROR);
       else
         throw SocialException(AppError.REQUEST_CANCELLED);
-    }else
+    } else
       throw SocialException(AppError.UNKNOWN_ERROR);
   }
 }

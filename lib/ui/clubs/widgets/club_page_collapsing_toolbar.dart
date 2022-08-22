@@ -52,12 +52,6 @@ class ClubCollapsingAppBar extends SliverPersistentHeaderDelegate {
               fit: BoxFit.cover,
             ),
           ),
-          //TODO Delete:
-          // Positioned.fill(
-          //   child: Container(
-          //     color: Colors.black.withOpacity(0.2),
-          //   ),
-          // ),
           SafeArea(
             child: _appBar(context, shrinkOffset),
           ),

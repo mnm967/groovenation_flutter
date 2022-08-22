@@ -60,11 +60,14 @@ class GroovenationApp extends StatelessWidget {
             create: (context) => ClubMomentsCubit(SocialRepository()),
           ),
           BlocProvider(
-            create: (context) => ConversationsCubit(ChatRepository()),
+            create: (context) => UserListCubit(SocialRepository()),
           ),
           BlocProvider(
-            create: (context) => ChatCubit(context, ChatRepository()),
+            create: (context) => ConversationsCubit(ChatRepository()),
           ),
+          // BlocProvider(
+          //   create: (context) => ChatCubit(context, ChatRepository()),
+          // ),
           BlocProvider(
             create: (context) => ClubReviewsCubit(ClubsRepository()),
           ),

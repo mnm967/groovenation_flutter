@@ -37,6 +37,7 @@ class NetworkUtil {
         }
       }
     } catch (e) {
+      print(e);
       if (!(e is DioError))
         onError(e);
       else {

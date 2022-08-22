@@ -38,51 +38,51 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
   @override
   void initState() {
     super.initState();
-    _initializeFirebase();
+    // _initializeFirebase();
     _sendInitAnalyticsEvent();
   }
 
-  void _initializeFirebase() {
-    final ConversationsCubit conversationsCubit =
-        BlocProvider.of<ConversationsCubit>(context);
+  // void _initializeFirebase() {
+  //   final ConversationsCubit conversationsCubit =
+  //       BlocProvider.of<ConversationsCubit>(context);
 
-    conversationsCubit.init(context);
+  //   conversationsCubit.init(context);
 
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
+  //   FirebaseMessaging messaging = FirebaseMessaging.instance;
 
-    messaging.getToken().then((value) async {
-      NetworkUtil.executePostRequest("$API_HOST/users/fcm/token",
-          {"userId": sharedPrefs.userId, "token": value}, () {});
-    });
+  //   messaging.getToken().then((value) async {
+  //     NetworkUtil.executePostRequest("$API_HOST/users/fcm/token",
+  //         {"userId": sharedPrefs.userId, "token": value}, () {});
+  //   });
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      print("Message Received - Front");
-      print(message.data);
+  //   FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+  //     print("Message Received - Front");
+  //     print(message.data);
 
-      if (message.data.toString() == "{}") return;
+  //     if (message.data.toString() == "{}") return;
 
-      if (message.data["command"] == "add_follower") {
-        await sharedPrefs.init();
-        print("Old Count: " + sharedPrefs.userFollowersCount.toString());
-        sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount + 1;
-        print("New Count: " + sharedPrefs.userFollowersCount.toString());
-        return;
-      } else if (message.data["command"] == "remove_follower") {
-        await sharedPrefs.init();
-        print("Old Count: " + sharedPrefs.userFollowersCount.toString());
-        sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount - 1;
-        print("New Count: " + sharedPrefs.userFollowersCount.toString());
-        return;
-      }
+  //     if (message.data["command"] == "add_follower") {
+  //       await sharedPrefs.init();
+  //       print("Old Count: " + sharedPrefs.userFollowersCount.toString());
+  //       sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount + 1;
+  //       print("New Count: " + sharedPrefs.userFollowersCount.toString());
+  //       return;
+  //     } else if (message.data["command"] == "remove_follower") {
+  //       await sharedPrefs.init();
+  //       print("Old Count: " + sharedPrefs.userFollowersCount.toString());
+  //       sharedPrefs.userFollowersCount = sharedPrefs.userFollowersCount - 1;
+  //       print("New Count: " + sharedPrefs.userFollowersCount.toString());
+  //       return;
+  //     }
 
-      var data = message.data;
+  //     var data = message.data;
 
-      conversationsCubit.updateConversation(data);
-    });
+  //     conversationsCubit.updateConversation(data);
+  //   });
 
-    if (sharedPrefs.notificationSetting == NOTIFICATION_ALL_NEARBY)
-      FirebaseMessaging.instance.subscribeToTopic("new_event_topic");
-  }
+  //   if (sharedPrefs.notificationSetting == NOTIFICATION_ALL_NEARBY)
+  //     FirebaseMessaging.instance.subscribeToTopic("new_event_topic");
+  // }
 
   @override
   Widget build(BuildContext context) {

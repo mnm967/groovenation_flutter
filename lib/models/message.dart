@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
@@ -24,12 +27,13 @@ class Message {
 
   @HiveField(6)
   final String? receiverId;
-  
+
   @HiveField(7)
   String? messageStatus;
 
   Message(this.messageID, this.conversationId, this.messageType,
-      this.messageDateTime, this.sender, this.receiverId, [this.messageStatus = MESSAGE_STATUS_PENDING]);
+      this.messageDateTime, this.sender, this.receiverId,
+      [this.messageStatus = MESSAGE_STATUS_PENDING]);
 
   factory Message.fromJson(dynamic json) {
     switch (json['messageType']) {
@@ -44,10 +48,19 @@ class Message {
     }
   }
 
+  factory Message.fromFireStore(DocumentSnapshot doc) {
+    final Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+
+    return Message.fromJson(jsonDecode(data['content']));
+  }
+
   static Map toJson(Message m) {
-    if(m.messageType == MESSAGE_TYPE_MEDIA) return MediaMessage.getJson(m as MediaMessage); 
-    else if(m.messageType == MESSAGE_TYPE_POST) return SocialPostMessage.getJson(m as SocialPostMessage);
-    else return TextMessage.getJson(m as TextMessage);
+    if (m.messageType == MESSAGE_TYPE_MEDIA)
+      return MediaMessage.getJson(m as MediaMessage);
+    else if (m.messageType == MESSAGE_TYPE_POST)
+      return SocialPostMessage.getJson(m as SocialPostMessage);
+    else
+      return TextMessage.getJson(m as TextMessage);
   }
 }
 
@@ -56,8 +69,13 @@ class TextMessage extends Message {
   @HiveField(8)
   final String? text;
 
-  TextMessage(String? messageID, String? conversationId, DateTime? messageDateTime,
-      SocialPerson? sender, this.text, String? receiverId)
+  TextMessage(
+      String? messageID,
+      String? conversationId,
+      DateTime? messageDateTime,
+      SocialPerson? sender,
+      this.text,
+      String? receiverId)
       : super(messageID, conversationId, MESSAGE_TYPE_TEXT, messageDateTime,
             sender, receiverId);
 
@@ -73,13 +91,13 @@ class TextMessage extends Message {
 
   static Map getJson(TextMessage message) {
     return {
-      "messageId" : message.messageID,
-      "conversationId" : message.conversationId,
-      "messageType" : message.messageType,
-      "messageDateTime" : message.messageDateTime!.toIso8601String(),
-      "sender" : message.sender!.toJson(),
-      "text" : message.text,
-      "receiverId" : message.receiverId,
+      "messageId": message.messageID,
+      "conversationId": message.conversationId,
+      "messageType": message.messageType,
+      "messageDateTime": message.messageDateTime!.toIso8601String(),
+      "sender": message.sender!.toJson(),
+      "text": message.text,
+      "receiverId": message.receiverId,
     };
   }
 }
@@ -95,7 +113,8 @@ class MediaMessage extends Message {
       DateTime? messageDateTime,
       SocialPerson? sender,
       this.mediaURL,
-      String? receiverId, [String? messageStatus])
+      String? receiverId,
+      [String? messageStatus])
       : super(messageID, conversationId, MESSAGE_TYPE_MEDIA, messageDateTime,
             sender, receiverId, messageStatus);
 
@@ -111,13 +130,13 @@ class MediaMessage extends Message {
 
   static Map getJson(MediaMessage message) {
     return {
-      "messageId" : message.messageID,
-      "conversationId" : message.conversationId,
-      "messageType" : message.messageType,
-      "messageDateTime" : message.messageDateTime!.toIso8601String(),
-      "sender" : message.sender!.toJson(),
-      "mediaURL" : message.mediaURL,
-      "receiverId" : message.receiverId,
+      "messageId": message.messageID,
+      "conversationId": message.conversationId,
+      "messageType": message.messageType,
+      "messageDateTime": message.messageDateTime!.toIso8601String(),
+      "sender": message.sender!.toJson(),
+      "mediaURL": message.mediaURL,
+      "receiverId": message.receiverId,
     };
   }
 }
@@ -149,13 +168,13 @@ class SocialPostMessage extends Message {
 
   static Map getJson(SocialPostMessage message) {
     return {
-      "messageId" : message.messageID,
-      "conversationId" : message.conversationId,
-      "messageType" : message.messageType,
-      "messageDateTime" : message.messageDateTime!.toIso8601String(),
-      "sender" : message.sender!.toJson(),
-      "post" : message.post!.toJson(),
-      "receiverId" : message.receiverId,
+      "messageId": message.messageID,
+      "conversationId": message.conversationId,
+      "messageType": message.messageType,
+      "messageDateTime": message.messageDateTime!.toIso8601String(),
+      "sender": message.sender!.toJson(),
+      "post": message.post!.toJson(),
+      "receiverId": message.receiverId,
     };
   }
 }

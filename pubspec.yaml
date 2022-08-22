@@ -75,10 +75,12 @@ dependencies:
   video_compress: ^3.1.0
   photofilters: ^3.0.1
   collection: ^1.15.0-nullsafety.4
+  cloud_firestore: ^3.1.4
   firebase_analytics: ^9.0.0-dev.3
   google_mobile_ads: ^0.13.6
   huawei_push: ^5.3.0+304
   google_api_availability: ^3.0.1
+  provider: ^6.0.1
   # light_compressor: ^1.2.1
 
 dev_dependencies:

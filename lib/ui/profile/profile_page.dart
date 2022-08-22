@@ -17,6 +17,8 @@ import 'package:groovenation_flutter/ui/social/widgets/social_grid_item.dart';
 import 'package:groovenation_flutter/ui/social/widgets/social_item.dart';
 import 'package:groovenation_flutter/util/chat_page_arguments.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:groovenation_flutter/util/helper_util.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:groovenation_flutter/widgets/custom_refresh_header.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 
@@ -101,19 +103,25 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   _openMessages() async {
-    final ConversationsCubit conversationsCubit =
-        BlocProvider.of<ConversationsCubit>(context);
-
-    Conversation? conversation =
-        await conversationsCubit.getPersonConversation(socialPerson!.personID);
-
-    if (conversation == null)
-      Navigator.pushNamed(context, '/chat',
+    String conversationId = HelperUtil.getConvoID(sharedPrefs.userId!, socialPerson!.personID!);
+    
+    Navigator.pushNamed(context, '/chat',
           arguments: ChatPageArguments(
-              Conversation(null, socialPerson, 0, null), null));
-    else
-      Navigator.pushNamed(context, '/chat',
-          arguments: ChatPageArguments(conversation, null));
+              Conversation(conversationId, socialPerson!.personID!, null), null));
+
+    // final ConversationsCubit conversationsCubit =
+    //     BlocProvider.of<ConversationsCubit>(context);
+
+    // Conversation? conversation =
+    //     await conversationsCubit.getPersonConversation(socialPerson!.personID);
+
+    // if (conversation == null)
+    //   Navigator.pushNamed(context, '/chat',
+    //       arguments: ChatPageArguments(
+    //           Conversation(null, socialPerson, 0, null), null));
+    // else
+    //   Navigator.pushNamed(context, '/chat',
+    //       arguments: ChatPageArguments(conversation, null));
   }
 
   List<SocialPost?>? posts = [];

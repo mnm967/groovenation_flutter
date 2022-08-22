@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:convert';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
@@ -6,11 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:groovenation_flutter/cubit/chat/conversations_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/chat_state.dart';
+import 'package:groovenation_flutter/cubit/state/user_cubit_state.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
+import 'package:groovenation_flutter/services/database.dart';
 import 'package:groovenation_flutter/ui/chat/conversation_item.dart';
 import 'package:groovenation_flutter/util/chat_page_arguments.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:need_resume/need_resume.dart';
+import 'package:provider/provider.dart';
 
 class ConversationsPage extends StatefulWidget {
   @override
@@ -40,20 +44,20 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
     });
   }
 
-  void initConversationsCubit() {
-    isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
-    if (!isUserMessagesLoaded)
-      sharedPrefs.onUserMessagesValueChanged = () {
-        setState(() {
-          isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
-        });
-      };
+  // void initConversationsCubit() {
+  //   isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
+  //   if (!isUserMessagesLoaded)
+  //     sharedPrefs.onUserMessagesValueChanged = () {
+  //       setState(() {
+  //         isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
+  //       });
+  //     };
 
-    final ConversationsCubit conversationsCubit =
-        BlocProvider.of<ConversationsCubit>(context);
+  //   final ConversationsCubit conversationsCubit =
+  //       BlocProvider.of<ConversationsCubit>(context);
 
-    conversationsCubit.getConversations();
-  }
+  //   conversationsCubit.getConversations();
+  // }
 
   @override
   void initState() {
@@ -61,18 +65,19 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
 
     _initScrollController();
     AwesomeNotifications().cancelAll();
-    initConversationsCubit();
+
+    // initConversationsCubit();
   }
 
-  @override
-  void onResume() {
-    super.onResume();
-    final ConversationsCubit conversationsCubit =
-        BlocProvider.of<ConversationsCubit>(context);
+  // @override
+  // void onResume() {
+  //   super.onResume();
+  //   final ConversationsCubit conversationsCubit =
+  //       BlocProvider.of<ConversationsCubit>(context);
 
-    conversationsCubit.getConversations();
-    setState(() {});
-  }
+  //   conversationsCubit.getConversations();
+  //   setState(() {});
+  // }
 
   @override
   void dispose() {
@@ -104,12 +109,37 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
                   child: Padding(
                     padding: EdgeInsets.only(top: 16, left: 16, right: 16),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _title(),
-                        _conversationsList(),
-                      ],
-                    ),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _title(),
+                          BlocBuilder<ConversationsCubit, ChatState>(
+                              builder: (contexts, state) {
+                            if (state is ConversationPersonsLoadingState)
+                              return _circularProgress();
+                            else if (state is ConversationUsersErrorState) {
+                              return _circularProgress();
+                            }
+                            else if (state is ConversationsInitialState) {
+                              return _circularProgress();
+                            }
+                            return StreamBuilder<List<Conversation>>(
+                                stream: Database.streamConversations(
+                                    sharedPrefs.userId.toString()),
+                                builder: (context, snapshot) {
+                                  if (Provider.of<List<Conversation>>(context)
+                                          .length ==
+                                      0) return Container();
+                                  if (!snapshot.hasData && !snapshot.hasError)
+                                    return _circularProgress();
+                                  else if (snapshot.hasError)
+                                    return Container();
+
+                                  return _conversationsList(
+                                      (state as ConversationPersonsLoadedState)
+                                          .persons!);
+                                });
+                          }),
+                        ]),
                   ),
                 ),
               ),
@@ -192,36 +222,29 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
     );
   }
 
-  Widget _conversationsList() {
-    return BlocBuilder<ConversationsCubit, ChatState>(
-        builder: (context, chatState) {
-      if (!isUserMessagesLoaded) {
-        return _loadingView();
-      }
+  Widget _conversationsList(List<SocialPerson> users) {
+    return _convoList(Provider.of<List<Conversation>>(context), users);
+  }
 
-      if (chatState is ConversationsLoadedState) {
-        conversations = chatState.conversations;
-      }
-
-      if (chatState is ConversationsLoadingState && conversations!.isEmpty)
-        _circularProgress();
-
-      return ListView.builder(
-          physics: NeverScrollableScrollPhysics(),
-          shrinkWrap: true,
-          padding: EdgeInsets.only(top: 24, bottom: 8),
-          itemCount: conversations!.length,
-          itemBuilder: (context, index) {
-            return ConversationItem(
-                conversation: conversations![index],
-                onClick: () {
-                  Navigator.pushNamed(context, '/chat',
-                      arguments:
-                          ChatPageArguments(conversations![index], null));
-                  setState(() {});
-                });
-          });
-    });
+  Widget _convoList(
+      List<Conversation> conversations, List<SocialPerson> users) {
+    return ListView.builder(
+        physics: NeverScrollableScrollPhysics(),
+        shrinkWrap: true,
+        padding: EdgeInsets.only(top: 24, bottom: 8),
+        itemCount: conversations.length,
+        itemBuilder: (context, index) {
+          return ConversationItem(
+              conversation: conversations[index],
+              person: users.firstWhere((element) =>
+                  element.personID ==
+                  conversations[index].conversationPersonId),
+              onClick: () {
+                Navigator.pushNamed(context, '/chat',
+                    arguments: ChatPageArguments(conversations[index], null));
+                setState(() {});
+              });
+        });
   }
 
   Widget _circularProgress() {
@@ -236,39 +259,6 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
             strokeWidth: 2.0,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _loadingView() {
-    return Padding(
-      padding: EdgeInsets.only(top: 96),
-      child: Column(
-        children: [
-          Center(
-            child: SizedBox(
-              height: 56,
-              width: 56,
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                strokeWidth: 2.0,
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(top: 36, left: 16, right: 16),
-            child: Center(
-              child: Text(
-                "Loading Messages. Sit tight, this only needs to be done once...",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontFamily: 'Lato',
-                    fontSize: 20),
-              ),
-            ),
-          )
-        ],
       ),
     );
   }

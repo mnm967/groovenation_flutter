@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:groovenation_flutter/models/conversation.dart';
+import 'package:groovenation_flutter/services/database.dart';
 import 'package:groovenation_flutter/ui/screens/app_background_page.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
@@ -28,6 +30,8 @@ import 'package:groovenation_flutter/ui/social/create_post_page.dart';
 import 'package:groovenation_flutter/ui/social/following_page.dart';
 import 'package:groovenation_flutter/util/chat_page_arguments.dart';
 import 'package:groovenation_flutter/util/create_post_arguments.dart';
+import 'package:groovenation_flutter/util/shared_prefs.dart';
+import 'package:provider/provider.dart';
 
 class MainNavigationScreen extends StatelessWidget {
   @override
@@ -79,7 +83,10 @@ class ClubReviewsPageScreen extends StatelessWidget {
 class ConversationsPageScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AppBackgroundPage(child: ConversationsPage());
+    return AppBackgroundPage(child: StreamProvider<List<Conversation>>.value(
+        initialData: [],
+        value: Database.streamConversations(sharedPrefs.userId!),
+    child: ConversationsPage()));
   }
 }
 

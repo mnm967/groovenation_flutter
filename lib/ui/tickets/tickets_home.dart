@@ -171,13 +171,6 @@ class _TicketsHomePageState extends State<TicketsHomePage> {
     return BlocConsumer<TicketsCubit, TicketsState>(
       listener: _blocListener,
       builder: (context, ticketsState) {
-        //TODO Test and Delete
-        // List<Ticket> up = ticketsState is TicketsLoadedState
-        //     ? (ticketsState).tickets.where((ticket) {
-        //         DateTime now = DateTime.now();
-        //         return (now.isBefore(ticket.endDate) && !ticket.isScanned);
-        //       }).toList()
-        //     : [];
 
         if (ticketsState is TicketsLoadedState) {
           upcoming = (ticketsState).tickets!.where((ticket) {

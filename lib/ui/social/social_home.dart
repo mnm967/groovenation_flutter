@@ -145,7 +145,7 @@ class _SocialHomePageState extends State<SocialHomePage>
 
     if (pickedFile == null) return;
 
-    File? croppedFile = await ImageCropper.cropImage(
+    File? croppedFile = await ImageCropper().cropImage(
       sourcePath: pickedFile.path,
       aspectRatioPresets: [
         CropAspectRatioPreset.square,

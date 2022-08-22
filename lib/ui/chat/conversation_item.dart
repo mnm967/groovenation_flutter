@@ -2,14 +2,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/message.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class ConversationItem extends StatelessWidget {
   final Conversation? conversation;
+  final SocialPerson? person;
   final Function? onClick;
 
-  const ConversationItem({Key? key, this.conversation, this.onClick})
+  const ConversationItem({Key? key, this.conversation, this.person, this.onClick})
       : super(key: key);
 
   @override
@@ -40,7 +42,7 @@ class ConversationItem extends StatelessWidget {
                           children: [
                             _profileImage(),
                             _content(),
-                            _newMessageCount()
+                            // _newMessageCount()
                           ],
                         )
                       ],
@@ -63,8 +65,8 @@ class ConversationItem extends StatelessWidget {
         width: 64,
         child: CircleAvatar(
           backgroundColor: Colors.purple.withOpacity(0.5),
-          backgroundImage: CachedNetworkImageProvider(
-              conversation!.conversationPerson!.personProfilePicURL!),
+          // backgroundImage: CachedNetworkImageProvider(
+          //     conversation!.conversationPerson!.personProfilePicURL!),
         ),
       ),
     );
@@ -135,7 +137,8 @@ class ConversationItem extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(left: 4, right: 3),
             child: Text(
-              conversation!.conversationPerson!.personUsername!,
+              "Username",
+              // conversation!.conversationPerson!.personUsername!,
               textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -157,27 +160,27 @@ class ConversationItem extends StatelessWidget {
     );
   }
 
-  Widget _newMessageCount() {
-    return Visibility(
-      visible: conversation!.newMessagesCount! > 0,
-      child: Padding(
-        padding: EdgeInsets.only(right: 5, left: 0),
-        child: SizedBox(
-          height: 24,
-          width: 24,
-          child: CircleAvatar(
-            backgroundColor: Colors.white,
-            child: Container(
-              child: Center(
-                child: Text(
-                  conversation!.newMessagesCount.toString(),
-                  style: TextStyle(fontFamily: 'Lato', fontSize: 16),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Widget _newMessageCount() {
+  //   return Visibility(
+  //     visible: conversation!.newMessagesCount! > 0,
+  //     child: Padding(
+  //       padding: EdgeInsets.only(right: 5, left: 0),
+  //       child: SizedBox(
+  //         height: 24,
+  //         width: 24,
+  //         child: CircleAvatar(
+  //           backgroundColor: Colors.white,
+  //           child: Container(
+  //             child: Center(
+  //               child: Text(
+  //                 conversation!.newMessagesCount.toString(),
+  //                 style: TextStyle(fontFamily: 'Lato', fontSize: 16),
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
 }

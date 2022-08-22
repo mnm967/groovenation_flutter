@@ -5,6 +5,7 @@ import 'package:groovenation_flutter/constants/strings.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/message.dart';
 import 'package:groovenation_flutter/models/saved_message.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/util/network_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hive/hive.dart';
@@ -55,6 +56,29 @@ class ChatRepository {
         sharedPrefs.isUserConversationsLoaded = true;
 
         return conversations;
+      }
+    }
+
+    return null;
+  }
+  
+  Future<List<SocialPerson>?> getConversationPersons() async {
+    var uid = sharedPrefs.userId;
+    List<SocialPerson> persons = [];
+
+    String url = "$API_HOST/conversation/persons/$uid";
+
+    var jsonResponse =
+        await NetworkUtil.executeGetRequest(url, _onRequestError);
+
+    if (jsonResponse != null) {
+      if (jsonResponse['status'] == 1) {
+        for (Map i in jsonResponse['social_people']) {
+          SocialPerson person = SocialPerson.fromJson(i);
+          persons.add(person);
+        }
+
+        return persons;
       }
     }
 

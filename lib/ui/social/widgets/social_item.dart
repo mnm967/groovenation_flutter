@@ -14,6 +14,7 @@ import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/social/widgets/comment_item.dart';
 import 'package:groovenation_flutter/ui/social/dialogs/comments_dialog.dart';
 import 'package:groovenation_flutter/util/chat_page_arguments.dart';
+import 'package:groovenation_flutter/util/helper_util.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:groovenation_flutter/widgets/custom_cache_image_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -115,15 +116,17 @@ class _SocialItemState extends State<SocialItem> {
       context,
       '/social_people_search',
       arguments: (SocialPerson sperson) async {
-        final ConversationsCubit conversationsCubit =
-            BlocProvider.of<ConversationsCubit>(context);
+        // final ConversationsCubit conversationsCubit =
+        //     BlocProvider.of<ConversationsCubit>(context);
 
-        Conversation? conversation =
-            await conversationsCubit.getPersonConversation(sperson.personID);
+        // Conversation? conversation =
+        //     await conversationsCubit.getPersonConversation(sperson.personID);
+        String conversationId =
+            HelperUtil.getConvoID(sharedPrefs.userId!, sperson.personID!);
 
         SocialPostMessage message = SocialPostMessage(
             null,
-            conversation == null ? null : conversation.conversationID,
+            conversationId,
             DateTime.now(),
             SocialPerson(
                 sharedPrefs.userId,
@@ -136,20 +139,27 @@ class _SocialItemState extends State<SocialItem> {
             socialPost,
             sperson.personID);
 
-        if (conversation == null) {
-          Navigator.pushNamed(
-            context,
-            '/chat',
-            arguments: ChatPageArguments(
-                Conversation(null, sperson, 0, null), message),
-          );
-        } else {
-          Navigator.pushNamed(
-            context,
-            '/chat',
-            arguments: ChatPageArguments(conversation, message),
-          );
-        }
+        Navigator.pushNamed(
+          context,
+          '/chat',
+          arguments: ChatPageArguments(
+              Conversation(conversationId, sperson.personID, null), message),
+        );
+
+        // if (conversation == null) {
+        //   Navigator.pushNamed(
+        //     context,
+        //     '/chat',
+        //     arguments: ChatPageArguments(
+        //         Conversation(null, sperson, 0, null), message),
+        //   );
+        // } else {
+        //   Navigator.pushNamed(
+        //     context,
+        //     '/chat',
+        //     arguments: ChatPageArguments(conversation, message),
+        //   );
+        // }
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -15,6 +16,7 @@ import 'package:groovenation_flutter/models/message.dart';
 import 'package:groovenation_flutter/models/saved_message.dart';
 import 'package:groovenation_flutter/models/send_media_task.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
+import 'package:groovenation_flutter/services/database.dart';
 import 'package:groovenation_flutter/ui/chat/message_item.dart';
 import 'package:groovenation_flutter/util/chat_page_arguments.dart';
 import 'package:groovenation_flutter/util/navigation_service.dart';
@@ -44,7 +46,7 @@ class _ChatPageState extends State<ChatPage> {
   final Conversation? conversation;
   Message? messageToSendArg;
   int messagesPage = 0;
-  late ChatCubit safeChatCubit;
+  // late ChatCubit safeChatCubit;
   bool isConversationMuted = false;
 
   _ChatPageState({this.conversation, this.messageToSendArg});
@@ -60,16 +62,11 @@ class _ChatPageState extends State<ChatPage> {
       _sendInitialMessage();
     });
 
-    NavigationService.onChatResumeCallback = () {
-      print("onChatResume");
-      Navigator.popAndPushNamed(context, '/chat',
-          arguments: ChatPageArguments(conversation!, null));
-    };
-
-    // WidgetsBinding.instance!.addObserver(LifecycleEventHandler(
-    // resumeCallBack: () async => Navigator.popAndPushNamed(context, '/chat',
-    //     arguments: ChatPageArguments(conversation!, null)),
-    //     suspendingCallBack: () async {}));
+    // NavigationService.onChatResumeCallback = () {
+    //   print("onChatResume");
+    //   Navigator.popAndPushNamed(context, '/chat',
+    //       arguments: ChatPageArguments(conversation!, null));
+    // };
   }
 
   void _initScrollListener() {
@@ -95,10 +92,10 @@ class _ChatPageState extends State<ChatPage> {
       isConversationMuted =
           sharedPrefs.mutedConversations.contains(conversation!.conversationID);
 
-    final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
-    safeChatCubit = chatCubit;
+    // final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
+    // safeChatCubit = chatCubit;
 
-    chatCubit.getChats(conversation!.conversationID, 0);
+    // chatCubit.getChats(conversation!.conversationID, 0);
 
     checkMediaSending();
   }
@@ -106,8 +103,8 @@ class _ChatPageState extends State<ChatPage> {
   void checkMediaSending() async {
     var box = await Hive.openBox<SendMediaTask>('sendmediatask');
 
-    SendMediaTask? task = box.values.firstWhereOrNull((element) =>
-        element.receiverId == conversation!.conversationPerson!.personID);
+    SendMediaTask? task = box.values.firstWhereOrNull(
+        (element) => element.receiverId == conversation!.conversationPersonId);
 
     if (task != null) {
       setState(() {
@@ -120,9 +117,6 @@ class _ChatPageState extends State<ChatPage> {
   void _sendInitialMessage() {
     if (messageToSendArg != null) {
       switch (messageToSendArg!.messageType) {
-        case MESSAGE_TYPE_MEDIA:
-          //TODO: Send Media Message
-          break;
         case MESSAGE_TYPE_POST:
           _sendSocialPostMessage(messageToSendArg as SocialPostMessage);
           Future.delayed(
@@ -142,14 +136,16 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _sendSocialPostMessage(SocialPostMessage message) {
-    final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
-    chatCubit.sendChat(message);
+    Database.sendMessage(
+        conversation!.conversationID!,
+        sharedPrefs.userId!,
+        conversation!.conversationPersonId!,
+        jsonEncode(SocialPostMessage.getJson(message)),
+        DateTime.now().microsecondsSinceEpoch.toString());
   }
 
   void _sendTextMessage() {
-    final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
-
-    chatCubit.sendChat(TextMessage(
+    TextMessage t = TextMessage(
         null,
         conversation!.conversationID != null
             ? conversation!.conversationID
@@ -164,7 +160,33 @@ class _ChatPageState extends State<ChatPage> {
             false,
             sharedPrefs.userFollowersCount),
         _textEditingController.text,
-        conversation!.conversationPerson!.personID));
+        conversation!.conversationPersonId);
+
+    Database.sendMessage(
+        conversation!.conversationID!,
+        sharedPrefs.userId!,
+        conversation!.conversationPersonId!,
+        jsonEncode(TextMessage.getJson(t)),
+        DateTime.now().microsecondsSinceEpoch.toString());
+
+    // final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
+
+    // chatCubit.sendChat(TextMessage(
+    //     null,
+    //     conversation!.conversationID != null
+    //         ? conversation!.conversationID
+    //         : null,
+    //     DateTime.now(),
+    //     SocialPerson(
+    //         sharedPrefs.userId,
+    //         sharedPrefs.username,
+    //         sharedPrefs.profilePicUrl,
+    //         sharedPrefs.coverPicUrl,
+    //         false,
+    //         false,
+    //         sharedPrefs.userFollowersCount),
+    //     _textEditingController.text,
+    //     conversation!.conversationPerson!.personID));
 
     setState(() {
       _textEditingController.text = "";
@@ -173,10 +195,10 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    NavigationService.onChatResumeCallback = null;
-    try {
-      safeChatCubit.currentConversationId = null;
-    } catch (e) {}
+    // NavigationService.onChatResumeCallback = null;
+    // try {
+    //   safeChatCubit.currentConversationId = null;
+    // } catch (e) {}
 
     _scrollController.dispose();
     _textEditingController.dispose();
@@ -203,9 +225,9 @@ class _ChatPageState extends State<ChatPage> {
             data: {
               "conversationId": conversation!.conversationID!,
               "userId": sharedPrefs.userId!,
-              "receiverId": conversation!.conversationPerson!.personID!,
+              "receiverId": conversation!.conversationPersonId!,
             },
-            tag: conversation!.conversationPerson!.personID),
+            tag: conversation!.conversationPersonId),
       );
 
       setState(() {
@@ -215,8 +237,8 @@ class _ChatPageState extends State<ChatPage> {
       var box = await Hive.openBox<SendMediaTask>('sendmediatask');
 
       SendMediaTask task = SendMediaTask(
-          taskId, _image.path, conversation!.conversationPerson!.personID);
-      box.put(conversation!.conversationPerson!.personID, task);
+          taskId, _image.path, conversation!.conversationPersonId);
+      box.put(conversation!.conversationPersonId, task);
 
       executeUpload(taskId);
     }
@@ -226,8 +248,6 @@ class _ChatPageState extends State<ChatPage> {
     uploader.result.listen((result) async {
       if (result.taskId == taskId) {
         if (result.response == null) return;
-
-        print(result.response!);
 
         Map<String, dynamic> jsonResponse = jsonDecode(result.response!);
 
@@ -239,19 +259,18 @@ class _ChatPageState extends State<ChatPage> {
           var sbox = await Hive.openBox<SendMediaTask>('sendmediatask');
           sbox.delete(nMessage.receiverId);
 
-          try {
-            print("Mounted: " + mounted.toString());
+          Database.sendMessage(
+              conversation!.conversationID!,
+              sharedPrefs.userId!,
+              conversation!.conversationPersonId!,
+              jsonEncode(MediaMessage.getJson(nMessage as MediaMessage)),
+              DateTime.now().microsecondsSinceEpoch.toString());
 
+          try {
             if (mounted)
               setState(() {
                 isSendingMedia = false;
               });
-
-            final ConversationsCubit conversationsCubit =
-                BlocProvider.of<ConversationsCubit>(
-                    NavigationService.navigatorKey.currentContext!);
-
-            conversationsCubit.updateConversation(jsonResponse, false);
 
             return;
           } catch (e) {
@@ -261,7 +280,7 @@ class _ChatPageState extends State<ChatPage> {
           _updateConversationCubit(jsonResponse, nMessage);
         } else {
           var sbox = await Hive.openBox<SendMediaTask>('sendmediatask');
-          sbox.delete(conversation!.conversationPerson!.personID);
+          sbox.delete(conversation!.conversationPersonId);
 
           try {
             if (mounted)
@@ -273,7 +292,7 @@ class _ChatPageState extends State<ChatPage> {
       }
     }, onError: (ex, stacktrace) async {
       var sbox = await Hive.openBox<SendMediaTask>('sendmediatask');
-      sbox.delete(conversation!.conversationPerson!.personID);
+      sbox.delete(conversation!.conversationPersonId);
 
       try {
         if (mounted)
@@ -299,9 +318,6 @@ class _ChatPageState extends State<ChatPage> {
     if (index != -1) {
       Conversation c = conversations[index];
 
-      if (nMessage.sender!.personID != sharedPrefs.userId)
-        c.newMessagesCount = c.newMessagesCount! + 1;
-
       c.latestMessage = nMessage;
       c.latestMessageJSON = Message.toJson(nMessage);
 
@@ -311,32 +327,32 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  void executeBlockUser() async {
-    setState(() {
-      conversation!.conversationPerson!.hasUserBlocked =
-          !conversation!.conversationPerson!.hasUserBlocked!;
-    });
+  // void executeBlockUser() async {
+  //   setState(() {
+  //     conversation!.conversationPerson!.hasUserBlocked =
+  //         !conversation!.conversationPerson!.hasUserBlocked!;
+  //   });
 
-    final UserSocialCubit userSocialCubit =
-        BlocProvider.of<UserSocialCubit>(context);
+  //   final UserSocialCubit userSocialCubit =
+  //       BlocProvider.of<UserSocialCubit>(context);
 
-    bool userBlockSuccess = await userSocialCubit.blockUser(
-        context,
-        conversation!.conversationPerson!,
-        conversation!.conversationPerson!.hasUserBlocked!);
+  //   bool userBlockSuccess = await userSocialCubit.blockUser(
+  //       context,
+  //       conversation!.conversationPerson!,
+  //       conversation!.conversationPersonId);
 
-    if (!userBlockSuccess)
-      setState(() {
-        conversation!.conversationPerson!.hasUserBlocked =
-            !conversation!.conversationPerson!.hasUserBlocked!;
-      });
-  }
+  //   if (!userBlockSuccess)
+  //     setState(() {
+  //       conversation!.conversationPerson!.hasUserBlocked =
+  //           !conversation!.conversationPerson!.hasUserBlocked!;
+  //     });
+  // }
 
   _onPopupMenuItemSelected(item) {
     switch (item) {
       case 'View User':
-        Navigator.pushNamed(context, '/profile_page',
-            arguments: conversation!.conversationPerson);
+        // Navigator.pushNamed(context, '/profile_page',
+        //     arguments: conversation!.conversationPerson);
         break;
       case 'Unmute notifications':
         if (conversation!.conversationID == null) break;
@@ -364,10 +380,10 @@ class _ChatPageState extends State<ChatPage> {
 
         break;
       case 'Block User':
-        executeBlockUser();
+        // executeBlockUser();
         break;
       case 'Unblock User':
-        executeBlockUser();
+        // executeBlockUser();
         break;
       default:
     }
@@ -434,12 +450,10 @@ class _ChatPageState extends State<ChatPage> {
                 width: 48,
                 child: CircleAvatar(
                   backgroundColor: Colors.purple.withOpacity(0.5),
-                  backgroundImage: CachedNetworkImageProvider(
-                      conversation!.conversationPerson!.personProfilePicURL!),
                   child: FlatButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/profile_page',
-                            arguments: conversation!.conversationPerson);
+                        // Navigator.pushNamed(context, '/profile_page',
+                        //     arguments: conversation!.conversationPerson);
                       },
                       child: Container()),
                 ),
@@ -449,7 +463,7 @@ class _ChatPageState extends State<ChatPage> {
               child: Padding(
                 padding: EdgeInsets.only(left: 16),
                 child: Text(
-                  conversation!.conversationPerson!.personUsername!,
+                  conversation!.conversationPersonId!,
                   textAlign: TextAlign.start,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -464,25 +478,12 @@ class _ChatPageState extends State<ChatPage> {
         ),
         automaticallyImplyLeading: false,
         actions: [
-          //TODO: Mute conversations:
-          // IconButton(
-          //     icon: isConversationMuted
-          //         ? Icon(Icons.notifications_on)
-          //         : Icon(Icons.notifications_off),
-          //     onPressed: _changeConversationMuted),
           PopupMenuButton<String>(
               onSelected: _onPopupMenuItemSelected,
               itemBuilder: (BuildContext context) {
                 return [
                   'View User',
-                  //TODO: Mute conversations:
-                  // isConversationMuted
-                  //     ? 'Unmute notifications'
-                  //     : 'Mute notifications',
-                  conversation!.conversationPerson!.hasUserBlocked!
-                      ? 'Unblock User'
-                      : 'Block User',
-                ].map((String choice) {
+                ].map((String choice) {  
                   return PopupMenuItem<String>(
                     value: choice,
                     child: Text(
@@ -548,90 +549,123 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
+  List<DocumentSnapshot> listMessage = [];
+  final ScrollController listScrollController = ScrollController();
+
   Widget _messagesList() {
-    return BlocConsumer<ChatCubit, ChatState>(
-      listener: (context, chatState) {
-        if (chatState is ChatUpdatingState &&
-            conversation!.conversationID != null) {
-          final ConversationsCubit conversationsCubit =
-              BlocProvider.of<ConversationsCubit>(context);
-
-          conversationsCubit.setMessagesRead(conversation!.conversationID);
-        }
-      },
-      builder: (context, chatState) {
-        if (chatState is ChatLoadedState) {
-          if (messagesPage == 0)
-            messages = chatState.messages;
-          else
-            messages!.addAll(chatState.messages!);
-
-          if (conversation!.conversationID == null && messages!.isNotEmpty) {
-            if (messages![0].conversationId != null)
-              conversation!.conversationID = messages![0].conversationId;
-          }
-
-          final ConversationsCubit conversationsCubit =
-              BlocProvider.of<ConversationsCubit>(context);
-          conversationsCubit.setMessagesRead(conversation!.conversationID);
-
-          // _sendInitialMessage();
-        }
-
-        if (chatState is ChatLoadingState && messages!.isEmpty) {
-          return Padding(
-            padding: EdgeInsets.only(top: 64),
-            child: Center(
-              child: SizedBox(
-                height: 56,
-                width: 56,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2.0,
-                ),
-              ),
+    return StreamBuilder(
+      stream: FirebaseFirestore.instance
+          .collection('messages')
+          .doc(conversation!.conversationID!)
+          .collection(conversation!.conversationID!)
+          .orderBy('timestamp', descending: true)
+          .limit(20)
+          .snapshots(),
+      builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
+        if (snapshot.hasData) {
+          listMessage = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(10.0),
+            itemBuilder: (BuildContext context, int index) => MessageItem(
+              isRight: Message.fromFireStore(snapshot.data!.docs[index])
+                      .sender!
+                      .personID ==
+                  sharedPrefs.userId,
+              message: Message.fromFireStore(snapshot.data!.docs[index]),
             ),
+            itemCount: snapshot.data!.docs.length,
+            reverse: true,
+            controller: listScrollController,
           );
+        } else {
+          return Container();
         }
-
-        messages!.forEach((m) => print(
-            m.messageType! + " - " + m.messageDateTime!.toIso8601String()));
-
-        return Column(
-          children: [
-            Visibility(
-              visible: chatState is ChatLoadingState && messages!.isNotEmpty,
-              child: SizedBox(
-                height: 64,
-                width: double.infinity,
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  strokeWidth: 2.0,
-                ),
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                  controller: _scrollController,
-                  reverse: true,
-                  physics: const BouncingScrollPhysics(
-                      parent: AlwaysScrollableScrollPhysics()),
-                  padding:
-                      EdgeInsets.only(top: 16, bottom: 10, left: 16, right: 16),
-                  itemCount: messages!.length,
-                  itemBuilder: (context, index) {
-                    return MessageItem(
-                      isRight: messages![index].sender!.personID ==
-                          sharedPrefs.userId,
-                      message: messages![index],
-                    );
-                  }),
-            ),
-          ],
-        );
       },
     );
   }
+
+  // Widget _messagesList() {
+  //   return BlocConsumer<ChatCubit, ChatState>(
+  //     listener: (context, chatState) {
+  //       if (chatState is ChatUpdatingState &&
+  //           conversation!.conversationID != null) {
+  //         final ConversationsCubit conversationsCubit =
+  //             BlocProvider.of<ConversationsCubit>(context);
+
+  //         conversationsCubit.setMessagesRead(conversation!.conversationID);
+  //       }
+  //     },
+  //     builder: (context, chatState) {
+  //       if (chatState is ChatLoadedState) {
+  //         if (messagesPage == 0)
+  //           messages = chatState.messages;
+  //         else
+  //           messages!.addAll(chatState.messages!);
+
+  //         if (conversation!.conversationID == null && messages!.isNotEmpty) {
+  //           if (messages![0].conversationId != null)
+  //             conversation!.conversationID = messages![0].conversationId;
+  //         }
+
+  //         final ConversationsCubit conversationsCubit =
+  //             BlocProvider.of<ConversationsCubit>(context);
+  //         conversationsCubit.setMessagesRead(conversation!.conversationID);
+  //       }
+
+  //       if (chatState is ChatLoadingState && messages!.isEmpty) {
+  //         return Padding(
+  //           padding: EdgeInsets.only(top: 64),
+  //           child: Center(
+  //             child: SizedBox(
+  //               height: 56,
+  //               width: 56,
+  //               child: CircularProgressIndicator(
+  //                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  //                 strokeWidth: 2.0,
+  //               ),
+  //             ),
+  //           ),
+  //         );
+  //       }
+
+  //       messages!.forEach((m) => print(
+  //           m.messageType! + " - " + m.messageDateTime!.toIso8601String()));
+
+  //       return Column(
+  //         children: [
+  //           Visibility(
+  //             visible: chatState is ChatLoadingState && messages!.isNotEmpty,
+  //             child: SizedBox(
+  //               height: 64,
+  //               width: double.infinity,
+  //               child: CircularProgressIndicator(
+  //                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+  //                 strokeWidth: 2.0,
+  //               ),
+  //             ),
+  //           ),
+  //           Expanded(
+  //             child: ListView.builder(
+  //                 controller: _scrollController,
+  //                 reverse: true,
+  //                 physics: const BouncingScrollPhysics(
+  //                     parent: AlwaysScrollableScrollPhysics()),
+  //                 padding:
+  //                     EdgeInsets.only(top: 16, bottom: 10, left: 16, right: 16),
+  //                 itemCount: messages!.length,
+  //                 itemBuilder: (context, index) {
+  //                   return MessageItem(
+  //                     isRight: messages![index].sender!.personID ==
+  //                         sharedPrefs.userId,
+  //                     message: messages![index],
+  //                   );
+  //                 }),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _sendingMediaText() {
     return Row(

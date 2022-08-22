@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:groovenation_flutter/constants/enums.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/message.dart';
+import 'package:groovenation_flutter/models/social_person.dart';
 
 abstract class ChatState extends Equatable {}
 
@@ -56,6 +57,29 @@ class ChatLoadedState extends ChatState {
 
 class ChatErrorState extends ChatState {
   ChatErrorState(this.error);
+
+  final AppError error;
+
+  @override
+  List<Object> get props => [error];
+}
+
+class ConversationPersonsLoadingState extends ChatState {
+  @override
+  List<Object> get props => [];
+}
+
+class ConversationPersonsLoadedState extends ChatState {
+  final List<SocialPerson>? persons;
+
+  ConversationPersonsLoadedState({this.persons});
+
+  @override
+  List<Object?> get props => [persons];
+}
+
+class ConversationPersonsErrorState extends ChatState {
+  ConversationPersonsErrorState(this.error);
 
   final AppError error;
 

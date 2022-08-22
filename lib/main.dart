@@ -1,4 +1,5 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -16,12 +17,10 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
-  print("Message Received - Back");
-  print("Notification: " + message.notification.toString());
-  print(message.data);
 
-  if (message.data.toString() != "{}")
+  if (message.data.toString() != "{}") {
     MessageHandler.handleMessage(message.data);
+  }
 }
 
 void backgroundHandler() {
@@ -69,6 +68,8 @@ Future _initialize() async {
   ]);
 
   await Firebase.initializeApp();
+
+  // FirebaseFirestore.instance.useFirestoreEmulator('10.76.73.111', 8081);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(

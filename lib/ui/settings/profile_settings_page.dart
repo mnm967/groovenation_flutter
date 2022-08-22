@@ -57,7 +57,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
   Future<File?> _cropImage(
       String imagePath, CropAspectRatioPreset ratio) async {
-    return await ImageCropper.cropImage(
+    return await ImageCropper().cropImage(
       sourcePath: imagePath,
       aspectRatioPresets: [ratio],
       androidUiSettings: AndroidUiSettings(

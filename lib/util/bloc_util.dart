@@ -24,8 +24,8 @@ class BlocUtil {
         BlocProvider.of<ProfileSocialCubit>(context);
     final ClubMomentsCubit clubMomentsCubit =
         BlocProvider.of<ClubMomentsCubit>(context);
-    final ConversationsCubit conversationsCubit =
-        BlocProvider.of<ConversationsCubit>(context);
+    // final ConversationsCubit conversationsCubit =
+    //     BlocProvider.of<ConversationsCubit>(context);
 
     followingSocialCubit.updateSocialPersonIfExists(person);
     trendingSocialCubit.updateSocialPersonIfExists(person);
@@ -33,7 +33,7 @@ class BlocUtil {
     userSocialCubit.updateSocialPersonIfExists(person);
     profileSocialCubit.updateSocialPersonIfExists(person);
     clubMomentsCubit.updateSocialPersonIfExists(person);
-    conversationsCubit.updateSocialPersonIfExists(person);
+    // conversationsCubit.updateSocialPersonIfExists(person);
   }
 
   static void updateSocialPost(BuildContext context, SocialPost post) {

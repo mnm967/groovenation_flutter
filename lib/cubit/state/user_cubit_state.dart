@@ -62,3 +62,33 @@ class SocialUsersSearchErrorState extends UserState {
   @override
   List<Object> get props => [error];
 }
+
+class ConversationUsersLoadingState extends UserState {
+  @override
+  List<Object> get props => [];
+}
+
+class ConversationUsersUpdatingState extends UserState {
+  @override
+  List<Object> get props => [];
+}
+
+class ConversationUsersLoadedState extends UserState {
+  final List<SocialPerson>? socialPeople;
+
+  ConversationUsersLoadedState({
+    this.socialPeople,
+  });
+
+  @override
+  List<Object?> get props => [socialPeople];
+}
+
+class ConversationUsersErrorState extends UserState {
+  ConversationUsersErrorState(this.error);
+
+  final AppError error;
+
+  @override
+  List<Object> get props => [error];
+}
