@@ -96,32 +96,21 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() {
       socialPerson!.isUserFollowing = !socialPerson!.isUserFollowing!;
-      socialPerson!.followersCount = socialPerson!.isUserFollowing! ? (socialPerson!.followersCount! + 1) : (socialPerson!.followersCount! - 1);
+      socialPerson!.followersCount = socialPerson!.isUserFollowing!
+          ? (socialPerson!.followersCount! + 1)
+          : (socialPerson!.followersCount! - 1);
     });
 
     profileSocialCubit.updateUserFollowing(context, socialPerson!);
   }
 
   _openMessages() async {
-    String conversationId = HelperUtil.getConvoID(sharedPrefs.userId!, socialPerson!.personID!);
-    
+    String conversationId =
+        HelperUtil.getConvoID(sharedPrefs.userId!, socialPerson!.personID!);
+
     Navigator.pushNamed(context, '/chat',
-          arguments: ChatPageArguments(
-              Conversation(conversationId, socialPerson!.personID!, null), null));
-
-    // final ConversationsCubit conversationsCubit =
-    //     BlocProvider.of<ConversationsCubit>(context);
-
-    // Conversation? conversation =
-    //     await conversationsCubit.getPersonConversation(socialPerson!.personID);
-
-    // if (conversation == null)
-    //   Navigator.pushNamed(context, '/chat',
-    //       arguments: ChatPageArguments(
-    //           Conversation(null, socialPerson, 0, null), null));
-    // else
-    //   Navigator.pushNamed(context, '/chat',
-    //       arguments: ChatPageArguments(conversation, null));
+        arguments: ChatPageArguments(
+            Conversation(conversationId, socialPerson!.personID!, null), null));
   }
 
   List<SocialPost?>? posts = [];
@@ -454,8 +443,7 @@ class _ProfilePageState extends State<ProfilePage> {
               decoration: BoxDecoration(
                   color: Colors.deepPurple,
                   borderRadius: BorderRadius.circular(9)),
-              child: FlatButton(
-                padding: EdgeInsets.zero,
+              child: TextButton(
                 onPressed: () {
                   _scrollController.animateTo(
                     0.0,
@@ -525,11 +513,13 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
         children: [
-          FlatButton(
+          TextButton(
             onPressed: () {
               Navigator.pop(context);
             },
-            padding: EdgeInsets.only(right: 0, top: 32, bottom: 24),
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.only(right: 0, top: 32, bottom: 24),
+            ),
             child: Icon(
               Icons.arrow_back_ios,
               size: 28,
@@ -651,8 +641,7 @@ class _ProfilePageState extends State<ProfilePage> {
               border: Border.all(width: 1.0, color: Colors.white),
               borderRadius: BorderRadius.all(Radius.circular(10.0)),
             ),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _openMessages();
               },
@@ -672,8 +661,7 @@ class _ProfilePageState extends State<ProfilePage> {
               color: socialPerson!.isUserFollowing! ? Colors.white : null,
               borderRadius: BorderRadius.all(Radius.circular(10.0)),
             ),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _changeUserFollowingStatus();
               },

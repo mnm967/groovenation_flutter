@@ -52,7 +52,7 @@ class _ChangePasswordSettingsPageState
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("Okay"),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -80,7 +80,8 @@ class _ChangePasswordSettingsPageState
   _hideLoadingDialog() {
     if (_isLoadingVisible) {
       _isLoadingVisible = false;
-      Navigator.of(_loadingDialogKey.currentContext!, rootNavigator: true).pop();
+      Navigator.of(_loadingDialogKey.currentContext!, rootNavigator: true)
+          .pop();
     }
   }
 
@@ -204,7 +205,7 @@ class _ChangePasswordSettingsPageState
           border: Border.all(color: Colors.white),
           borderRadius: BorderRadius.all(Radius.circular(10.0)),
         ),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () => _saveNewPassword(),
           child: Container(
             height: 64,
@@ -234,8 +235,10 @@ class _ChangePasswordSettingsPageState
             decoration: BoxDecoration(
                 color: Colors.deepPurple,
                 borderRadius: BorderRadius.circular(900)),
-            child: FlatButton(
-              padding: EdgeInsets.only(left: 8),
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 8),
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },

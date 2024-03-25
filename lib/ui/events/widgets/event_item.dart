@@ -28,11 +28,10 @@ class EventItem extends StatelessWidget {
       clipBehavior: Clip.antiAliasWithSaveLayer,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12.0))),
-      child: FlatButton(
+      child: TextButton(
         onPressed: () {
           Navigator.pushNamed(context, '/event', arguments: event);
         },
-        padding: EdgeInsets.zero,
         child: Wrap(
           children: [
             Column(
@@ -69,8 +68,7 @@ class EventItem extends StatelessWidget {
                   decoration: BoxDecoration(
                       color: Colors.deepPurple,
                       borderRadius: BorderRadius.circular(9)),
-                  child: FlatButton(
-                    padding: EdgeInsets.zero,
+                  child: TextButton(
                     onPressed: () => _changeFavourite(context),
                     child: Icon(
                       isFavourite! ? Icons.favorite : Icons.favorite_border,

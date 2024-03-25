@@ -49,7 +49,7 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
       height: (expandedHeight - 36),
       child: Stack(
         fit: StackFit.expand,
-        overflow: Overflow.visible,
+        
         children: [
           Positioned.fill(
             child: CachedNetworkImage(
@@ -117,8 +117,7 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
               color: Colors.deepPurple,
               borderRadius: BorderRadius.circular(9),
             ),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () => onFavButtonClick(),
               child: Icon(
                 isEventLiked ? Icons.favorite_outlined : Icons.favorite_border,
@@ -147,8 +146,10 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
               color: Colors.deepPurple,
               borderRadius: BorderRadius.circular(90),
             ),
-            child: FlatButton(
-              padding: EdgeInsets.only(left: 8),
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 8),
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -198,8 +199,7 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
           shape: CircleBorder(),
           color: Colors.deepPurple,
           child: Container(
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 MapsLauncher.launchCoordinates(latitude!, longitude!);
               },
@@ -228,8 +228,7 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
           shape: CircleBorder(),
           color: Colors.deepPurple,
           child: Container(
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: onClubButtonClick as void Function()?,
               child: Center(
                 child: Icon(
@@ -256,8 +255,7 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
           shape: CircleBorder(),
           color: Colors.deepPurple,
           child: Container(
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () async {
                 await showDialog(
                   context: context,
@@ -291,8 +289,7 @@ class EventCollapsingAppBar extends SliverPersistentHeaderDelegate {
           shape: CircleBorder(),
           color: Colors.deepPurple,
           child: Container(
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: onTicketButtonClick as void Function()?,
               child: Center(
                 child: FaIcon(

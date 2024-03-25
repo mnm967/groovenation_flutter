@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:groovenation_flutter/cubit/chat/chat_cubit.dart';
 import 'package:groovenation_flutter/cubit/chat/conversations_cubit.dart';
 import 'package:groovenation_flutter/cubit/club/club_events_cubit.dart';
 import 'package:groovenation_flutter/cubit/club/club_moments_cubit.dart';
@@ -65,9 +64,6 @@ class GroovenationApp extends StatelessWidget {
           BlocProvider(
             create: (context) => ConversationsCubit(ChatRepository()),
           ),
-          // BlocProvider(
-          //   create: (context) => ChatCubit(context, ChatRepository()),
-          // ),
           BlocProvider(
             create: (context) => ClubReviewsCubit(ClubsRepository()),
           ),

@@ -338,10 +338,12 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
     return Padding(
       padding: EdgeInsets.only(top: 16, right: 16, left: 16),
       child: Center(
-        child: FlatButton(
-          color: Colors.white,
-          padding: EdgeInsets.fromLTRB(32, 16, 32, 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: TextButton(
+          style: TextButton.styleFrom(
+            backgroundColor: Colors.white,
+            padding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
           onPressed: () {
             final TicketPurchaseCubit ticketPurchaseCubit =
                 BlocProvider.of<TicketPurchaseCubit>(context);
@@ -545,7 +547,7 @@ class _TicketPurchaseDialogState extends State<TicketPurchaseDialog> {
             color: Colors.white,
             borderRadius: BorderRadius.all(Radius.circular(10.0)),
           ),
-          child: FlatButton(
+          child: TextButton(
             onPressed: () => _makePayment(context),
             child: Container(
               height: 56,

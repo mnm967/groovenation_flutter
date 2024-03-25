@@ -12,10 +12,6 @@ class MessageItem extends StatelessWidget {
 
   const MessageItem({Key? key, this.isRight, this.message}) : super(key: key);
 
-  void _showMessageOptions() {
-    //TODO: Implement Method
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -47,9 +43,6 @@ class MessageItem extends StatelessWidget {
                             ),
                           );
                         }
-                      },
-                      onLongPress: () {
-                        _showMessageOptions();
                       },
                       child: Container(
                         child: Column(

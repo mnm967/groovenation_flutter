@@ -38,14 +38,14 @@ class LocationUtil {
     if (sharedPrefs.defaultLat != null)
       return sharedPrefs.defaultLat!;
     else
-      return -26.07598127940465; //Default: Johannesburg
+      return 39.946581; //Default
   }
 
   double getDefaultCityLon() {
     if (sharedPrefs.defaultLon != null)
       return sharedPrefs.defaultLon!;
     else
-      return 27.91605082698467; //Default: Johannesburg
+      return 121.755806; //Default
   }
 }
 

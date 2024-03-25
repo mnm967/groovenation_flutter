@@ -139,11 +139,6 @@ class MainAppPageState extends State<MainAppPage>
                 return _buildPageTransition(EventPageScreen(), settings);
               case '/club':
                 return _buildPageTransition(ClubPageScreen(), settings);
-              case '/conversations':
-                return _buildPageTransition(
-                    ConversationsPageScreen(), settings);
-              case '/chat':
-                return _buildPageTransition(ChatPageScreen(), settings);
               case '/signup':
                 return _buildPageTransition(SignUpPageScreen(), settings);
               case '/search':
@@ -292,11 +287,10 @@ class MainAppPageState extends State<MainAppPage>
             Radius.circular(12.0),
           ),
         ),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () {
             _controller.animateBack(-4.0);
           },
-          padding: EdgeInsets.zero,
           child: Wrap(children: [
             Column(
               children: [

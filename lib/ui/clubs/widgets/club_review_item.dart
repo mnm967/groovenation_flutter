@@ -25,13 +25,15 @@ class _ReviewItemState extends State<ReviewItem> {
 
   @override
   Widget build(BuildContext context) {
-    return FlatButton(
+    return TextButton(
       onPressed: () {
         setState(() {
           currentMaxLines = !currentMaxLines;
         });
       },
-      padding: EdgeInsets.only(top: 16, bottom: 16),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.only(top: 16, bottom: 16),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.max,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,7 +50,7 @@ class _ReviewItemState extends State<ReviewItem> {
         backgroundColor: Colors.purple.withOpacity(0.5),
         backgroundImage:
             CachedNetworkImageProvider(review.person!.personProfilePicURL!),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () {},
           child: Container(),
         ),

@@ -1,4 +1,3 @@
-import 'package:bloc/bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:groovenation_flutter/cubit/social/social_comments_cubit.dart';
@@ -36,16 +35,6 @@ class SocialCommentsLikeCubit extends Cubit<SocialCommentsState> {
 
       emit(SocialCommentLikeSuccessState());
     } on SocialException catch (e) {
-      //TODO Test and Delete:
-      //Undo changes and emit
-      if (comment.hasUserLiked!) {
-        comment.hasUserLiked = false;
-        comment.likesAmount = comment.likesAmount! - 1;
-      } else {
-        comment.hasUserLiked = true;
-        comment.likesAmount = comment.likesAmount! + 1;
-      }
-
       emit(SocialCommentLikeUpdatingState(comment));
 
       final SocialCommentsCubit socialCommentsCubit =

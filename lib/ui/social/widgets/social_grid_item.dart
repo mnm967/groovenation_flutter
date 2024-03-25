@@ -56,8 +56,7 @@ class _SocialGridItemState extends State<SocialGridItem> {
   Widget _gridSocialVideo() {
     return AspectRatio(
       aspectRatio: 1.0,
-      child: FlatButton(
-        padding: EdgeInsets.zero,
+      child: TextButton(
         onPressed: () {
           _showSocialDialog(context);
         },

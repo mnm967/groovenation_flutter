@@ -44,40 +44,13 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
     });
   }
 
-  // void initConversationsCubit() {
-  //   isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
-  //   if (!isUserMessagesLoaded)
-  //     sharedPrefs.onUserMessagesValueChanged = () {
-  //       setState(() {
-  //         isUserMessagesLoaded = sharedPrefs.isUserMessagesLoaded;
-  //       });
-  //     };
-
-  //   final ConversationsCubit conversationsCubit =
-  //       BlocProvider.of<ConversationsCubit>(context);
-
-  //   conversationsCubit.getConversations();
-  // }
-
   @override
   void initState() {
     super.initState();
 
     _initScrollController();
     AwesomeNotifications().cancelAll();
-
-    // initConversationsCubit();
   }
-
-  // @override
-  // void onResume() {
-  //   super.onResume();
-  //   final ConversationsCubit conversationsCubit =
-  //       BlocProvider.of<ConversationsCubit>(context);
-
-  //   conversationsCubit.getConversations();
-  //   setState(() {});
-  // }
 
   @override
   void dispose() {
@@ -123,7 +96,7 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
                               return _circularProgress();
                             }
                             return StreamBuilder<List<Conversation>>(
-                                stream: Database.streamConversations(
+                                stream: ChatDatabase.streamConversations(
                                     sharedPrefs.userId.toString()),
                                 builder: (context, snapshot) {
                                   if (Provider.of<List<Conversation>>(context)
@@ -165,8 +138,7 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
             decoration: BoxDecoration(
                 color: Colors.deepPurple.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(9)),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _scrollController.animateTo(
                   0.0,
@@ -198,8 +170,10 @@ class _ConversationsPageState extends ResumableState<ConversationsPage> {
               decoration: BoxDecoration(
                   color: Colors.deepPurple,
                   borderRadius: BorderRadius.circular(900)),
-              child: FlatButton(
-                padding: EdgeInsets.only(left: 9),
+              child: TextButton(
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.only(left: 9),
+                ),
                 onPressed: () {
                   Navigator.pop(context);
                 },

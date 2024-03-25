@@ -103,9 +103,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {}
   }
 
-  _openForgotPassword() {
-    //TODO: Forgot Password Screen
-  }
+  _openForgotPassword() {}
 
   _executeLogin() {
     _showLoadingDialog(context);
@@ -140,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("Okay"),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -343,7 +341,7 @@ class _LoginPageState extends State<LoginPage> {
             borderRadius: BorderRadius.circular(10.0),
           ),
           semanticContainer: true,
-          child: FlatButton(
+          child: TextButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _executeLogin();
@@ -453,7 +451,7 @@ class _LoginPageState extends State<LoginPage> {
                 borderRadius: BorderRadius.circular(8.0),
               ),
               semanticContainer: true,
-              child: FlatButton(
+              child: TextButton(
                 onPressed:
                     isFacebook ? () => _loginFacebook() : () => _loginGoogle(),
                 child: Padding(

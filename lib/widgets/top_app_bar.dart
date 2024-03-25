@@ -16,8 +16,7 @@ class TopAppBar extends StatelessWidget {
       children: [
         Padding(
           padding: EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
-          child: FlatButton(
-            padding: EdgeInsets.zero,
+          child: TextButton(
             onPressed: () => _openSearchPage(context),
             child: Container(
               width: double.infinity,

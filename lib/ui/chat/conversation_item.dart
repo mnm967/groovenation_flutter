@@ -24,9 +24,8 @@ class ConversationItem extends StatelessWidget {
         clipBehavior: Clip.antiAliasWithSaveLayer,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(12.0))),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () => onClick!(),
-          padding: EdgeInsets.zero,
           child: Wrap(
             children: [
               Column(
@@ -42,7 +41,6 @@ class ConversationItem extends StatelessWidget {
                           children: [
                             _profileImage(),
                             _content(),
-                            // _newMessageCount()
                           ],
                         )
                       ],
@@ -65,8 +63,8 @@ class ConversationItem extends StatelessWidget {
         width: 64,
         child: CircleAvatar(
           backgroundColor: Colors.purple.withOpacity(0.5),
-          // backgroundImage: CachedNetworkImageProvider(
-          //     conversation!.conversationPerson!.personProfilePicURL!),
+          backgroundImage: CachedNetworkImageProvider(
+              conversation!.person!.personProfilePicURL!),
         ),
       ),
     );
@@ -137,8 +135,7 @@ class ConversationItem extends StatelessWidget {
           child: Padding(
             padding: EdgeInsets.only(left: 4, right: 3),
             child: Text(
-              "Username",
-              // conversation!.conversationPerson!.personUsername!,
+              person!.personUsername!,
               textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -159,28 +156,4 @@ class ConversationItem extends StatelessWidget {
       ],
     );
   }
-
-  // Widget _newMessageCount() {
-  //   return Visibility(
-  //     visible: conversation!.newMessagesCount! > 0,
-  //     child: Padding(
-  //       padding: EdgeInsets.only(right: 5, left: 0),
-  //       child: SizedBox(
-  //         height: 24,
-  //         width: 24,
-  //         child: CircleAvatar(
-  //           backgroundColor: Colors.white,
-  //           child: Container(
-  //             child: Center(
-  //               child: Text(
-  //                 conversation!.newMessagesCount.toString(),
-  //                 style: TextStyle(fontFamily: 'Lato', fontSize: 16),
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
 }

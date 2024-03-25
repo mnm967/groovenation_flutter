@@ -336,8 +336,7 @@ class _SocialPeopleSearchPageState extends State<SocialPeopleSearchPage>
             decoration: BoxDecoration(
                 color: Colors.deepPurple.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(9)),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: _scrollToTop,
               child: Icon(
                 Icons.keyboard_arrow_up,

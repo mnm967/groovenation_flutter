@@ -130,7 +130,7 @@ const String NEW_FOLLOWER_NOTIFICATION_TITLE = "You've gained a new follower";
 
 //Links
 
-const String TERMS_AND_CONDITIONS_LINK = "https://lithiumtech.co.za";
-const String PRIVACY_POLICY_LINK = "https://lithiumtech.co.za";
-const String GROOVENATION_WEBSITE_LINK = "https://lithiumtech.co.za/GROOVENATION";
+const String TERMS_AND_CONDITIONS_LINK = "https://google.com";
+const String PRIVACY_POLICY_LINK = "https://google.com";
+const String GROOVENATION_WEBSITE_LINK = "https://google.com";
 

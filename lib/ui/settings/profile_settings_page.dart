@@ -216,7 +216,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           border: Border.all(color: Colors.white),
           borderRadius: BorderRadius.all(Radius.circular(10.0)),
         ),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () => _saveProfileChanges(),
           child: Container(
             height: 64,
@@ -245,7 +245,7 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
           border: Border.all(color: Colors.white),
           borderRadius: BorderRadius.all(Radius.circular(10.0)),
         ),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () {
             Navigator.pushNamed(context, '/change_password_settings');
           },
@@ -267,9 +267,8 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
 
   Widget _profileImage() {
     return Align(
-      child: FlatButton(
+      child: TextButton(
         onPressed: () => _chooseProfileImage(),
-        padding: EdgeInsets.zero,
         child: SizedBox(
           height: 116,
           width: 116,
@@ -437,8 +436,10 @@ class _ProfileSettingsPageState extends State<ProfileSettingsPage> {
             decoration: BoxDecoration(
                 color: Colors.deepPurple,
                 borderRadius: BorderRadius.circular(900)),
-            child: FlatButton(
-              padding: EdgeInsets.only(left: 8),
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 8),
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },

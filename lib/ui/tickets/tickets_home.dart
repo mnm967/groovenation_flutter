@@ -60,8 +60,7 @@ class _TicketsHomePageState extends State<TicketsHomePage> {
       children: [
         Padding(
           padding: EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 16),
-          child: FlatButton(
-            padding: EdgeInsets.zero,
+          child: TextButton(
             onPressed: () {
               openSearchPage();
             },
@@ -171,7 +170,6 @@ class _TicketsHomePageState extends State<TicketsHomePage> {
     return BlocConsumer<TicketsCubit, TicketsState>(
       listener: _blocListener,
       builder: (context, ticketsState) {
-
         if (ticketsState is TicketsLoadedState) {
           upcoming = (ticketsState).tickets!.where((ticket) {
             DateTime now = DateTime.now();

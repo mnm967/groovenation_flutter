@@ -7,10 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:groovenation_flutter/constants/strings.dart';
-import 'package:groovenation_flutter/cubit/chat/chat_cubit.dart';
-import 'package:groovenation_flutter/cubit/chat/conversations_cubit.dart';
 import 'package:groovenation_flutter/cubit/social/social_cubit.dart';
-import 'package:groovenation_flutter/cubit/state/chat_state.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 import 'package:groovenation_flutter/models/message.dart';
 import 'package:groovenation_flutter/models/saved_message.dart';
@@ -19,11 +16,9 @@ import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/services/database.dart';
 import 'package:groovenation_flutter/ui/chat/message_item.dart';
 import 'package:groovenation_flutter/util/chat_page_arguments.dart';
-import 'package:groovenation_flutter/util/navigation_service.dart';
 import 'package:groovenation_flutter/util/shared_prefs.dart';
 import 'package:hive/hive.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_uploader/flutter_uploader.dart';
 
 class ChatPage extends StatefulWidget {
@@ -46,7 +41,6 @@ class _ChatPageState extends State<ChatPage> {
   final Conversation? conversation;
   Message? messageToSendArg;
   int messagesPage = 0;
-  // late ChatCubit safeChatCubit;
   bool isConversationMuted = false;
 
   _ChatPageState({this.conversation, this.messageToSendArg});
@@ -61,12 +55,6 @@ class _ChatPageState extends State<ChatPage> {
     WidgetsBinding.instance!.addPostFrameCallback((timeStamp) {
       _sendInitialMessage();
     });
-
-    // NavigationService.onChatResumeCallback = () {
-    //   print("onChatResume");
-    //   Navigator.popAndPushNamed(context, '/chat',
-    //       arguments: ChatPageArguments(conversation!, null));
-    // };
   }
 
   void _initScrollListener() {
@@ -91,11 +79,6 @@ class _ChatPageState extends State<ChatPage> {
     if (conversation!.conversationID != null)
       isConversationMuted =
           sharedPrefs.mutedConversations.contains(conversation!.conversationID);
-
-    // final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
-    // safeChatCubit = chatCubit;
-
-    // chatCubit.getChats(conversation!.conversationID, 0);
 
     checkMediaSending();
   }
@@ -136,7 +119,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _sendSocialPostMessage(SocialPostMessage message) {
-    Database.sendMessage(
+    ChatDatabase.sendMessage(
         conversation!.conversationID!,
         sharedPrefs.userId!,
         conversation!.conversationPersonId!,
@@ -162,31 +145,12 @@ class _ChatPageState extends State<ChatPage> {
         _textEditingController.text,
         conversation!.conversationPersonId);
 
-    Database.sendMessage(
+    ChatDatabase.sendMessage(
         conversation!.conversationID!,
         sharedPrefs.userId!,
         conversation!.conversationPersonId!,
         jsonEncode(TextMessage.getJson(t)),
         DateTime.now().microsecondsSinceEpoch.toString());
-
-    // final ChatCubit chatCubit = BlocProvider.of<ChatCubit>(context);
-
-    // chatCubit.sendChat(TextMessage(
-    //     null,
-    //     conversation!.conversationID != null
-    //         ? conversation!.conversationID
-    //         : null,
-    //     DateTime.now(),
-    //     SocialPerson(
-    //         sharedPrefs.userId,
-    //         sharedPrefs.username,
-    //         sharedPrefs.profilePicUrl,
-    //         sharedPrefs.coverPicUrl,
-    //         false,
-    //         false,
-    //         sharedPrefs.userFollowersCount),
-    //     _textEditingController.text,
-    //     conversation!.conversationPerson!.personID));
 
     setState(() {
       _textEditingController.text = "";
@@ -195,11 +159,6 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   void dispose() {
-    // NavigationService.onChatResumeCallback = null;
-    // try {
-    //   safeChatCubit.currentConversationId = null;
-    // } catch (e) {}
-
     _scrollController.dispose();
     _textEditingController.dispose();
     super.dispose();
@@ -259,7 +218,7 @@ class _ChatPageState extends State<ChatPage> {
           var sbox = await Hive.openBox<SendMediaTask>('sendmediatask');
           sbox.delete(nMessage.receiverId);
 
-          Database.sendMessage(
+          ChatDatabase.sendMessage(
               conversation!.conversationID!,
               sharedPrefs.userId!,
               conversation!.conversationPersonId!,
@@ -327,32 +286,29 @@ class _ChatPageState extends State<ChatPage> {
     }
   }
 
-  // void executeBlockUser() async {
-  //   setState(() {
-  //     conversation!.conversationPerson!.hasUserBlocked =
-  //         !conversation!.conversationPerson!.hasUserBlocked!;
-  //   });
+  void executeBlock(bool block) async {
+    setState(() {
+      conversation!.person!.hasUserBlocked = block;
+    });
 
-  //   final UserSocialCubit userSocialCubit =
-  //       BlocProvider.of<UserSocialCubit>(context);
+    final UserSocialCubit userSocialCubit =
+        BlocProvider.of<UserSocialCubit>(context);
 
-  //   bool userBlockSuccess = await userSocialCubit.blockUser(
-  //       context,
-  //       conversation!.conversationPerson!,
-  //       conversation!.conversationPersonId);
+    bool userBlockSuccess = await userSocialCubit.blockUser(
+        context, conversation!.person!, conversation!.person!.hasUserBlocked!);
 
-  //   if (!userBlockSuccess)
-  //     setState(() {
-  //       conversation!.conversationPerson!.hasUserBlocked =
-  //           !conversation!.conversationPerson!.hasUserBlocked!;
-  //     });
-  // }
+    if (!userBlockSuccess)
+      setState(() {
+        conversation!.person!.hasUserBlocked =
+            !conversation!.person!.hasUserBlocked!;
+      });
+  }
 
   _onPopupMenuItemSelected(item) {
     switch (item) {
       case 'View User':
-        // Navigator.pushNamed(context, '/profile_page',
-        //     arguments: conversation!.conversationPerson);
+        Navigator.pushNamed(context, '/profile_page',
+            arguments: conversation!.person);
         break;
       case 'Unmute notifications':
         if (conversation!.conversationID == null) break;
@@ -380,10 +336,10 @@ class _ChatPageState extends State<ChatPage> {
 
         break;
       case 'Block User':
-        // executeBlockUser();
+        executeBlock(true);
         break;
       case 'Unblock User':
-        // executeBlockUser();
+        executeBlock(false);
         break;
       default:
     }
@@ -431,7 +387,6 @@ class _ChatPageState extends State<ChatPage> {
       child: AppBar(
         toolbarHeight: 72,
         titleSpacing: 0,
-        brightness: Brightness.light,
         title: Row(
           children: [
             Padding(
@@ -450,10 +405,10 @@ class _ChatPageState extends State<ChatPage> {
                 width: 48,
                 child: CircleAvatar(
                   backgroundColor: Colors.purple.withOpacity(0.5),
-                  child: FlatButton(
+                  child: TextButton(
                       onPressed: () {
-                        // Navigator.pushNamed(context, '/profile_page',
-                        //     arguments: conversation!.conversationPerson);
+                        Navigator.pushNamed(context, '/profile_page',
+                            arguments: conversation!.person);
                       },
                       child: Container()),
                 ),
@@ -483,7 +438,7 @@ class _ChatPageState extends State<ChatPage> {
               itemBuilder: (BuildContext context) {
                 return [
                   'View User',
-                ].map((String choice) {  
+                ].map((String choice) {
                   return PopupMenuItem<String>(
                     value: choice,
                     child: Text(
@@ -583,89 +538,6 @@ class _ChatPageState extends State<ChatPage> {
       },
     );
   }
-
-  // Widget _messagesList() {
-  //   return BlocConsumer<ChatCubit, ChatState>(
-  //     listener: (context, chatState) {
-  //       if (chatState is ChatUpdatingState &&
-  //           conversation!.conversationID != null) {
-  //         final ConversationsCubit conversationsCubit =
-  //             BlocProvider.of<ConversationsCubit>(context);
-
-  //         conversationsCubit.setMessagesRead(conversation!.conversationID);
-  //       }
-  //     },
-  //     builder: (context, chatState) {
-  //       if (chatState is ChatLoadedState) {
-  //         if (messagesPage == 0)
-  //           messages = chatState.messages;
-  //         else
-  //           messages!.addAll(chatState.messages!);
-
-  //         if (conversation!.conversationID == null && messages!.isNotEmpty) {
-  //           if (messages![0].conversationId != null)
-  //             conversation!.conversationID = messages![0].conversationId;
-  //         }
-
-  //         final ConversationsCubit conversationsCubit =
-  //             BlocProvider.of<ConversationsCubit>(context);
-  //         conversationsCubit.setMessagesRead(conversation!.conversationID);
-  //       }
-
-  //       if (chatState is ChatLoadingState && messages!.isEmpty) {
-  //         return Padding(
-  //           padding: EdgeInsets.only(top: 64),
-  //           child: Center(
-  //             child: SizedBox(
-  //               height: 56,
-  //               width: 56,
-  //               child: CircularProgressIndicator(
-  //                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-  //                 strokeWidth: 2.0,
-  //               ),
-  //             ),
-  //           ),
-  //         );
-  //       }
-
-  //       messages!.forEach((m) => print(
-  //           m.messageType! + " - " + m.messageDateTime!.toIso8601String()));
-
-  //       return Column(
-  //         children: [
-  //           Visibility(
-  //             visible: chatState is ChatLoadingState && messages!.isNotEmpty,
-  //             child: SizedBox(
-  //               height: 64,
-  //               width: double.infinity,
-  //               child: CircularProgressIndicator(
-  //                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-  //                 strokeWidth: 2.0,
-  //               ),
-  //             ),
-  //           ),
-  //           Expanded(
-  //             child: ListView.builder(
-  //                 controller: _scrollController,
-  //                 reverse: true,
-  //                 physics: const BouncingScrollPhysics(
-  //                     parent: AlwaysScrollableScrollPhysics()),
-  //                 padding:
-  //                     EdgeInsets.only(top: 16, bottom: 10, left: 16, right: 16),
-  //                 itemCount: messages!.length,
-  //                 itemBuilder: (context, index) {
-  //                   return MessageItem(
-  //                     isRight: messages![index].sender!.personID ==
-  //                         sharedPrefs.userId,
-  //                     message: messages![index],
-  //                   );
-  //                 }),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
 
   Widget _sendingMediaText() {
     return Row(
@@ -794,8 +666,7 @@ class _ChatPageState extends State<ChatPage> {
               color: Colors.deepPurple.withOpacity(1),
               borderRadius: BorderRadius.circular(9),
             ),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _scrollController.animateTo(
                   0.0,

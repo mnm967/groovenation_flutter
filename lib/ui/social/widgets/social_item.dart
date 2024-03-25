@@ -116,11 +116,6 @@ class _SocialItemState extends State<SocialItem> {
       context,
       '/social_people_search',
       arguments: (SocialPerson sperson) async {
-        // final ConversationsCubit conversationsCubit =
-        //     BlocProvider.of<ConversationsCubit>(context);
-
-        // Conversation? conversation =
-        //     await conversationsCubit.getPersonConversation(sperson.personID);
         String conversationId =
             HelperUtil.getConvoID(sharedPrefs.userId!, sperson.personID!);
 
@@ -145,21 +140,6 @@ class _SocialItemState extends State<SocialItem> {
           arguments: ChatPageArguments(
               Conversation(conversationId, sperson.personID, null), message),
         );
-
-        // if (conversation == null) {
-        //   Navigator.pushNamed(
-        //     context,
-        //     '/chat',
-        //     arguments: ChatPageArguments(
-        //         Conversation(null, sperson, 0, null), message),
-        //   );
-        // } else {
-        //   Navigator.pushNamed(
-        //     context,
-        //     '/chat',
-        //     arguments: ChatPageArguments(conversation, message),
-        //   );
-        // }
       },
     );
   }
@@ -262,7 +242,7 @@ class _SocialItemState extends State<SocialItem> {
         backgroundColor: Colors.purple.withOpacity(0.5),
         backgroundImage:
             CachedNetworkImageProvider(socialPost!.person.personProfilePicURL!),
-        child: FlatButton(
+        child: TextButton(
             onPressed: () => _openSocialPerson(socialPost!.person),
             child: Container()),
       ),

@@ -330,8 +330,7 @@ class _ClubSearchPageState extends State<ClubSearchPage>
             decoration: BoxDecoration(
                 color: Colors.deepPurple.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(9)),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _scrollController.animateTo(
                   0.0,

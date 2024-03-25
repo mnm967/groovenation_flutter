@@ -266,8 +266,7 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
               decoration: BoxDecoration(
                   color: Colors.deepPurple,
                   borderRadius: BorderRadius.circular(9)),
-              child: FlatButton(
-                padding: EdgeInsets.zero,
+              child: TextButton(
                 onPressed: () {
                   _scrollController.animateTo(
                     0.0,
@@ -465,11 +464,13 @@ class _ProfileHomePageState extends State<ProfileHomePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              FlatButton(
+              TextButton(
                 onPressed: () {
                   Navigator.pushNamed(context, '/settings');
                 },
-                padding: EdgeInsets.only(right: 8),
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.only(right: 8),
+                ),
                 child: Icon(
                   FontAwesomeIcons.userCog,
                   size: 28,

@@ -35,13 +35,15 @@ class _TrimmerViewState extends State<TrimmerView> {
     String? _value;
 
     await _trimmer
-        .saveTrimmedVideo(startValue: _startValue, endValue: _endValue)
-        .then((value) {
-      setState(() {
-        _progressVisibility = false;
-        _value = value;
-      });
-    });
+        .saveTrimmedVideo(
+            startValue: _startValue,
+            endValue: _endValue,
+            onSave: (String? outputPath) {
+              setState(() {
+              _progressVisibility = false;
+              _value = outputPath;
+            });
+        });
 
     return _value;
   }
@@ -59,16 +61,6 @@ class _TrimmerViewState extends State<TrimmerView> {
     _loadVideo();
   }
 
-  // Future<String?> _compressVideo(String videoPath) async {
-  //   print("Path: " + videoPath);
-  //   MediaInfo? mediaInfo = await (VideoCompress.compressVideo(
-  //     videoPath,
-  //     quality: VideoQuality.MediumQuality,
-  //     deleteOrigin: true, // It's false by default
-  //   ));
-
-  //   return mediaInfo!.path;
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -110,12 +102,11 @@ class _TrimmerViewState extends State<TrimmerView> {
                   child: VideoViewer(trimmer: _trimmer),
                 ),
                 Center(
-                  child: TrimEditor(
+                  child: TrimViewer(
                     trimmer: _trimmer,
                     viewerHeight: 50.0,
                     viewerWidth: MediaQuery.of(context).size.width,
                     maxVideoLength: Duration(seconds: 30),
-                    fit: BoxFit.contain,
                     onChangeStart: (value) {
                       _startValue = value;
                     },
@@ -144,7 +135,7 @@ class _TrimmerViewState extends State<TrimmerView> {
                           color: Colors.white,
                         ),
                   onPressed: () async {
-                    bool playbackState = await _trimmer.videPlaybackControl(
+                    bool playbackState = await _trimmer.videoPlaybackControl(
                       startValue: _startValue,
                       endValue: _endValue,
                     );

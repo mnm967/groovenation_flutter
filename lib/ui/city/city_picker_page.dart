@@ -47,7 +47,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("No"),
               onPressed: () {
                 sharedPrefs.userCity = _selectedCity;
@@ -60,7 +60,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
                   Navigator.pushReplacementNamed(context, '/create_username');
               },
             ),
-            FlatButton(
+            TextButton(
               child: Text("Yes"),
               onPressed: () async {
                 Location location = new Location();
@@ -181,7 +181,7 @@ class _CityPickerPageState extends State<CityPickerPage> {
         clipBehavior: Clip.antiAliasWithSaveLayer,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(12.0))),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () {
             _selectedCity = city.cityID;
             _selectedDefaultLat = city.defaultLat;
@@ -189,7 +189,6 @@ class _CityPickerPageState extends State<CityPickerPage> {
 
             _showPermissionDialog();
           },
-          padding: EdgeInsets.zero,
           child: Wrap(
             children: [
               Column(

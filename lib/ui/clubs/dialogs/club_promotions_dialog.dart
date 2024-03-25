@@ -82,7 +82,9 @@ class ClubPromotionsDialog extends StatelessWidget {
                     padding: EdgeInsets.only(left: 8),
                   ),
                   Text(
-                    "Available Until "+DateFormat.MMMd().format(_clubPromotion!.promotionEndDate),
+                    "Available Until " +
+                        DateFormat.MMMd()
+                            .format(_clubPromotion!.promotionEndDate),
                     style: TextStyle(
                         color: Colors.purple,
                         fontFamily: 'LatoBold',
@@ -110,8 +112,7 @@ class ClubPromotionsDialog extends StatelessWidget {
           width: 48,
           decoration: BoxDecoration(
               color: Colors.purple, borderRadius: BorderRadius.circular(9)),
-          child: FlatButton(
-            padding: EdgeInsets.zero,
+          child: TextButton(
             onPressed: () => Navigator.pop(context),
             child: Icon(
               Icons.close,

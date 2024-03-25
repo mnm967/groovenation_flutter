@@ -14,42 +14,42 @@ class ProfileItem extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
       child: Card(
-      elevation: 4,
-      color: Colors.deepPurple,
-      clipBehavior: Clip.antiAliasWithSaveLayer,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12.0))),
-      child: FlatButton(
-        onPressed: () {
-          onUserSelected!(person);
-        },
-        padding: EdgeInsets.zero,
-        child: Wrap(
-          children: [
-            Column(
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.max,
-                        children: [
-                          _profilePic(),
-                          _usernameContainer(),
-                        ],
-                      )
-                    ],
+        elevation: 4,
+        color: Colors.deepPurple,
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12.0))),
+        child: TextButton(
+          onPressed: () {
+            onUserSelected!(person);
+          },
+          child: Wrap(
+            children: [
+              Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            _profilePic(),
+                            _usernameContainer(),
+                          ],
+                        )
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),);
+    );
   }
 
   Widget _profilePic() {

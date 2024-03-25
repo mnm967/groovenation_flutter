@@ -69,7 +69,7 @@ class _ClubPageState extends State<ClubPage> {
   Widget _collapsingAppBar() {
     final FavouritesClubsCubit favouritesClubsCubit =
         BlocProvider.of<FavouritesClubsCubit>(context);
-        
+
     return SliverPersistentHeader(
       delegate: ClubCollapsingAppBar(
           expandedHeight: 392.0,
@@ -223,7 +223,6 @@ class _ClubPageState extends State<ClubPage> {
   String? _currentUserReview = "";
   TextEditingController _reviewInputController = TextEditingController();
 
-  //TODO: Optimize
   void _onUserReviewChanged(text) {
     setState(() {
       _currentUserReview = text;
@@ -275,7 +274,6 @@ class _ClubPageState extends State<ClubPage> {
     }
   }
 
-  //TODO: Optimize
   void _onUserRatingBarChanged(rating) {
     setState(() {
       _currentUserRating = rating;
@@ -434,8 +432,10 @@ class _ClubPageState extends State<ClubPage> {
   }
 
   Widget _cardViewContent(IconData icon, String text) {
-    return FlatButton(
-      padding: EdgeInsets.all(24),
+    return TextButton(
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.all(24),
+      ),
       onPressed: () {},
       child: Row(
         children: [

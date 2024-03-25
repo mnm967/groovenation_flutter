@@ -85,8 +85,10 @@ class EventCardView extends StatelessWidget {
   Widget _viewMoreButton(BuildContext context) {
     return Visibility(
       visible: club!.upcomingEvents.length != 0,
-      child: FlatButton(
-        padding: EdgeInsets.all(24),
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.all(24),
+        ),
         onPressed: () {
           Navigator.pushNamed(context, '/club_events', arguments: club);
         },
@@ -174,11 +176,13 @@ class EventCardView extends StatelessWidget {
   }
 
   Widget _miniEventItem(BuildContext context, Event event) {
-    return FlatButton(
+    return TextButton(
       onPressed: () {
         Navigator.pushNamed(context, '/event', arguments: event);
       },
-      padding: EdgeInsets.only(top: 16, bottom: 16),
+      style: TextButton.styleFrom(
+         padding: EdgeInsets.only(top: 16, bottom: 16),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.max,
         children: [

@@ -124,8 +124,10 @@ class MomentsCardView extends StatelessWidget {
   Widget _viewMoreButton(BuildContext context) {
     return Visibility(
       visible: club!.reviews.length != 0,
-      child: FlatButton(
-        padding: EdgeInsets.all(24),
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.all(24),
+        ),
         onPressed: () {
           Navigator.pushNamed(context, '/club_moments', arguments: club);
         },

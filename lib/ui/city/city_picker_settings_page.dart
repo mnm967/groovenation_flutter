@@ -116,8 +116,10 @@ class _CityPickerSettingsPageState extends State<CityPickerSettingsPage> {
             decoration: BoxDecoration(
                 color: Colors.deepPurple,
                 borderRadius: BorderRadius.circular(900)),
-            child: FlatButton(
-              padding: EdgeInsets.only(left: 8),
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 8),
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -162,7 +164,7 @@ class _CityPickerSettingsPageState extends State<CityPickerSettingsPage> {
         clipBehavior: Clip.antiAliasWithSaveLayer,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(12.0))),
-        child: FlatButton(
+        child: TextButton(
           onPressed: () {
             _selectedCity = city.cityID;
             _selectedDefaultLat = city.defaultLat;
@@ -170,7 +172,6 @@ class _CityPickerSettingsPageState extends State<CityPickerSettingsPage> {
 
             _saveSelectedCity(context);
           },
-          padding: EdgeInsets.zero,
           child: Wrap(
             children: [
               Column(

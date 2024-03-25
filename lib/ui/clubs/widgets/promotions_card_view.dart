@@ -132,7 +132,8 @@ class PromotionsCardView extends StatelessWidget {
     );
   }
 
-  Future<void> _showClubPromotionDialog(BuildContext context, ClubPromotion promotion) async {
+  Future<void> _showClubPromotionDialog(
+      BuildContext context, ClubPromotion promotion) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
@@ -143,9 +144,11 @@ class PromotionsCardView extends StatelessWidget {
   }
 
   Widget _miniPromotionItem(BuildContext context, ClubPromotion promotion) {
-    return FlatButton(
+    return TextButton(
       onPressed: () => _showClubPromotionDialog(context, promotion),
-      padding: EdgeInsets.only(top: 16, bottom: 16),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.only(top: 16, bottom: 16),
+      ),
       child: Row(
         mainAxisSize: MainAxisSize.max,
         children: [

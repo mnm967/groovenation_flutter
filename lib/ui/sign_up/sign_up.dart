@@ -69,7 +69,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("Okay"),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -435,7 +435,7 @@ class _SignUpPageState extends State<SignUpPage> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             semanticContainer: true,
-            child: FlatButton(
+            child: TextButton(
               onPressed: _validateForm,
               child: Padding(
                 padding: EdgeInsets.all(0),
@@ -612,12 +612,13 @@ class _SignUpPageState extends State<SignUpPage> {
   Widget _dateOfBirth() {
     return Padding(
       padding: EdgeInsets.only(top: 24),
-      child: FlatButton(
+      child: TextButton(
         onPressed: () {
           _selectDateOfBirth(context);
         },
-        padding: EdgeInsets.all(0),
-        splashColor: Colors.white.withOpacity(0.3),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.all(0),
+        ),
         child: TextFormField(
           enabled: false,
           style: formFieldTextStyle,

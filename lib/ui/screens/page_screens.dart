@@ -5,8 +5,6 @@ import 'package:groovenation_flutter/ui/screens/app_background_page.dart';
 import 'package:groovenation_flutter/models/club.dart';
 import 'package:groovenation_flutter/models/event.dart';
 import 'package:groovenation_flutter/models/social_person.dart';
-import 'package:groovenation_flutter/ui/chat/chat_page.dart';
-import 'package:groovenation_flutter/ui/chat/conversations_page.dart';
 import 'package:groovenation_flutter/ui/city/city_picker_page.dart';
 import 'package:groovenation_flutter/ui/city/city_picker_settings_page.dart';
 import 'package:groovenation_flutter/ui/clubs/club_events_page.dart';
@@ -77,25 +75,6 @@ class ClubReviewsPageScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final Club? club = ModalRoute.of(context)!.settings.arguments as Club?;
     return AppBackgroundPage(child: ClubReviewsPage(club));
-  }
-}
-
-class ConversationsPageScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return AppBackgroundPage(child: StreamProvider<List<Conversation>>.value(
-        initialData: [],
-        value: Database.streamConversations(sharedPrefs.userId!),
-    child: ConversationsPage()));
-  }
-}
-
-class ChatPageScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final ChatPageArguments args = ModalRoute.of(context)!.settings.arguments as ChatPageArguments;
-    return AppBackgroundPage(
-        child: ChatPage(args.conversation, args.messageToSend));
   }
 }
 

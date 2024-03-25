@@ -26,13 +26,12 @@ class _CommentItemState extends State<CommentItem> {
 
   @override
   Widget build(BuildContext context) {
-    return FlatButton(
+    return TextButton(
       onPressed: () {
         setState(() {
           currentMaxLines = !currentMaxLines;
         });
       },
-      padding: EdgeInsets.zero,
       child: Align(
         alignment: Alignment.topLeft,
         child: Padding(

@@ -563,7 +563,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     return BlocConsumer<SearchClubsCubit, ClubsState>(
       listener: _clubBlocListener,
       builder: (context, searchClubsState) {
-        
         if (searchClubsState is ClubsErrorState &&
             searchClubsState.error != AppError.REQUEST_CANCELLED)
           return Container(
@@ -654,8 +653,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             decoration: BoxDecoration(
                 color: Colors.deepPurple.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(9)),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _eventScrollController.animateTo(
                   0.0,

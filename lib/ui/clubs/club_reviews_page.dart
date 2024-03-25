@@ -136,8 +136,10 @@ class _ClubReviewsPageState extends State<ClubReviewsPage> {
               decoration: BoxDecoration(
                   color: Colors.deepPurple,
                   borderRadius: BorderRadius.circular(900)),
-              child: FlatButton(
+              child: TextButton(
+                style: TextButton.styleFrom(
                 padding: EdgeInsets.only(left: 8),
+              ),
                 onPressed: () {
                   Navigator.pop(context);
                 },
@@ -273,8 +275,7 @@ class _ClubReviewsPageState extends State<ClubReviewsPage> {
               decoration: BoxDecoration(
                   color: Colors.deepPurple,
                   borderRadius: BorderRadius.circular(9)),
-              child: FlatButton(
-                padding: EdgeInsets.zero,
+              child: TextButton(
                 onPressed: () {
                   _scrollController.animateTo(
                     0.0,

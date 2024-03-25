@@ -135,8 +135,10 @@ class _SettingsPageState extends State<SettingsPage> {
             decoration: BoxDecoration(
                 color: Colors.deepPurple,
                 borderRadius: BorderRadius.circular(900)),
-            child: FlatButton(
-              padding: EdgeInsets.only(left: 8),
+            child: TextButton(
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.only(left: 8),
+              ),
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -174,9 +176,8 @@ class _SettingsPageState extends State<SettingsPage> {
             Radius.circular(12.0),
           ),
         ),
-        child: FlatButton(
+        child: TextButton(
           onPressed: onPress as void Function()?,
-          padding: EdgeInsets.zero,
           child: Wrap(
             children: [
               Column(
@@ -313,9 +314,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _logoutButton() {
-    return FlatButton(
+    return TextButton(
       onPressed: () => _logUserOut(),
-      padding: EdgeInsets.zero,
       child: Wrap(children: [
         Column(
           children: [

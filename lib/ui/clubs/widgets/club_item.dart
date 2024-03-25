@@ -38,7 +38,7 @@ class ClubItem extends StatelessWidget {
           Radius.circular(12.0),
         ),
       ),
-      child: FlatButton(
+      child: TextButton(
         onPressed: onClubSelected == null
             ? () {
                 Navigator.pushNamed(context, '/club', arguments: club);
@@ -47,7 +47,6 @@ class ClubItem extends StatelessWidget {
                 onClubSelected!(club!.clubID, club!.name);
                 Navigator.pop(context);
               },
-        padding: EdgeInsets.zero,
         child: Wrap(
           children: [
             Column(
@@ -144,8 +143,7 @@ class ClubItem extends StatelessWidget {
           width: 48,
           decoration: BoxDecoration(
               color: Colors.deepPurple, borderRadius: BorderRadius.circular(9)),
-          child: FlatButton(
-            padding: EdgeInsets.zero,
+          child: TextButton(
             onPressed: () => _changeClubFavourite(context),
             child: Icon(
               isFavourite! ? Icons.star : Icons.star_border,
@@ -167,7 +165,9 @@ class ClubItem extends StatelessWidget {
             mainAxisSize: MainAxisSize.max,
             children: [
               _contentClubRating(),
-              Expanded(child: _contentText(),),
+              Expanded(
+                child: _contentText(),
+              ),
             ],
           )
         ],

@@ -4,14 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:groovenation_flutter/cubit/social/social_cubit.dart';
 import 'package:groovenation_flutter/cubit/state/social_state.dart';
-import 'package:groovenation_flutter/models/social_person.dart';
 import 'package:groovenation_flutter/models/social_post.dart';
 import 'package:groovenation_flutter/ui/profile/widgets/social_post_list.dart';
-import 'package:groovenation_flutter/ui/social/create_post_page.dart';
-import 'package:groovenation_flutter/ui/social/widgets/native_ad_widget.dart';
 import 'package:groovenation_flutter/ui/social/widgets/social_item.dart';
 import 'package:groovenation_flutter/ui/social/widgets/trimmer_view.dart';
 import 'package:groovenation_flutter/util/create_post_arguments.dart';
@@ -23,9 +19,6 @@ import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:video_compress/video_compress.dart';
-
-import '../../ad_helper.dart';
 
 class SocialHomePage extends StatefulWidget {
   final _SocialHomePageState state = _SocialHomePageState();
@@ -259,8 +252,7 @@ class _SocialHomePageState extends State<SocialHomePage>
     return Expanded(
       child: Padding(
         padding: EdgeInsets.only(top: 16, left: 16, bottom: 16),
-        child: FlatButton(
-          padding: EdgeInsets.zero,
+        child: TextButton(
           onPressed: _openSearchPage,
           child: Container(
             width: double.infinity,
@@ -305,8 +297,7 @@ class _SocialHomePageState extends State<SocialHomePage>
   Widget _conversationsButton() {
     return Expanded(
       flex: 0,
-      child: FlatButton(
-        padding: EdgeInsets.zero,
+      child: TextButton(
         onPressed: () {
           Navigator.pushNamed(context, '/conversations');
         },
@@ -689,59 +680,4 @@ class _SocialHomePageState extends State<SocialHomePage>
       ],
     );
   }
-
-  // TODO Complete Mobile Ads - Work in Progress:
-  // final int ADS_FREQUENCY = 2;
-  // Widget _trendingScrollView(SocialState socialState) {
-  //   final List<SocialPost?> list = (socialState is SocialLoadedState)
-  //       ? socialState.socialPosts!
-  //       : trendingSocialPosts!;
-  //   int totalLength = list.length;
-  //
-  //   int numAds = 0;
-  //   if(totalLength >= ADS_FREQUENCY) numAds = (totalLength / ADS_FREQUENCY).round();
-  //
-  //   int insertedAds = 0;
-  //   for(int i = 0; i < totalLength; i++){
-  //     if((i+1) % ADS_FREQUENCY == 0){
-  //       list.insert(i, SocialPost(null, SocialPerson(null, null, null, null, null, null), null, null, null, null, null, null, null));
-  //       insertedAds++;
-  //     }
-  //
-  //     if(insertedAds == numAds) break;
-  //   }
-  //
-  //   return CustomScrollView(
-  //     physics:
-  //     const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-  //     slivers: [
-  //       SliverPadding(
-  //         padding: EdgeInsets.only(top: 24),
-  //         sliver: SliverList(
-  //           delegate: SliverChildBuilderDelegate(
-  //                 (BuildContext context, int index) {
-  //
-  //               print("Remainder: " + ((index+1) % ADS_FREQUENCY).toString());
-  //
-  //               if(index >= list.length) return Container();
-  //               // if((index+1) % ADS_FREQUENCY == 0) return NativeAdWidget();
-  //
-  //               final item = list[index];
-  //
-  //               if(item!.postID == null) return NativeAdWidget();
-  //
-  //               return Padding(
-  //                 padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
-  //                 child: SocialItem(
-  //                     key: Key(item.postID!),
-  //                     socialPost: item,
-  //                     showClose: false),);
-  //             },
-  //             childCount: list.length + numAds,
-  //           ),
-  //         ),
-  //       )
-  //     ],
-  //   );
-  // }
 }

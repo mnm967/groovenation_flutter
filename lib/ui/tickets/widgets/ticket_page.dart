@@ -188,7 +188,7 @@ class TicketPage extends StatelessWidget {
           aspectRatio: 1,
           child: RepaintBoundary(
               key: globalKey,
-              child: QrImage(
+              child: QrImageView(
                 data: ticket.encryptedQRTag,
                 version: QrVersions.auto,
               )),

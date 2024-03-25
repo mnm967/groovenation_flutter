@@ -93,7 +93,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("Okay"),
               onPressed: () {
                 onButtonClick();
@@ -128,43 +128,42 @@ class _CreatePostPageState extends State<CreatePostPage> {
     SystemChrome.setSystemUIOverlayStyle(myTheme);
 
     return Material(
-        color: Colors.transparent,
-        child: SafeArea(
-          child: Stack(
-            children: [
-              CustomScrollView(
-                physics: const BouncingScrollPhysics(
-                    parent: AlwaysScrollableScrollPhysics()),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: BlocListener<SocialPostCubit, SocialState>(
-                      listener: _uploadBlocListener,
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 16),
-                        child: Column(
-                          children: [
-                            _header(),
-                            isVideo!
-                                ? Padding(padding: EdgeInsets.zero)
-                                : _postImageView(),
-                            isVideo!
-                                ? _postVideoView()
-                                : Padding(padding: EdgeInsets.zero),
-                            _captionSection(),
-                            _tagClubSection(),
-                            _uploadButton(),
-                          ],
-                        ),
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            CustomScrollView(
+              physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: BlocListener<SocialPostCubit, SocialState>(
+                    listener: _uploadBlocListener,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 16),
+                      child: Column(
+                        children: [
+                          _header(),
+                          isVideo!
+                              ? Padding(padding: EdgeInsets.zero)
+                              : _postImageView(),
+                          isVideo!
+                              ? _postVideoView()
+                              : Padding(padding: EdgeInsets.zero),
+                          _captionSection(),
+                          _tagClubSection(),
+                          _uploadButton(),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
-      )
-    ;
+      ),
+    );
   }
 
   Widget _header() {
@@ -179,8 +178,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
             decoration: BoxDecoration(
                 color: Colors.deepPurple,
                 borderRadius: BorderRadius.circular(900)),
-            child: FlatButton(
-              padding: EdgeInsets.only(left: 0),
+            child: TextButton(
               onPressed: () {
                 Navigator.pop(context);
               },
@@ -390,7 +388,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             semanticContainer: true,
-            child: FlatButton(
+            child: TextButton(
               onPressed: () {
                 final SocialPostCubit socialPostUploadCubit =
                     BlocProvider.of<SocialPostCubit>(context);

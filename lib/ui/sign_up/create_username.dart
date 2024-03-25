@@ -56,7 +56,7 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("Okay"),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -383,7 +383,7 @@ class _CreateUsernamePageState extends State<CreateUsernamePage> {
               borderRadius: BorderRadius.circular(10.0),
             ),
             semanticContainer: true,
-            child: FlatButton(
+            child: TextButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _createUsername();

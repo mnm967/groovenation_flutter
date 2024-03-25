@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:groovenation_flutter/models/conversation.dart';
 
-class Database {
+class ChatDatabase {
   static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   static Stream<List<Conversation>> streamConversations(String uid) {

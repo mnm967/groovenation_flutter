@@ -57,13 +57,15 @@ class _PostCommentItemState extends State<PostCommentItem> {
   Widget build(BuildContext context) {
     return BlocListener<SocialCommentsLikeCubit, SocialCommentsState>(
       listener: _blocListener,
-      child: FlatButton(
+      child: TextButton(
         onPressed: () {
           setState(() {
             _showAllLines = !_showAllLines;
           });
         },
-        padding: EdgeInsets.only(left: 16, right: 8, top: 16, bottom: 16),
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.only(left: 16, right: 8, top: 16, bottom: 16),
+        ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +89,7 @@ class _PostCommentItemState extends State<PostCommentItem> {
           backgroundColor: Colors.purple.withOpacity(0.5),
           backgroundImage: CachedNetworkImageProvider(
               _socialComment.person.personProfilePicURL!),
-          child: FlatButton(
+          child: TextButton(
             onPressed: () {
               _openSocialPerson(_socialComment.person);
             },

@@ -147,7 +147,7 @@ class _EventPageState extends State<EventPage> {
             ),
           ),
           actions: [
-            FlatButton(
+            TextButton(
               child: Text("Okay"),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -317,8 +317,7 @@ class _EventPageState extends State<EventPage> {
             decoration: BoxDecoration(
                 color: Colors.deepPurple.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(9)),
-            child: FlatButton(
-              padding: EdgeInsets.zero,
+            child: TextButton(
               onPressed: () {
                 _scrollController.animateTo(
                   0.0,

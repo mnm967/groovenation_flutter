@@ -21,9 +21,8 @@ class TicketItem extends StatelessWidget {
       clipBehavior: Clip.antiAliasWithSaveLayer,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12.0))),
-      child: FlatButton(
+      child: TextButton(
         onPressed: () => onTicketPressed!(context, ticket),
-        padding: EdgeInsets.zero,
         child: Wrap(
           children: [
             Column(
@@ -34,7 +33,10 @@ class TicketItem extends StatelessWidget {
                     children: [
                       Row(
                         mainAxisSize: MainAxisSize.max,
-                        children: [_imageContainer(), Expanded(child: _contentContainer())],
+                        children: [
+                          _imageContainer(),
+                          Expanded(child: _contentContainer())
+                        ],
                       ),
                     ],
                   ),
@@ -84,18 +86,18 @@ class TicketItem extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-              ticket!.eventName!,
-              textAlign: TextAlign.start,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 2,
-              style: TextStyle(
-                  fontFamily: 'LatoBold',
-                  fontSize: 18,
-                  decoration: isCompleted!
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
-                  color: Colors.white),
-            ),
+            ticket!.eventName!,
+            textAlign: TextAlign.start,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
+            style: TextStyle(
+                fontFamily: 'LatoBold',
+                fontSize: 18,
+                decoration: isCompleted!
+                    ? TextDecoration.lineThrough
+                    : TextDecoration.none,
+                color: Colors.white),
+          ),
           Padding(
             padding: EdgeInsets.zero,
             child: Text(

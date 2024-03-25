@@ -86,14 +86,12 @@ class _MaterialClassicHeaderState
 
   @override
   void didUpdateWidget(covariant CustomMaterialClassicHeader oldWidget) {
-    // TODO: implement didUpdateWidget
     _position = Scrollable.of(context)!.position;
     super.didUpdateWidget(oldWidget);
   }
 
   @override
   Widget buildContent(BuildContext context, RefreshStatus? mode) {
-    // TODO: implement buildContent
     return _buildIndicator(widget.backgroundColor ?? Colors.white);
   }
 
@@ -120,7 +118,6 @@ class _MaterialClassicHeaderState
 
   @override
   void onOffsetChange(double offset) {
-    // TODO: implement onOffsetChange
     if (!floating) {
       _valueAni.value = offset / configuration!.headerTriggerDistance;
       _positionController.value = offset / configuration!.headerTriggerDistance;
@@ -129,7 +126,6 @@ class _MaterialClassicHeaderState
 
   @override
   void onModeChange(RefreshStatus? mode) {
-    // TODO: implement onModeChange
     if (mode == RefreshStatus.refreshing) {
       _positionController.value = widget.distance / widget.height;
       _scaleFactor.value = 1;
@@ -139,7 +135,6 @@ class _MaterialClassicHeaderState
 
   @override
   void resetValue() {
-    // TODO: implement resetValue
     _scaleFactor.value = 1.0;
     _positionController.value = 0.0;
     _valueAni.value = 0.0;
@@ -162,19 +157,16 @@ class _MaterialClassicHeaderState
 
   @override
   Future<void> readyToRefresh() {
-    // TODO: implement readyToRefresh
     return _positionController.animateTo(widget.distance / widget.height);
   }
 
   @override
   Future<void> endRefresh() {
-    // TODO: implement endRefresh
     return _scaleFactor.animateTo(0.0);
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     _valueAni.dispose();
     _scaleFactor.dispose();
     _positionController.dispose();
